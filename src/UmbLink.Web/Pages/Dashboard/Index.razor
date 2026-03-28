@@ -8,27 +8,44 @@
 
 <TrialBanner TrialEndsAt="_sub?.TrialEndsAt" />
 
-<div class="container py-4">
+<div class="container py-4" style="max-width:960px">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0">Minhas Páginas</h4>
+            <h4 style="font-weight:700;color:var(--text-primary);margin:0">Minhas Páginas</h4>
             @if (_sub is not null)
             {
-                <span class="text-muted small">Plano <PlanBadge PlanName="@_sub.PlanName" /></span>
+                <span class="text-theme-secondary" style="font-size:.8rem">Plano <PlanBadge PlanName="@_sub.PlanName" /></span>
             }
         </div>
-        <button class="btn btn-primary" @onclick="ShowCreateModal">
-            <i class="bi bi-plus-lg me-1"></i>Nova página
+        <button class="btn-accent" @onclick="ShowCreateModal">
+            <i class="bi bi-plus-lg"></i>Nova página
         </button>
     </div>
+
+    @if (_sub?.PlanName == "Free" && _pages.Count >= 1)
+    {
+        <div class="alert-theme mb-3">
+            <i class="bi bi-stars text-accent flex-shrink-0"></i>
+            <span class="flex-grow-1">Você está no plano gratuito — <strong>@_pages.Count/1</strong> página usada.
+                <a href="/plans" style="color:var(--accent);font-weight:600">Fazer upgrade</a> para até 3 páginas e links ilimitados.</span>
+        </div>
+    }
 
     <LoadingSpinner Loading="_loading">
         @if (_pages.Count == 0)
         {
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-grid fs-1 d-block mb-3"></i>
-                <p>Você ainda não tem nenhuma página.</p>
-                <button class="btn btn-primary" @onclick="ShowCreateModal">Criar minha primeira página</button>
+            <div class="text-center py-5">
+                <div class="animate-fade-in-up">
+                    <i class="bi bi-stars" style="font-size:3rem;color:var(--accent);display:block;margin-bottom:1rem"></i>
+                    <h5 style="font-weight:700;color:var(--text-primary)">Crie sua primeira página!</h5>
+                    <p class="text-theme-secondary" style="max-width:360px;margin:0 auto 1.5rem">
+                        Junte todos os seus links em um só lugar e compartilhe com o mundo.
+                    </p>
+                    <button class="btn-accent btn-accent-lg" @onclick="ShowCreateModal">
+                        <i class="bi bi-rocket-takeoff"></i>Criar minha página
+                    </button>
+                    <p class="text-theme-muted" style="font-size:.8rem;margin-top:0.75rem">Grátis, sem cartão. Pronto em minutos.</p>
+                </div>
             </div>
         }
         else
@@ -37,33 +54,33 @@
                 @foreach (var pg in _pages)
                 {
                     <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-body">
+                        <div class="page-card">
+                            <div class="page-card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0 fw-semibold">@pg.Title</h6>
-                                    <span class="badge @(pg.Status == PageStatus.Published ? "bg-success" : "bg-secondary") ms-2">
+                                    <h6 style="font-weight:600;color:var(--text-primary);margin:0">@pg.Title</h6>
+                                    <span class="badge-theme @(pg.Status == PageStatus.Published ? "badge-success" : "badge-muted") ms-2">
                                         @(pg.Status == PageStatus.Published ? "Publicada" : "Rascunho")
                                     </span>
                                 </div>
-                                <p class="text-muted small mb-1">umblink.com/p/@pg.Slug</p>
-                                <p class="text-muted small">@pg.LinkCount link(s)</p>
+                                <p class="text-theme-muted" style="font-size:.8rem;margin-bottom:.25rem">umblink.com/p/@pg.Slug</p>
+                                <p class="text-theme-secondary" style="font-size:.8rem;margin:0">@pg.LinkCount link(s)</p>
                             </div>
-                            <div class="card-footer bg-transparent d-flex gap-2 flex-wrap">
-                                <a href="/editor/@pg.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
-                                    <i class="bi bi-pencil me-1"></i>Editar
+                            <div class="page-card-footer">
+                                <a href="/editor/@pg.Id" class="btn-accent" style="flex-grow:1;justify-content:center">
+                                    <i class="bi bi-pencil"></i>Editar
                                 </a>
-                                <a href="/dashboard/metrics/@pg.Id" class="btn btn-sm btn-outline-info" title="Métricas">
+                                <a href="/dashboard/metrics/@pg.Id" class="btn-ghost" title="Métricas">
                                     <i class="bi bi-bar-chart"></i>
                                 </a>
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
+                                <button class="btn-ghost" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
                                     <i class="bi bi-link-45deg"></i>
                                 </button>
-                                <button class="btn btn-sm @(pg.Status == PageStatus.Published ? "btn-warning" : "btn-success")"
-                                        @onclick="() => TogglePublish(pg)"
-                                        title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")">
+                                <button class="btn-ghost" @onclick="() => TogglePublish(pg)"
+                                        title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")"
+                                        style="color:@(pg.Status == PageStatus.Published ? "var(--warning)" : "var(--success)")">
                                     <i class="bi @(pg.Status == PageStatus.Published ? "bi-eye-slash" : "bi-eye")"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(pg)" title="Excluir">
+                                <button class="btn-ghost" style="color:var(--danger)" @onclick="() => ConfirmDelete(pg)" title="Excluir">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -78,38 +95,43 @@
 <!-- Create modal -->
 @if (_showCreate)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nova Página</h5>
-                    <button class="btn-close" @onclick="() => _showCreate = false"></button>
-                </div>
-                <div class="modal-body">
-                    @if (!string.IsNullOrEmpty(_createError))
-                    {
-                        <div class="alert alert-danger py-2">@_createError</div>
-                    }
-                    <div class="mb-3">
-                        <label class="form-label">Título</label>
-                        <input @bind="_createTitle" class="form-control" placeholder="Minha Página" />
+    <div class="modal-theme-backdrop">
+        <div class="modal-theme">
+            <div class="modal-theme-header">
+                <h5>Nova Página</h5>
+                <button class="btn-ghost" @onclick="() => _showCreate = false" style="padding:.25rem .5rem">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-theme-body">
+                @if (!string.IsNullOrEmpty(_createError))
+                {
+                    <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                        <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
+                        @_createError
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Endereço (slug)</label>
-                        <div class="input-group">
-                            <span class="input-group-text text-muted small">umblink.com/p/</span>
-                            <input @bind="_createSlug" class="form-control" placeholder="meu-slug" />
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Bio (opcional)</label>
-                        <textarea @bind="_createBio" class="form-control" rows="2"></textarea>
+                }
+                <div style="margin-bottom:1rem">
+                    <label class="form-label-theme">Título</label>
+                    <input value="@_createTitle" @oninput="OnCreateTitleInput" class="form-control-theme w-100" placeholder="Minha Página" />
+                </div>
+                <div style="margin-bottom:1rem">
+                    <label class="form-label-theme">Endereço (slug)</label>
+                    <div class="d-flex">
+                        <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                              style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">umblink.com/p/</span>
+                        <input value="@_createSlug" @oninput="OnCreateSlugInput" class="form-control-theme w-100"
+                               style="border-radius:0 10px 10px 0" placeholder="meu-slug" />
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => _showCreate = false">Cancelar</button>
-                    <button class="btn btn-primary" @onclick="CreatePage">Criar</button>
+                <div>
+                    <label class="form-label-theme">Bio (opcional)</label>
+                    <textarea @bind="_createBio" class="form-control-theme w-100" rows="2"></textarea>
                 </div>
+            </div>
+            <div class="modal-theme-footer">
+                <button class="btn-ghost" @onclick="() => _showCreate = false">Cancelar</button>
+                <button class="btn-accent" @onclick="CreatePage">Criar</button>
             </div>
         </div>
     </div>
@@ -128,6 +150,7 @@
     bool _showCreate;
     string _createTitle = "", _createSlug = "", _createBio = "";
     string _createError = "";
+    bool _createSlugEdited;
     bool _showUpgrade;
     string _upgradeMessage = "";
     bool _showConfirm;
@@ -146,7 +169,34 @@
         _loading = false;
     }
 
-    void ShowCreateModal() => _showCreate = true;
+    void ShowCreateModal() { _showCreate = true; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }
+
+    void OnCreateTitleInput(ChangeEventArgs e)
+    {
+        _createTitle = e.Value?.ToString() ?? string.Empty;
+        if (!_createSlugEdited)
+            _createSlug = ToSlug(_createTitle);
+    }
+
+    void OnCreateSlugInput(ChangeEventArgs e)
+    {
+        _createSlug = e.Value?.ToString() ?? string.Empty;
+        _createSlugEdited = true;
+    }
+
+    static string ToSlug(string title)
+    {
+        var s = title.ToLowerInvariant().Trim()
+            .Replace('ã','a').Replace('â','a').Replace('á','a').Replace('à','a')
+            .Replace('ê','e').Replace('é','e').Replace('è','e')
+            .Replace('î','i').Replace('í','i').Replace('ì','i')
+            .Replace('ô','o').Replace('ó','o').Replace('ò','o').Replace('õ','o')
+            .Replace('ú','u').Replace('û','u').Replace('ù','u')
+            .Replace('ç','c');
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\s-]", "");
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", "-");
+        return System.Text.RegularExpressions.Regex.Replace(s, @"-+", "-").Trim('-');
+    }
 
     async Task CreatePage()
     {
@@ -168,6 +218,7 @@
         _pages = await PageSvc.GetUserPagesAsync(userId);
         _showCreate = false;
         _createTitle = _createSlug = _createBio = "";
+        _createSlugEdited = false;
         Nav.NavigateTo($"/editor/{result.Value!.Id}");
     }
 
