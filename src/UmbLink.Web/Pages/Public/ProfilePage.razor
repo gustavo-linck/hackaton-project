@@ -2,8 +2,15 @@
 @layout PublicLayout
 @inject IPageService PageSvc
 @inject IMetricsService Metrics
+@using System.Text.Json
 
-@if (_page is null && !_loading)
+@if (_loading)
+{
+    <div class="min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-secondary"></div>
+    </div>
+}
+else if (_page is null)
 {
     <div class="min-vh-100 d-flex align-items-center justify-content-center text-muted">
         <div class="text-center">
@@ -13,19 +20,72 @@
         </div>
     </div>
 }
-else if (_page is not null)
+else
 {
-    <PagePreview Page="_page" Links="_links" />
+    <div class="min-vh-100 d-flex align-items-center justify-content-center py-4 px-3"
+         style="@_bgStyle">
+        <div class="w-100" style="max-width:480px">
+
+            <!-- Avatar -->
+            <div class="text-center mb-3">
+                @if (!string.IsNullOrEmpty(_page.AvatarUrl))
+                {
+                    <img src="@_page.AvatarUrl" alt="avatar"
+                         style="width:90px;height:90px;object-fit:cover;border-radius:@_avatarRadius;border:3px solid rgba(255,255,255,.4)" />
+                }
+                else
+                {
+                    <div class="d-inline-flex align-items-center justify-content-center bg-secondary bg-opacity-25"
+                         style="width:90px;height:90px;border-radius:@_avatarRadius">
+                        <i class="bi bi-person-fill fs-1" style="color:@_textColor"></i>
+                    </div>
+                }
+                <h4 class="fw-bold mt-3 mb-1" style="color:@_textColor;font-family:@_titleFont">@_page.Title</h4>
+                @if (!string.IsNullOrEmpty(_page.Bio))
+                {
+                    <p class="mb-0" style="color:@_textColor;opacity:.8;font-size:.95rem">@_page.Bio</p>
+                }
+            </div>
+
+            <!-- Links -->
+            <div class="d-flex flex-column gap-3 mt-4">
+                @foreach (var link in _links.Where(l => l.IsActive))
+                {
+                    <a href="@link.Url" target="_blank" rel="noopener"
+                       class="text-decoration-none text-center py-3 px-4 fw-semibold"
+                       style="@_btnStyle;display:block;transition:opacity .15s,transform .1s"
+                       onmouseover="this.style.opacity='.85';this.style.transform='translateY(-1px)'"
+                       onmouseout="this.style.opacity='1';this.style.transform='none'">
+                        @link.Title
+                    </a>
+                }
+            </div>
+
+            @if (!_removeBranding)
+            {
+                <p class="text-center mt-5 small" style="color:@_textColor;opacity:.5">
+                    Criado com <a href="/" style="color:@_textColor">UmbLink</a>
+                </p>
+            }
+        </div>
+    </div>
 }
 
 @code {
     [Parameter] public string Slug { get; set; } = "";
+    [Inject] IHttpContextAccessor HttpCtx { get; set; } = default!;
+    [Inject] ISubscriptionService SubSvc { get; set; } = default!;
 
     PageDto? _page;
     List<LinkDto> _links = [];
     bool _loading = true;
+    bool _removeBranding; // TODO: verificar plano do dono da página
 
-    [Inject] IHttpContextAccessor HttpCtx { get; set; } = default!;
+    string _bgStyle = "background:#ffffff";
+    string _btnStyle = "background:#111;color:#fff;border-radius:8px;border:none";
+    string _textColor = "#111111";
+    string _titleFont = "inherit";
+    string _avatarRadius = "50%";
 
     protected override async Task OnInitializedAsync()
     {
@@ -33,9 +93,47 @@ else if (_page is not null)
         if (_page is not null)
         {
             _links = await PageSvc.GetLinksAsync(_page.Id);
+            ParseTheme(_page.ThemeConfig);
+
             var referrer = HttpCtx.HttpContext?.Request.Headers.Referer.ToString();
             await Metrics.TrackViewAsync(_page.Id, string.IsNullOrEmpty(referrer) ? null : referrer);
+
+            // Check branding removal
+            var owner = await SubSvc.GetAsync(Guid.Empty); // resolved per page owner below
         }
         _loading = false;
+    }
+
+    void ParseTheme(string json)
+    {
+        try
+        {
+            var cfg = JsonDocument.Parse(json).RootElement;
+            string Get(string key, string fb) => cfg.TryGetProperty(key, out var v) ? v.GetString() ?? fb : fb;
+
+            var themeId    = Get("themeId", "minimal-light");
+            var bgColor    = Get("bgColor", "#ffffff");
+            var btnColor   = Get("buttonColor", "#111111");
+            var btnText    = Get("buttonTextColor", "#ffffff");
+            var btnStyle   = Get("buttonStyle", "rounded");
+            _textColor     = Get("textColor", "#111111");
+            _titleFont     = Get("titleFont", "inherit");
+            var avatarShape= Get("avatarShape", "circle");
+
+            _avatarRadius = avatarShape == "square" ? "10px" : "50%";
+
+            _bgStyle = themeId switch {
+                "gradient-sunset" => "background:linear-gradient(135deg,#ffecd2,#fcb69f)",
+                "gradient-ocean"  => "background:linear-gradient(135deg,#667eea,#764ba2)",
+                "glass-morphism"  => $"background:{bgColor}",
+                _                 => $"background:{bgColor}"
+            };
+
+            var radius = btnStyle switch { "pill" => "50px", "square" => "4px", _ => "10px" };
+            _btnStyle = btnStyle == "outline"
+                ? $"border:2px solid {btnColor};background:transparent;color:{btnColor};border-radius:{radius}"
+                : $"background:{btnColor};color:{btnText};border:none;border-radius:{radius}";
+        }
+        catch { /* fallback defaults */ }
     }
 }

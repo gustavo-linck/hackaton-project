@@ -48,18 +48,22 @@
                                 <p class="text-muted small mb-1">umblink.com/p/@pg.Slug</p>
                                 <p class="text-muted small">@pg.LinkCount link(s)</p>
                             </div>
-                            <div class="card-footer bg-transparent d-flex gap-2">
+                            <div class="card-footer bg-transparent d-flex gap-2 flex-wrap">
                                 <a href="/editor/@pg.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
                                     <i class="bi bi-pencil me-1"></i>Editar
+                                </a>
+                                <a href="/dashboard/metrics/@pg.Id" class="btn btn-sm btn-outline-info" title="Métricas">
+                                    <i class="bi bi-bar-chart"></i>
                                 </a>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
                                     <i class="bi bi-link-45deg"></i>
                                 </button>
                                 <button class="btn btn-sm @(pg.Status == PageStatus.Published ? "btn-warning" : "btn-success")"
-                                        @onclick="() => TogglePublish(pg)">
+                                        @onclick="() => TogglePublish(pg)"
+                                        title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")">
                                     <i class="bi @(pg.Status == PageStatus.Published ? "bi-eye-slash" : "bi-eye")"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(pg)">
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(pg)" title="Excluir">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

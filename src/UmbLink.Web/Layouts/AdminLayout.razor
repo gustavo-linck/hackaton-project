@@ -5,9 +5,12 @@
     <aside class="bg-dark text-white p-3 flex-shrink-0" style="width:220px">
         <h6 class="text-uppercase text-muted small mb-3">Admin Umbler</h6>
         <nav class="nav flex-column gap-1">
-            <a href="/admin" class="nav-link text-white">Usuários</a>
-            <a href="/admin/stats" class="nav-link text-white">Métricas Globais</a>
+            <a href="/admin" class="nav-link text-white"><i class="bi bi-bar-chart me-2"></i>Dashboard</a>
+            <a href="/admin/users" class="nav-link text-white"><i class="bi bi-people me-2"></i>Usuários</a>
         </nav>
+        <div class="mt-auto pt-3 border-top border-secondary">
+            <a href="/dashboard" class="nav-link text-muted small"><i class="bi bi-arrow-left me-1"></i>Voltar ao app</a>
+        </div>
     </aside>
     <main class="flex-grow-1 p-4">@Body</main>
 </div>

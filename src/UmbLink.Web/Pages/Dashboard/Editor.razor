@@ -21,7 +21,16 @@ else
             </a>
             <span class="navbar-brand mb-0 fw-semibold fs-6">@_page?.Title</span>
             <div class="ms-auto d-flex gap-2">
-                <button class="btn btn-sm btn-outline-success" @onclick="SavePage" disabled="@_saving">
+                @if (_page is not null)
+                {
+                    <a href="/p/@_editSlug" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver página">
+                        <i class="bi bi-eye me-1"></i>Ver
+                    </a>
+                    <a href="/dashboard/metrics/@PageId" class="btn btn-sm btn-outline-info" title="Métricas">
+                        <i class="bi bi-bar-chart"></i>
+                    </a>
+                }
+                <button class="btn btn-sm btn-success" @onclick="SavePage" disabled="@_saving">
                     @if (_saving) { <span class="spinner-border spinner-border-sm"></span> }
                     else { <i class="bi bi-check-lg me-1"></i> }
                     Salvar
