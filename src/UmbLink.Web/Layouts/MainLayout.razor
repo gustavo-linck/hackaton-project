@@ -1,28 +1,64 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
-<div class="min-vh-100 d-flex flex-column">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-        <a class="navbar-brand fw-bold" href="/dashboard">UmbLink</a>
+<div class="min-vh-100 d-flex flex-column" style="background:var(--bg-primary)">
+    <nav class="navbar-theme d-flex align-items-center">
+        <a class="nav-brand" href="/dashboard">UmbLink</a>
+
         <div class="ms-auto d-flex align-items-center gap-2">
             <AuthorizeView>
                 <Authorized>
-                    <a href="/dashboard" class="btn btn-sm btn-outline-light">Dashboard</a>
-                    <a href="/my-plan" class="btn btn-sm btn-outline-light">Meu Plano</a>
+                    <span class="d-none d-md-inline text-theme-secondary" style="font-size:.8rem">
+                        <i class="bi bi-person-circle me-1"></i>@context.User.FindFirst("display_name")?.Value
+                    </span>
+                    <a href="/dashboard" class="nav-link-theme">Dashboard</a>
+                    <a href="/plans" class="nav-link-theme">Planos</a>
+                    <a href="/my-plan" class="nav-link-theme">Meu Plano</a>
+                    <button class="theme-toggle" @onclick="ToggleTheme" title="Alternar tema">
+                        <i class="bi @(_isDark ? "bi-sun" : "bi-moon-stars")"></i>
+                    </button>
                     <form action="/auth/logout" method="post">
                         <AntiforgeryToken />
-                        <button type="submit" class="btn btn-sm btn-danger">Sair</button>
+                        <button type="submit" class="btn-ghost" style="color:var(--danger)">
+                            <i class="bi bi-box-arrow-right"></i> Sair
+                        </button>
                     </form>
                 </Authorized>
                 <NotAuthorized>
-                    <a href="/auth/login" class="btn btn-sm btn-outline-light">Entrar</a>
+                    <button class="theme-toggle" @onclick="ToggleTheme" title="Alternar tema">
+                        <i class="bi @(_isDark ? "bi-sun" : "bi-moon-stars")"></i>
+                    </button>
+                    <a href="/auth/login" class="btn-ghost">Entrar</a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
     </nav>
+
     <main class="flex-grow-1">
         @Body
     </main>
-    <footer class="text-center text-muted py-2 small">
+
+    <footer class="footer-theme">
         &copy; @DateTime.Now.Year UmbLink by Umbler
     </footer>
 </div>
+
+@code {
+    bool _isDark;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("umblink.getTheme");
+            _isDark = theme == "dark";
+            StateHasChanged();
+        }
+    }
+
+    async Task ToggleTheme()
+    {
+        _isDark = !_isDark;
+        await JS.InvokeVoidAsync("umblink.setTheme", _isDark ? "dark" : "light");
+    }
+}
