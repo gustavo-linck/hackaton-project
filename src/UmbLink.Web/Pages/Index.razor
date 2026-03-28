@@ -1,40 +1,99 @@
 @page "/"
 @layout PublicLayout
+@inject IJSRuntime JS
 
 <!-- Hero Section (always dark) -->
 <div class="hero-section">
     <div class="hero-nav">
         <a href="/" class="nav-brand" style="color:#fff;font-size:1.35rem">UmbLink</a>
         <div class="d-flex gap-2 align-items-center">
-            <a href="/auth/login" class="hero-cta-secondary" style="padding:.5rem 1.25rem;font-size:.875rem">Entrar</a>
-            <a href="/auth/register" class="hero-cta-primary" style="padding:.5rem 1.25rem;font-size:.875rem">Criar grátis</a>
+            <button class="theme-toggle" @onclick="ToggleTheme" title="Alternar tema"
+                    style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff">
+                <i class="bi @(_isDark ? "bi-sun" : "bi-moon-stars")"></i>
+            </button>
+            <AuthorizeView>
+                <Authorized>
+                    <a href="/dashboard" class="hero-cta-primary" style="padding:.5rem 1.25rem;font-size:.875rem">
+                        <i class="bi bi-grid me-1"></i>Dashboard
+                    </a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/auth/login" class="hero-cta-secondary" style="padding:.5rem 1.25rem;font-size:.875rem">Entrar</a>
+                    <a href="/auth/register" class="hero-cta-primary" style="padding:.5rem 1.25rem;font-size:.875rem">Criar grátis</a>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
     </div>
 
     <div class="hero-content">
-        <div class="animate-fade-in-up">
-            <div class="hero-badge animate-fade-in-up delay-1">
+        <div>
+            <div class="hero-badge animate-fade-in-up">
                 <i class="bi bi-stars"></i>
                 Novo — planos a partir de R$19/mês
             </div>
-            <h1 class="hero-title animate-fade-in-up delay-2">
+            <h1 class="hero-title animate-fade-in-up delay-1">
                 Todos os seus links<br/>em <span class="highlight">um só lugar</span>
             </h1>
-            <p class="hero-subtitle animate-fade-in-up delay-3">
+            <p class="hero-subtitle animate-fade-in-up delay-2">
                 Crie sua página personalizada em segundos e compartilhe com o mundo.
                 Ideal para criadores, profissionais e marcas.
             </p>
-            <div class="d-flex gap-3 justify-content-center flex-wrap animate-fade-in-up delay-4">
-                <a href="/auth/register" class="hero-cta-primary">
-                    <i class="bi bi-rocket-takeoff"></i>Começar grátis
-                </a>
+            <div class="d-flex gap-3 justify-content-center flex-wrap animate-fade-in-up delay-3">
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/dashboard" class="hero-cta-primary">
+                            <i class="bi bi-rocket-takeoff"></i>Ir para o Dashboard
+                        </a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/auth/register" class="hero-cta-primary">
+                            <i class="bi bi-rocket-takeoff"></i>Começar grátis
+                        </a>
+                    </NotAuthorized>
+                </AuthorizeView>
                 <a href="/p/joao-silva" class="hero-cta-secondary" target="_blank">
                     <i class="bi bi-eye"></i>Ver exemplo
                 </a>
             </div>
-            <p class="animate-fade-in-up delay-5" style="color:rgba(255,255,255,0.4);font-size:.85rem;margin-top:1rem">
+            <p class="animate-fade-in-up delay-4" style="color:rgba(255,255,255,0.4);font-size:.85rem;margin-top:1rem">
                 Sem cartão de crédito. Plano gratuito para sempre.
             </p>
+
+            <!-- Floating mockup -->
+            <div class="animate-fade-in-up delay-5 d-none d-md-block" style="margin-top:3rem">
+                <div class="hero-mockup animate-float">
+                    <div style="width:260px;padding:1.5rem;background:rgba(255,255,255,0.06);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;text-align:center">
+                        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#557cf2,#a855f7);margin:0 auto .75rem;display:flex;align-items:center;justify-content:center">
+                            <i class="bi bi-person-fill" style="font-size:1.5rem;color:#fff"></i>
+                        </div>
+                        <div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem">Seu Nome</div>
+                        <div style="font-size:.75rem;color:rgba(255,255,255,.5);margin-bottom:1rem">Bio criativa aqui</div>
+                        <div style="background:rgba(85,124,242,0.8);border-radius:10px;padding:.5rem;font-size:.75rem;font-weight:600;margin-bottom:.5rem">Instagram</div>
+                        <div style="background:rgba(85,124,242,0.6);border-radius:10px;padding:.5rem;font-size:.75rem;font-weight:600;margin-bottom:.5rem">YouTube</div>
+                        <div style="background:rgba(85,124,242,0.4);border-radius:10px;padding:.5rem;font-size:.75rem;font-weight:600">Portfolio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats bar -->
+<div style="background:var(--accent);padding:1rem 0;color:#fff">
+    <div class="container">
+        <div class="row text-center g-3">
+            <div class="col-4">
+                <div style="font-size:1.5rem;font-weight:800">10k+</div>
+                <div style="font-size:.75rem;opacity:.8">Páginas criadas</div>
+            </div>
+            <div class="col-4">
+                <div style="font-size:1.5rem;font-weight:800">50k+</div>
+                <div style="font-size:.75rem;opacity:.8">Links ativos</div>
+            </div>
+            <div class="col-4">
+                <div style="font-size:1.5rem;font-weight:800">1M+</div>
+                <div style="font-size:.75rem;opacity:.8">Cliques rastreados</div>
+            </div>
         </div>
     </div>
 </div>
@@ -43,36 +102,37 @@
 <div class="section-steps section-padding bg-theme-secondary">
     <div class="container">
         <div class="text-center">
+            <span class="badge-accent badge-theme mb-3 animate-fade-in-up" style="font-size:.75rem">SIMPLES E RÁPIDO</span>
             <h2 class="section-title animate-fade-in-up">Como funciona</h2>
             <p class="section-subtitle animate-fade-in-up delay-1">Em menos de 3 minutos você tem sua página pronta</p>
         </div>
         <div class="row g-4 justify-content-center">
             <div class="col-md-4">
                 <div class="step-card animate-fade-in-up delay-2">
-                    <div class="step-icon" style="background:rgba(99,102,241,0.1);color:var(--accent)">
+                    <div class="step-number">1</div>
+                    <div class="step-icon" style="background:rgba(85,124,242,0.1);color:var(--accent)">
                         <i class="bi bi-person-plus"></i>
                     </div>
-                    <div class="badge-accent badge-theme mb-2">Passo 1</div>
                     <h5>Crie sua conta</h5>
                     <p>Cadastre-se gratuitamente em segundos. Sem cartão de crédito.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="step-card animate-fade-in-up delay-3">
-                    <div class="step-icon" style="background:rgba(245,158,11,0.1);color:var(--warning)">
+                    <div class="step-number">2</div>
+                    <div class="step-icon" style="background:rgba(168,85,247,0.1);color:#a855f7">
                         <i class="bi bi-palette"></i>
                     </div>
-                    <div class="badge-theme" style="background:rgba(245,158,11,0.1);color:var(--warning)">Passo 2</div>
                     <h5>Personalize</h5>
                     <p>Escolha um tema, adicione seus links e customize as cores da sua página.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="step-card animate-fade-in-up delay-4">
+                    <div class="step-number">3</div>
                     <div class="step-icon" style="background:rgba(16,185,129,0.1);color:var(--success)">
                         <i class="bi bi-share"></i>
                     </div>
-                    <div class="badge-theme" style="background:rgba(16,185,129,0.1);color:var(--success)">Passo 3</div>
                     <h5>Compartilhe</h5>
                     <p>Um único link para todas as suas redes, projetos e contatos.</p>
                 </div>
@@ -85,6 +145,7 @@
 <div class="section-features section-padding bg-theme-primary">
     <div class="container">
         <div class="text-center">
+            <span class="badge-accent badge-theme mb-3 animate-fade-in-up" style="font-size:.75rem">RECURSOS</span>
             <h2 class="section-title animate-fade-in-up">Tudo que você precisa</h2>
             <p class="section-subtitle animate-fade-in-up delay-1">Gratuito para sempre, com planos premium para quem quer mais</p>
         </div>
@@ -152,13 +213,50 @@
     <div class="container animate-fade-in-up">
         <h2 style="font-weight:700;font-size:1.875rem;margin-bottom:0.75rem">Pronto para começar?</h2>
         <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Crie sua página gratuita agora. Sem cartão de crédito.</p>
-        <a href="/auth/register" class="hero-cta-primary btn-accent-lg">
-            <i class="bi bi-rocket-takeoff"></i>Criar minha página grátis
-        </a>
+        <AuthorizeView>
+            <Authorized>
+                <a href="/dashboard" class="hero-cta-primary btn-accent-lg">
+                    <i class="bi bi-grid"></i>Ir para o Dashboard
+                </a>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/auth/register" class="hero-cta-primary btn-accent-lg">
+                    <i class="bi bi-rocket-takeoff"></i>Criar minha página grátis
+                </a>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </div>
 
 <!-- Footer -->
 <footer class="footer-theme">
-    &copy; @DateTime.Now.Year UmbLink by Umbler — <a href="/auth/login">Entrar</a>
+    &copy; @DateTime.Now.Year UmbLink by Umbler —
+    <AuthorizeView>
+        <Authorized>
+            <a href="/dashboard">Dashboard</a>
+        </Authorized>
+        <NotAuthorized>
+            <a href="/auth/login">Entrar</a>
+        </NotAuthorized>
+    </AuthorizeView>
 </footer>
+
+@code {
+    bool _isDark;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("umblink.getTheme");
+            _isDark = theme == "dark";
+            StateHasChanged();
+        }
+    }
+
+    async Task ToggleTheme()
+    {
+        _isDark = !_isDark;
+        await JS.InvokeVoidAsync("umblink.setTheme", _isDark ? "dark" : "light");
+    }
+}

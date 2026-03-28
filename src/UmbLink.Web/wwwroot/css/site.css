@@ -23,9 +23,9 @@ html, body {
     --text-primary: #111827;
     --text-secondary: #6b7280;
     --text-muted: #9ca3af;
-    --accent: #6366f1;
-    --accent-hover: #4f46e5;
-    --accent-glow: rgba(99, 102, 241, 0.25);
+    --accent: #557cf2;
+    --accent-hover: #4366d6;
+    --accent-glow: rgba(85, 124, 242, 0.25);
     --border: #e5e7eb;
     --shadow: rgba(0, 0, 0, 0.08);
     --shadow-lg: rgba(0, 0, 0, 0.12);
@@ -41,23 +41,23 @@ html, body {
 }
 
 :root[data-theme="dark"] {
-    --bg-primary: #0f0f14;
-    --bg-secondary: #1a1a24;
-    --bg-card: #1e1e2a;
-    --bg-hover: #2a2a3a;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
-    --accent: #818cf8;
-    --accent-hover: #6366f1;
-    --accent-glow: rgba(129, 140, 248, 0.25);
-    --border: rgba(255, 255, 255, 0.08);
-    --shadow: rgba(0, 0, 0, 0.3);
-    --shadow-lg: rgba(0, 0, 0, 0.5);
-    --glass-bg: rgba(30, 30, 42, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --navbar-bg: rgba(15, 15, 20, 0.8);
-    --modal-bg: rgba(0, 0, 0, 0.6);
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111728;
+    --bg-card: #151c30;
+    --bg-hover: #1c2540;
+    --text-primary: #c9d1e5;
+    --text-secondary: #8892ad;
+    --text-muted: #556180;
+    --accent: #557cf2;
+    --accent-hover: #4366d6;
+    --accent-glow: rgba(85, 124, 242, 0.3);
+    --border: rgba(85, 124, 242, 0.12);
+    --shadow: rgba(0, 0, 0, 0.4);
+    --shadow-lg: rgba(0, 0, 0, 0.6);
+    --glass-bg: rgba(17, 23, 40, 0.75);
+    --glass-border: rgba(85, 124, 242, 0.1);
+    --navbar-bg: rgba(10, 14, 26, 0.85);
+    --modal-bg: rgba(0, 0, 0, 0.7);
     --success: #34d399;
     --warning: #fbbf24;
     --danger: #f87171;
@@ -409,7 +409,7 @@ body {
 
 /* ===== Hero (always dark, independent of theme) ===== */
 .hero-section {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e, #1a1045);
+    background: linear-gradient(135deg, #080d1a, #0f1a3d, #162050, #0c1230);
     background-size: 400% 400%;
     animation: gradientShift 8s ease infinite;
     color: #ffffff;
@@ -421,8 +421,8 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.1), transparent 60%);
+    background: radial-gradient(ellipse at 30% 20%, rgba(85, 124, 242, 0.2), transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.12), transparent 60%);
     pointer-events: none;
 }
 
@@ -488,7 +488,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: #6366f1;
+    background: #557cf2;
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -499,10 +499,10 @@ body {
     transition: all 0.25s ease;
 }
 .hero-cta-primary:hover {
-    background: #4f46e5;
+    background: #4366d6;
     color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 8px 25px rgba(85, 124, 242, 0.35);
 }
 
 .hero-cta-secondary {
@@ -552,10 +552,33 @@ body {
     padding: 2rem 1.5rem;
     text-align: center;
     transition: all 0.25s ease;
+    position: relative;
 }
 .step-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 30px var(--shadow-lg);
+}
+
+.step-number {
+    position: absolute;
+    top: -12px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.hero-mockup {
+    display: flex;
+    justify-content: center;
 }
 
 .step-icon {
@@ -625,7 +648,7 @@ body {
 
 /* ===== CTA Section (always dark) ===== */
 .cta-section {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #1a1045);
+    background: linear-gradient(135deg, #080d1a, #0f1a3d, #162050);
     background-size: 400% 400%;
     animation: gradientShift 8s ease infinite;
     color: #ffffff;
