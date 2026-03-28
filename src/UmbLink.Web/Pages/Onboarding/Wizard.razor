@@ -1,0 +1,305 @@
+@page "/onboarding"
+@layout PublicLayout
+@attribute [Authorize]
+@inject IPageService PageSvc
+@inject ILinkService LinkSvc
+@inject NavigationManager Nav
+
+<PageTitle>Bem-vindo — UmbLink</PageTitle>
+
+<div class="min-vh-100 d-flex flex-column" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e)">
+    <!-- Navbar -->
+    <nav class="navbar px-4 py-3">
+        <span class="navbar-brand text-white fw-bold fs-5">UmbLink</span>
+    </nav>
+
+    <!-- Content -->
+    <div class="flex-grow-1 d-flex align-items-start justify-content-center px-3 py-4">
+
+        @if (_step == 1)
+        {
+            <div class="row w-100 justify-content-center g-4" style="max-width:960px">
+                <!-- Form column -->
+                <div class="col-12 col-lg-6">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-body p-4">
+                            <h4 class="fw-bold mb-1">Vamos criar sua página!</h4>
+                            <p class="text-muted small mb-4">Como você quer se chamar?</p>
+
+                            @if (!string.IsNullOrEmpty(_error))
+                            {
+                                <div class="alert alert-danger py-2">@_error</div>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Seu nome ou marca</label>
+                                <input class="form-control form-control-lg"
+                                       placeholder="Seu nome ou marca"
+                                       value="@_pageTitle"
+                                       @oninput="OnTitleInput" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Endereço da sua página</label>
+                                <div class="input-group">
+                                    <span class="input-group-text text-muted small">umblink.com/p/</span>
+                                    <input class="form-control"
+                                           placeholder="seu-slug"
+                                           value="@_pageSlug"
+                                           @oninput="OnSlugInput" />
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Escolha um visual</label>
+                                <div class="row g-2">
+                                    @foreach (var theme in Themes.All)
+                                    {
+                                        <div class="col-6">
+                                            <div class="border rounded p-2 d-flex align-items-center gap-2
+                                                 @(_selectedThemeId == theme.Id ? "border-primary bg-primary bg-opacity-10" : "")
+                                                 @(theme.IsPremium ? "opacity-60" : "")"
+                                                 style="cursor:pointer"
+                                                 @onclick="() => SelectThemeInWizard(theme)">
+                                                <div style="width:22px;height:22px;border-radius:50%;background:@theme.DefaultBg;border:1px solid rgba(0,0,0,.15);flex-shrink:0"></div>
+                                                <span class="small">@theme.Name</span>
+                                                @if (theme.IsPremium)
+                                                {
+                                                    <span class="ms-auto"><i class="bi bi-lock-fill text-warning" style="font-size:.7rem"></i></span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                @if (_proThemeNotice)
+                                {
+                                    <div class="alert alert-warning py-2 small mt-2 mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-stars text-warning"></i>
+                                        Temas premium disponíveis nos planos Pro e Business. Continue com um dos temas gratuitos por enquanto!
+                                    </div>
+                                }
+                            </div>
+
+                            <button class="btn btn-primary w-100 btn-lg" @onclick="NextStep">
+                                Próximo →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live preview column -->
+                <div class="col-lg-4 d-none d-lg-flex flex-column align-items-center justify-content-start pt-2">
+                    <PagePreview Page="GetPreviewDto()" Links="GetPreviewLinks()" />
+                    <small class="text-white-50 mt-2">Preview ao vivo</small>
+                </div>
+            </div>
+        }
+
+        @if (_step == 2)
+        {
+            <div style="width:100%;max-width:500px">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-4 text-center">
+                        <i class="bi bi-link-45deg fs-1 text-primary d-block mb-2"></i>
+                        <h5 class="fw-bold mb-1">Adicione seu primeiro link</h5>
+                        <p class="text-muted small mb-4">Todo mundo começa com um link. Qual é o seu?</p>
+
+                        @if (!string.IsNullOrEmpty(_error))
+                        {
+                            <div class="alert alert-danger py-2 text-start">@_error</div>
+                        }
+
+                        <div class="mb-3 text-start">
+                            <label class="form-label">Título do link</label>
+                            <input class="form-control" placeholder="Meu Instagram" @bind="_linkTitle" />
+                        </div>
+
+                        <div class="mb-4 text-start">
+                            <label class="form-label">URL</label>
+                            <input class="form-control" type="url" placeholder="https://..." @bind="_linkUrl" />
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-5">
+                                <button class="btn btn-outline-secondary w-100" @onclick="() => _step = 1">
+                                    ← Voltar
+                                </button>
+                            </div>
+                            <div class="col-7">
+                                <button class="btn btn-primary w-100" @onclick="CreatePageAsync" disabled="@_creating">
+                                    @if (_creating)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                    }
+                                    Criar minha página 🚀
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-link text-muted small p-0" @onclick="SkipLink">
+                            Pular por agora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_step == 3)
+        {
+            <div style="width:100%;max-width:500px">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-4 text-center">
+                        <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
+                        <h4 class="fw-bold mb-1">Sua página está pronta! 🎉</h4>
+                        <p class="text-muted mb-4">Parabéns! Compartilhe com o mundo.</p>
+
+                        <div class="input-group mb-4">
+                            <input class="form-control" readonly value="https://umblink.com/p/@_createdSlug" />
+                            <button class="btn btn-outline-secondary" @onclick="CopyUrl">Copiar</button>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" @onclick="GoToEditor">
+                                ✏️ Personalizar minha página
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="GoToDashboard">
+                                📋 Ir ao dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    int _step = 1;
+    string _pageTitle = "", _pageSlug = "", _selectedThemeId = "minimal-light";
+    string _linkTitle = "", _linkUrl = "";
+    string _error = "";
+    bool _creating, _slugEdited, _proThemeNotice;
+    Guid _createdPageId;
+    string _createdSlug = "";
+    Guid _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        _userId = auth.User.GetUserId();
+        var pages = await PageSvc.GetUserPagesAsync(_userId);
+        if (pages.Count > 0)
+            Nav.NavigateTo("/dashboard");
+    }
+
+    void OnTitleInput(ChangeEventArgs e)
+    {
+        _pageTitle = e.Value?.ToString() ?? string.Empty;
+        if (!_slugEdited) _pageSlug = ToSlug(_pageTitle);
+    }
+
+    void OnSlugInput(ChangeEventArgs e)
+    {
+        _pageSlug = e.Value?.ToString() ?? string.Empty;
+        _slugEdited = true;
+    }
+
+    void SelectThemeInWizard(ThemeDefinition theme)
+    {
+        if (theme.IsPremium) { _proThemeNotice = true; return; }
+        _selectedThemeId = theme.Id;
+        _proThemeNotice = false;
+    }
+
+    void NextStep()
+    {
+        if (string.IsNullOrWhiteSpace(_pageTitle) || string.IsNullOrWhiteSpace(_pageSlug))
+        { _error = "Preencha seu nome e o endereço da página."; return; }
+        _error = string.Empty;
+        _step = 2;
+    }
+
+    async Task SkipLink()
+    {
+        _linkTitle = "";
+        _linkUrl = "";
+        await CreatePageAsync();
+    }
+
+    async Task CreatePageAsync()
+    {
+        _creating = true; _error = string.Empty;
+        var result = await PageSvc.CreateAsync(_userId, new() { Title = _pageTitle, Slug = _pageSlug });
+        if (result.IsFailure)
+        { _error = result.Error!; _creating = false; return; }
+
+        var page = result.Value!;
+
+        // Apply selected theme
+        var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
+        var themeConfig = System.Text.Json.JsonSerializer.Serialize(new {
+            themeId = theme.Id, bgColor = theme.DefaultBg,
+            buttonStyle = "rounded", buttonColor = theme.DefaultButtonColor,
+            buttonTextColor = theme.DefaultButtonTextColor, textColor = theme.DefaultTextColor,
+            titleFont = "inter", linkFont = "inter", spacing = "normal", avatarShape = "circle"
+        });
+        await PageSvc.UpdateAsync(_userId, page.Id, new() {
+            Title = _pageTitle, Slug = _pageSlug, ThemeConfig = themeConfig
+        });
+
+        // Add link if provided
+        if (!string.IsNullOrWhiteSpace(_linkTitle) && !string.IsNullOrWhiteSpace(_linkUrl))
+            await LinkSvc.AddAsync(_userId, page.Id, new() { Title = _linkTitle, Url = _linkUrl });
+
+        // Publish
+        await PageSvc.PublishAsync(_userId, page.Id);
+
+        _createdPageId = page.Id;
+        _createdSlug = _pageSlug;
+        _creating = false;
+        _step = 3;
+    }
+
+    async Task CopyUrl()
+    {
+        await JS.InvokeAsync<bool>("umblink.copyToClipboard", $"https://umblink.com/p/{_createdSlug}");
+    }
+
+    void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");
+    void GoToDashboard() => Nav.NavigateTo("/dashboard");
+
+    PageDto GetPreviewDto() => new(Guid.Empty, Guid.Empty, "preview",
+        string.IsNullOrEmpty(_pageTitle) ? "Seu nome" : _pageTitle,
+        null, null, PageStatus.Draft, BuildPreviewThemeConfig(), 0);
+
+    List<LinkDto> GetPreviewLinks() => string.IsNullOrWhiteSpace(_linkTitle)
+        ? [] : [new LinkDto(Guid.Empty, Guid.Empty, _linkTitle, "#", null, true, 1)];
+
+    string BuildPreviewThemeConfig()
+    {
+        var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
+        return System.Text.Json.JsonSerializer.Serialize(new {
+            themeId = theme.Id, bgColor = theme.DefaultBg, buttonStyle = "rounded",
+            buttonColor = theme.DefaultButtonColor, buttonTextColor = theme.DefaultButtonTextColor,
+            textColor = theme.DefaultTextColor, titleFont = "inter", linkFont = "inter",
+            spacing = "normal", avatarShape = "circle"
+        });
+    }
+
+    static string ToSlug(string title)
+    {
+        var s = title.ToLowerInvariant().Trim()
+            .Replace('ã','a').Replace('â','a').Replace('á','a').Replace('à','a')
+            .Replace('ê','e').Replace('é','e').Replace('è','e')
+            .Replace('î','i').Replace('í','i').Replace('ì','i')
+            .Replace('ô','o').Replace('ó','o').Replace('ò','o').Replace('õ','o')
+            .Replace('ú','u').Replace('û','u').Replace('ù','u').Replace('ç','c');
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\s-]", "");
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", "-");
+        return System.Text.RegularExpressions.Regex.Replace(s, @"-+", "-").Trim('-');
+    }
+}

@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
+@using UmbLink.Infrastructure.Data.Entities
 
 <PageTitle>Planos — UmbLink</PageTitle>
 
@@ -77,9 +78,18 @@
                     {
                         <button class="btn btn-primary w-100" disabled>Plano atual</button>
                     }
+                    else if (_currentPlan == "Free")
+                    {
+                        <a href="/plans/checkout?planId=2&period=@_period" class="btn btn-primary w-100 mb-2">Assinar Pro</a>
+                        <button class="btn btn-outline-primary w-100" @onclick="() => StartTrial(2)" disabled="@_starting">
+                            @if (_starting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Iniciar trial grátis (7 dias)
+                        </button>
+                        @if (!string.IsNullOrEmpty(_trialError)) { <div class="text-danger small mt-1">@_trialError</div> }
+                    }
                     else
                     {
-                        <a href="/plans/checkout?plan=Pro&period=@_period" class="btn btn-primary w-100">Assinar Pro</a>
+                        <a href="/plans/checkout?planId=2&period=@_period" class="btn btn-primary w-100">Assinar Pro</a>
                     }
                 </div>
             </div>
@@ -106,9 +116,17 @@
                     {
                         <button class="btn btn-warning w-100" disabled>Plano atual</button>
                     }
+                    else if (_currentPlan == "Free")
+                    {
+                        <a href="/plans/checkout?planId=3&period=@_period" class="btn btn-outline-dark w-100 mb-2">Assinar Business</a>
+                        <button class="btn btn-outline-secondary w-100" @onclick="() => StartTrial(3)" disabled="@_starting">
+                            @if (_starting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Iniciar trial grátis (7 dias)
+                        </button>
+                    }
                     else
                     {
-                        <a href="/plans/checkout?plan=Business&period=@_period" class="btn btn-outline-dark w-100">Assinar Business</a>
+                        <a href="/plans/checkout?planId=3&period=@_period" class="btn btn-outline-dark w-100">Assinar Business</a>
                     }
                 </div>
             </div>
@@ -116,17 +134,40 @@
     </div>
 </div>
 
+<ToastContainer @ref="_toast" />
+
 @code {
     string _period = "Monthly";
     string _currentPlan = "Free";
+    SubscriptionDto? _sub;
+    bool _starting;
+    string _trialError = "";
+    ToastContainer? _toast;
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         var auth = await AuthState;
-        var sub = await SubSvc.GetAsync(auth.User.GetUserId());
-        _currentPlan = sub.PlanName;
+        _sub = await SubSvc.GetAsync(auth.User.GetUserId());
+        _currentPlan = _sub.PlanName;
+    }
+
+    async Task StartTrial(int planId)
+    {
+        _starting = true; _trialError = "";
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+        var period = Enum.Parse<BillingPeriod>(_period);
+        var result = await SubSvc.StartTrialAsync(userId, planId, period);
+        if (result.IsSuccess)
+        {
+            _sub = result.Value;
+            _currentPlan = _sub!.PlanName;
+            _toast?.Show("Trial iniciado! 7 dias grátis.");
+        }
+        else _trialError = result.Error!;
+        _starting = false;
     }
 
     string GetPrice(string plan) => (_period, plan) switch {

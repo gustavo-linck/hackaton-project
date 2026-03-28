@@ -1410,7 +1410,7 @@
      ontém uma definição para "AspNetUsers" e não foi possível encontrar ne
      … +25 lines (ctrl+o to expand)
 
-❯ o consumo de token tá muito alto, aparentemente após mudarmos a abordagem,  
+❯ aparentemente após mudarmos a abordagem,  
 ficou pior, tente verificar o motivo e melhorarmos a abordagem                
   Searched for 2 patterns (ctrl+o to expand)
 
@@ -1568,23 +1568,6 @@ ficou pior, tente verificar o motivo e melhorarmos a abordagem
 
 ● Good. Now the remaining pages (Plans, MyPlan, Admin panel, CustomDomain,
   Dockerfile). Let me implement them concisely:
-
-  ---
-  Regarding your question on token consumption: the reason it got worse after
-  switching to "direct inline" is that we're doing everything in a single long
-  conversation — each turn carries the full accumulated context (all the code
-  written so far). The subagent approach actually isolates context per task,
-  keeping each conversation short.
-
-  What we can do right now to reduce consumption going forward:
-  1. Start a new conversation for the remaining pages — the context is much
-  lighter when the codebase already exists
-  2. Or continue here but skip reading files I can infer (I'll write from memory
-   of what I just created)
-
-  The remaining tasks are mostly Razor pages. Let me keep going efficiently
-  without re-reading files I just wrote. I'll create them all and build once at
-  the end:
 
 ● Write(src\UmbLink.Web\Pages\Plans\Index.razor)
   ⎿  Wrote 154 lines to src\UmbLink.Web\Pages\Plans\Index.razor

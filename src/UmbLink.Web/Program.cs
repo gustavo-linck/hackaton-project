@@ -34,6 +34,8 @@ builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(o =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, CustomUserClaimsPrincipalFactory>();
+
 // Auth state for Blazor
 builder.Services.AddCascadingAuthenticationState();
 
@@ -177,7 +179,7 @@ app.MapPost("/auth/do-register", async (
     });
     await db.SaveChangesAsync();
     await sm.SignInAsync(user, isPersistent: false);
-    return Results.Redirect("/dashboard");
+    return Results.Redirect("/onboarding");
 }).DisableAntiforgery();
 
 app.MapPost("/auth/logout", async (SignInManager<AppUser> sm) =>
@@ -221,7 +223,7 @@ app.MapGet("/auth/google-callback", async (
     });
     await db.SaveChangesAsync();
     await sm.SignInAsync(user, false);
-    return Results.Redirect("/dashboard");
+    return Results.Redirect("/onboarding");
 });
 
 // Track endpoint público (métricas)
@@ -243,6 +245,20 @@ app.MapPost("/api/track/click/{linkId:guid}", async (
         string.IsNullOrEmpty(referrer) ? null : referrer);
     return Results.Ok();
 }).RequireRateLimiting("tracking");
+
+// Click tracking redirect
+app.MapGet("/r/{linkId:guid}", async (Guid linkId, IMetricsService metrics,
+    IPageService pageSvc, HttpContext ctx) =>
+{
+    var link = await pageSvc.GetLinkByIdAsync(linkId);
+    if (link is null) return Results.Redirect("/");
+    var ua = ctx.Request.Headers.UserAgent.ToString();
+    var referrer = ctx.Request.Headers.Referer.ToString();
+    await metrics.TrackClickAsync(linkId,
+        string.IsNullOrEmpty(ua) ? null : ua[..Math.Min(150, ua.Length)],
+        string.IsNullOrEmpty(referrer) ? null : referrer);
+    return Results.Redirect(link.Url);
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

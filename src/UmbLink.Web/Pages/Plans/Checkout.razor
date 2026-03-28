@@ -6,81 +6,116 @@
 <PageTitle>Checkout — UmbLink</PageTitle>
 
 <div class="container py-5" style="max-width:480px">
+    <h4 class="fw-bold mb-1">Finalizar assinatura</h4>
+    <p class="text-muted small mb-4">Plano <strong>@_planName</strong> — @_priceLabel</p>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger py-2">@_error</div>
+    }
+
     <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <h4 class="fw-bold mb-1">Finalizar assinatura</h4>
-            <p class="text-muted small mb-4">Plano <strong>@Plan</strong> — @GetPeriodLabel()</p>
-
-            <div class="alert alert-info small">
-                <i class="bi bi-info-circle me-1"></i>
-                Esta é uma demonstração. Nenhum pagamento real será processado.
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Número do cartão</label>
+                <input @bind="_cardNumber" class="form-control" placeholder="0000 0000 0000 0000"
+                       maxlength="19" inputmode="numeric" />
             </div>
-
-            <div class="border rounded p-3 mb-4">
-                <div class="d-flex justify-content-between">
-                    <span>@Plan @GetPeriodLabel()</span>
-                    <strong>R$@GetTotal()</strong>
+            <div class="mb-3">
+                <label class="form-label">Nome no cartão</label>
+                <input @bind="_cardName" class="form-control" placeholder="NOME SOBRENOME" />
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="form-label">Validade</label>
+                    <input @bind="_expiry" class="form-control" placeholder="MM/AA" maxlength="5" />
                 </div>
-                <div class="text-muted small mt-1">R$@GetMonthly()/mês equivalente</div>
+                <div class="col-6">
+                    <label class="form-label">CVV</label>
+                    <input @bind="_cvv" class="form-control" placeholder="123" maxlength="4" type="password" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">CPF do titular</label>
+                <input @bind="_cpf" class="form-control" placeholder="000.000.000-00" maxlength="14" />
             </div>
 
-            @if (!string.IsNullOrEmpty(_error))
-            {
-                <div class="alert alert-danger py-2">@_error</div>
-            }
-
-            <button class="btn btn-primary w-100 @(_loading ? "disabled" : "")" @onclick="Confirm">
-                @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
-                Confirmar assinatura (demo)
+            <button class="btn btn-primary w-100" @onclick="Confirm" disabled="@_loading">
+                @if (_loading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>Processando...</span>
+                }
+                else
+                {
+                    <i class="bi bi-lock-fill me-1"></i>
+                    <span>Assinar agora</span>
+                }
             </button>
-            <a href="/plans" class="btn btn-link w-100 mt-2">Voltar aos planos</a>
+            <p class="text-muted text-center small mt-2">
+                <i class="bi bi-shield-check me-1"></i>Pagamento seguro. Dados não armazenados.
+            </p>
         </div>
     </div>
+    <a href="/plans" class="btn btn-link w-100 mt-2">Voltar aos planos</a>
 </div>
 
 @code {
-    [SupplyParameterFromQuery] string Plan { get; set; } = "";
-    [SupplyParameterFromQuery] string Period { get; set; } = "Monthly";
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    [SupplyParameterFromQuery] int PlanId { get; set; }
+    [SupplyParameterFromQuery] string Period { get; set; } = "monthly";
+
+    string _planName = "Pro";
+    string _priceLabel = "";
+    string _cardNumber = "", _cardName = "", _expiry = "", _cvv = "", _cpf = "";
     bool _loading;
     string _error = "";
 
-    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
-
-    string GetPeriodLabel() => Period switch { "Quarterly" => "Trimestral", "Annual" => "Anual", _ => "Mensal" };
-
-    string GetMonthly() => (Plan, Period) switch {
-        ("Pro",      "Monthly")   => "19",
-        ("Pro",      "Quarterly") => "16",
-        ("Pro",      "Annual")    => "14",
-        ("Business", "Monthly")   => "75",
-        ("Business", "Quarterly") => "64",
-        ("Business", "Annual")    => "56",
-        _ => "0"
-    };
-
-    string GetTotal() => (Plan, Period) switch {
-        ("Pro",      "Quarterly") => "48",
-        ("Pro",      "Annual")    => "168",
-        ("Business", "Quarterly") => "192",
-        ("Business", "Annual")    => "672",
-        _ => GetMonthly()
-    };
+    protected override void OnParametersSet()
+    {
+        _planName = PlanId switch { 3 => "Business", 2 => "Pro", _ => "Free" };
+        var period = Period?.ToLower() switch {
+            "quarterly" => BillingPeriod.Quarterly,
+            "annual" => BillingPeriod.Annual,
+            _ => BillingPeriod.Monthly
+        };
+        _priceLabel = (PlanId, period) switch {
+            (2, BillingPeriod.Monthly)   => "R$ 19,00/mês",
+            (2, BillingPeriod.Quarterly) => "R$ 48,45/trimestre",
+            (2, BillingPeriod.Annual)    => "R$ 171,00/ano",
+            (3, BillingPeriod.Monthly)   => "R$ 75,00/mês",
+            (3, BillingPeriod.Quarterly) => "R$ 191,25/trimestre",
+            (3, BillingPeriod.Annual)    => "R$ 675,00/ano",
+            _ => "Grátis"
+        };
+    }
 
     async Task Confirm()
     {
+        if (string.IsNullOrWhiteSpace(_cardNumber) || string.IsNullOrWhiteSpace(_cardName)
+            || string.IsNullOrWhiteSpace(_expiry) || string.IsNullOrWhiteSpace(_cvv)
+            || string.IsNullOrWhiteSpace(_cpf))
+        {
+            _error = "Preencha todos os campos.";
+            return;
+        }
+
         _loading = true; _error = "";
+        await Task.Delay(1500); // simulate payment processing
+
         var auth = await AuthState;
         var userId = auth.User.GetUserId();
-
-        var planId = Plan == "Pro" ? 2 : 3; // Pro=2, Business=3 (seed order)
-        var period = Enum.Parse<BillingPeriod>(Period);
-
-        var result = await SubSvc.ActivatePlanAsync(userId, planId, period);
+        var period = Period?.ToLower() switch {
+            "quarterly" => BillingPeriod.Quarterly,
+            "annual" => BillingPeriod.Annual,
+            _ => BillingPeriod.Monthly
+        };
+        var result = await SubSvc.ActivatePlanAsync(userId, PlanId, period);
         if (result.IsSuccess)
-            Nav.NavigateTo("/dashboard?subscribed=1");
+            Nav.NavigateTo("/plans/my?success=1");
         else
         {
-            _error = result.Error!;
+            _error = result.Error ?? "Erro ao processar pagamento.";
             _loading = false;
         }
     }

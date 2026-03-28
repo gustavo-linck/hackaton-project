@@ -101,6 +101,30 @@ public class SubscriptionService(AppDbContext db, IAuditService audit) : ISubscr
         sub.CurrentPeriodEnd = null;
         sub.UpdatedAt = DateTime.UtcNow;
 
+        // Downgrade: suspend excess pages and deactivate excess links
+        var freeLimit = await db.PlanLimits.FirstOrDefaultAsync(pl => pl.PlanId == freePlan.Id);
+        if (freeLimit is not null)
+        {
+            var pages = await db.Pages
+                .Where(p => p.UserId == userId && p.Status != PageStatus.Suspended)
+                .OrderByDescending(p => p.UpdatedAt)
+                .ToListAsync();
+
+            for (int i = freeLimit.MaxPages; i < pages.Count; i++)
+                pages[i].Status = PageStatus.Suspended;
+
+            foreach (var page in pages.Take(freeLimit.MaxPages))
+            {
+                var links = await db.Links
+                    .Where(l => l.PageId == page.Id && l.IsActive)
+                    .OrderBy(l => l.Order)
+                    .ToListAsync();
+
+                for (int i = freeLimit.MaxLinksPerPage; i < links.Count; i++)
+                    links[i].IsActive = false;
+            }
+        }
+
         await db.SaveChangesAsync();
         await audit.LogAsync(userId, "subscription.cancelled", null);
         return Result<bool>.Ok(true);

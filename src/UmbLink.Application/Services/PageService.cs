@@ -80,7 +80,7 @@ public class PageService(AppDbContext db, IPlanLimitService limits, IAuditServic
             .Where(p => p.UserId == userId)
             .OrderBy(p => p.CreatedAt)
             .Select(p => new PageDto(
-                p.Id, p.Slug, p.Title, p.Bio, p.AvatarUrl, p.Status, p.ThemeConfig,
+                p.Id, p.UserId, p.Slug, p.Title, p.Bio, p.AvatarUrl, p.Status, p.ThemeConfig,
                 p.Links.Count))
             .ToListAsync();
 
@@ -99,6 +99,13 @@ public class PageService(AppDbContext db, IPlanLimitService limits, IAuditServic
             .Select(l => new LinkDto(l.Id, l.PageId, l.Title, l.Url, l.IconName, l.IsActive, l.Order))
             .ToListAsync();
 
+    public async Task<LinkDto?> GetLinkByIdAsync(Guid linkId)
+    {
+        var link = await db.Links.FindAsync(linkId);
+        if (link is null) return null;
+        return new LinkDto(link.Id, link.PageId, link.Title, link.Url, link.IconName, link.IsActive, link.Order);
+    }
+
     static PageDto ToDto(Page p, int linkCount) =>
-        new(p.Id, p.Slug, p.Title, p.Bio, p.AvatarUrl, p.Status, p.ThemeConfig, linkCount);
+        new(p.Id, p.UserId, p.Slug, p.Title, p.Bio, p.AvatarUrl, p.Status, p.ThemeConfig, linkCount);
 }

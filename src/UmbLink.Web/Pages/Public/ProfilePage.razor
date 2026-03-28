@@ -51,7 +51,7 @@ else
             <div class="d-flex flex-column gap-3 mt-4">
                 @foreach (var link in _links.Where(l => l.IsActive))
                 {
-                    <a href="@link.Url" target="_blank" rel="noopener"
+                    <a href="/r/@link.Id" target="_blank" rel="noopener"
                        class="text-decoration-none text-center py-3 px-4 fw-semibold"
                        style="@_btnStyle;display:block;transition:opacity .15s,transform .1s"
                        onmouseover="this.style.opacity='.85';this.style.transform='translateY(-1px)'"
@@ -99,7 +99,8 @@ else
             await Metrics.TrackViewAsync(_page.Id, string.IsNullOrEmpty(referrer) ? null : referrer);
 
             // Check branding removal
-            var owner = await SubSvc.GetAsync(Guid.Empty); // resolved per page owner below
+            var ownerSub = await SubSvc.GetAsync(_page.UserId);
+            _removeBranding = ownerSub?.PlanName is "Pro" or "Business";
         }
         _loading = false;
     }

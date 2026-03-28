@@ -12,4 +12,5 @@ public interface IPageService
     Task<List<PageDto>> GetUserPagesAsync(Guid userId);
     Task<PageDto?> GetBySlugAsync(string slug);
     Task<List<LinkDto>> GetLinksAsync(Guid pageId);
+    Task<LinkDto?> GetLinkByIdAsync(Guid linkId);
 }
