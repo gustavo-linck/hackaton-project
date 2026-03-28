@@ -27,31 +27,31 @@
             <!-- Summary cards -->
             <div class="row g-3 mb-4">
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card text-center p-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                         <div class="fs-2 fw-bold text-primary">@_metrics.TotalViews</div>
-                        <div class="text-muted small">Visualizações</div>
+                        <div class="text-theme-muted small">Visualizações</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card text-center p-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                         <div class="fs-2 fw-bold text-success">@_metrics.TotalClicks</div>
-                        <div class="text-muted small">Cliques</div>
+                        <div class="text-theme-muted small">Cliques</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <div class="card text-center p-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                         <div class="fs-2 fw-bold text-info">
                             @(_metrics.TotalViews > 0
                                 ? $"{Math.Round((double)_metrics.TotalClicks / _metrics.TotalViews * 100, 1)}%"
                                 : "—")
                         </div>
-                        <div class="text-muted small">CTR Geral</div>
+                        <div class="text-theme-muted small">CTR Geral</div>
                     </div>
                 </div>
             </div>
 
             <!-- Chart -->
-            <div class="card mb-4 p-3">
+            <div class="card mb-4 p-3" style="background:var(--bg-card);border-color:var(--border)">
                 <h6 class="fw-semibold mb-3">Visualizações diárias</h6>
                 <canvas id="views-chart" height="100"></canvas>
             </div>
@@ -59,7 +59,7 @@
             <!-- Link table -->
             @if (_metrics.LinkMetrics.Count > 0)
             {
-                <div class="card p-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
                     <h6 class="fw-semibold mb-3">Performance por link</h6>
                     <div class="table-responsive">
                         <table class="table table-sm">

@@ -1,11 +1,11 @@
 @page "/auth/register"
 @layout PublicLayout
 
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-    <div class="card shadow-sm" style="width:100%;max-width:420px">
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-theme-secondary">
+    <div class="card-theme-static shadow-sm" style="width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem">
         <div class="card-body p-4">
             <h4 class="card-title mb-1 fw-bold">Criar conta</h4>
-            <p class="text-muted small mb-4">Comece grátis. Sem cartão necessário.</p>
+            <p class="text-theme-muted small mb-4">Comece grátis. Sem cartão necessário.</p>
 
             @if (!string.IsNullOrEmpty(_errorMsg))
             {
@@ -15,20 +15,20 @@
             <form method="post" action="/auth/do-register">
                 <div class="mb-3">
                     <label class="form-label">Nome</label>
-                    <input name="name" type="text" class="form-control" placeholder="Seu nome" required />
+                    <input name="name" type="text" class="form-control-theme" placeholder="Seu nome" required />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">E-mail</label>
-                    <input name="email" type="email" class="form-control" placeholder="voce@exemplo.com" required />
+                    <input name="email" type="email" class="form-control-theme" placeholder="voce@exemplo.com" required />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
                     <div class="input-group">
                         <input name="password" type="@(_showPassword ? "text" : "password")"
-                               class="form-control" minlength="6" required />
-                        <button type="button" class="btn btn-outline-secondary"
+                               class="form-control-theme" minlength="6" required />
+                        <button type="button" class="btn btn-ghost"
                                 @onclick="() => _showPassword = !_showPassword"
                                 tabindex="-1">
                             <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
@@ -37,13 +37,13 @@
                     <div class="form-text">Mínimo 8 caracteres com número.</div>
                 </div>
 
-                <button class="btn btn-primary w-100" type="submit">Criar conta</button>
+                <button class="btn btn-accent w-100" type="submit">Criar conta</button>
             </form>
 
             @if (_googleEnabled)
             {
-                <div class="text-center my-3 text-muted small">ou</div>
-                <a href="/auth/google-login" class="btn btn-outline-secondary w-100">
+                <div class="text-center my-3 text-theme-muted small">ou</div>
+                <a href="/auth/google-login" class="btn btn-ghost w-100">
                     <img src="https://www.google.com/favicon.ico" width="16" class="me-2" alt="" />
                     Continuar com Google
                 </a>

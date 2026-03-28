@@ -21,10 +21,10 @@
             <div class="row w-100 justify-content-center g-4" style="max-width:960px">
                 <!-- Form column -->
                 <div class="col-12 col-lg-6">
-                    <div class="card shadow-lg border-0">
+                    <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
                         <div class="card-body p-4">
                             <h4 class="fw-bold mb-1">Vamos criar sua página!</h4>
-                            <p class="text-muted small mb-4">Como você quer se chamar?</p>
+                            <p class="text-theme-muted small mb-4">Como você quer se chamar?</p>
 
                             @if (!string.IsNullOrEmpty(_error))
                             {
@@ -33,7 +33,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Seu nome ou marca</label>
-                                <input class="form-control form-control-lg"
+                                <input class="form-control-theme form-control-lg"
                                        placeholder="Seu nome ou marca"
                                        value="@_pageTitle"
                                        @oninput="OnTitleInput" />
@@ -42,8 +42,8 @@
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">Endereço da sua página</label>
                                 <div class="input-group">
-                                    <span class="input-group-text text-muted small">umblink.com/p/</span>
-                                    <input class="form-control"
+                                    <span class="input-group-text text-theme-muted small">umblink.com/p/</span>
+                                    <input class="form-control-theme"
                                            placeholder="seu-slug"
                                            value="@_pageSlug"
                                            @oninput="OnSlugInput" />
@@ -80,7 +80,7 @@
                                 }
                             </div>
 
-                            <button class="btn btn-primary w-100 btn-lg" @onclick="NextStep">
+                            <button class="btn btn-accent w-100 btn-lg" @onclick="NextStep">
                                 Próximo →
                             </button>
                         </div>
@@ -98,11 +98,11 @@
         @if (_step == 2)
         {
             <div style="width:100%;max-width:500px">
-                <div class="card shadow-lg border-0">
+                <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
                     <div class="card-body p-4 text-center">
                         <i class="bi bi-link-45deg fs-1 text-primary d-block mb-2"></i>
                         <h5 class="fw-bold mb-1">Adicione seu primeiro link</h5>
-                        <p class="text-muted small mb-4">Todo mundo começa com um link. Qual é o seu?</p>
+                        <p class="text-theme-muted small mb-4">Todo mundo começa com um link. Qual é o seu?</p>
 
                         @if (!string.IsNullOrEmpty(_error))
                         {
@@ -111,22 +111,22 @@
 
                         <div class="mb-3 text-start">
                             <label class="form-label">Título do link</label>
-                            <input class="form-control" placeholder="Meu Instagram" @bind="_linkTitle" />
+                            <input class="form-control-theme" placeholder="Meu Instagram" @bind="_linkTitle" />
                         </div>
 
                         <div class="mb-4 text-start">
                             <label class="form-label">URL</label>
-                            <input class="form-control" type="url" placeholder="https://..." @bind="_linkUrl" />
+                            <input class="form-control-theme" type="url" placeholder="https://..." @bind="_linkUrl" />
                         </div>
 
                         <div class="row g-2 mb-3">
                             <div class="col-5">
-                                <button class="btn btn-outline-secondary w-100" @onclick="() => _step = 1">
+                                <button class="btn btn-ghost w-100" @onclick="() => _step = 1">
                                     ← Voltar
                                 </button>
                             </div>
                             <div class="col-7">
-                                <button class="btn btn-primary w-100" @onclick="CreatePageAsync" disabled="@_creating">
+                                <button class="btn btn-accent w-100" @onclick="CreatePageAsync" disabled="@_creating">
                                     @if (_creating)
                                     {
                                         <span class="spinner-border spinner-border-sm me-1"></span>
@@ -136,7 +136,7 @@
                             </div>
                         </div>
 
-                        <button class="btn btn-link text-muted small p-0" @onclick="SkipLink">
+                        <button class="btn btn-ghost text-theme-muted small p-0" @onclick="SkipLink">
                             Pular por agora
                         </button>
                     </div>
@@ -147,22 +147,22 @@
         @if (_step == 3)
         {
             <div style="width:100%;max-width:500px">
-                <div class="card shadow-lg border-0">
+                <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
                     <div class="card-body p-4 text-center">
                         <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
                         <h4 class="fw-bold mb-1">Sua página está pronta! 🎉</h4>
-                        <p class="text-muted mb-4">Parabéns! Compartilhe com o mundo.</p>
+                        <p class="text-theme-muted mb-4">Parabéns! Compartilhe com o mundo.</p>
 
                         <div class="input-group mb-4">
-                            <input class="form-control" readonly value="https://umblink.com/p/@_createdSlug" />
-                            <button class="btn btn-outline-secondary" @onclick="CopyUrl">Copiar</button>
+                            <input class="form-control-theme" readonly value="https://umblink.com/p/@_createdSlug" />
+                            <button class="btn btn-ghost" @onclick="CopyUrl">Copiar</button>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary" @onclick="GoToEditor">
+                            <button class="btn btn-accent" @onclick="GoToEditor">
                                 ✏️ Personalizar minha página
                             </button>
-                            <button class="btn btn-outline-secondary" @onclick="GoToDashboard">
+                            <button class="btn btn-ghost" @onclick="GoToDashboard">
                                 📋 Ir ao dashboard
                             </button>
                         </div>

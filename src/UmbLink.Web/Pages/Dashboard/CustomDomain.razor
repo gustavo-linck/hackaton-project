@@ -7,27 +7,27 @@
 
 <div class="container py-4" style="max-width:540px">
     <div class="d-flex align-items-center gap-3 mb-4">
-        <a href="/editor/@PageId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <a href="/editor/@PageId" class="btn btn-sm btn-ghost"><i class="bi bi-arrow-left"></i></a>
         <h4 class="fw-bold mb-0">Domínio Customizado</h4>
     </div>
 
     @if (!_allowed)
     {
-        <div class="card border-warning">
+        <div class="card border-warning" style="background:var(--bg-card)">
             <div class="card-body text-center py-4">
                 <i class="bi bi-lock-fill fs-2 text-warning mb-3 d-block"></i>
                 <h5>Recurso Pro/Business</h5>
-                <p class="text-muted">Domínios customizados estão disponíveis nos planos Pro e Business.</p>
-                <a href="/plans" class="btn btn-primary">Ver planos</a>
+                <p class="text-theme-muted">Domínios customizados estão disponíveis nos planos Pro e Business.</p>
+                <a href="/plans" class="btn btn-accent">Ver planos</a>
             </div>
         </div>
     }
     else
     {
-        <div class="card">
+        <div class="card" style="background:var(--bg-card);border-color:var(--border)">
             <div class="card-body p-4">
-                <p class="text-muted small mb-3">Configure um domínio próprio para esta página apontando o CNAME:</p>
-                <div class="alert alert-secondary font-monospace small py-2">
+                <p class="text-theme-muted small mb-3">Configure um domínio próprio para esta página apontando o CNAME:</p>
+                <div class="alert-theme font-monospace small py-2 px-3 mb-3" style="border-radius:.375rem">
                     CNAME → pages.umblink.com
                 </div>
 
@@ -42,9 +42,9 @@
 
                 <div class="mb-3">
                     <label class="form-label">Seu domínio</label>
-                    <input @bind="_domain" class="form-control" placeholder="meusite.com.br" />
+                    <input @bind="_domain" class="form-control-theme" placeholder="meusite.com.br" />
                 </div>
-                <button class="btn btn-primary" @onclick="Save">Salvar domínio</button>
+                <button class="btn btn-accent" @onclick="Save">Salvar domínio</button>
             </div>
         </div>
     }
