@@ -1,0 +1,92 @@
+@page "/admin/users"
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IAdminService AdminSvc
+
+<PageTitle>Usuários — Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">Usuários</h4>
+    <div class="input-group" style="max-width:280px">
+        <input @bind="_search" @bind:event="oninput" @bind:after="Search" class="form-control form-control-sm" placeholder="Buscar..." />
+    </div>
+</div>
+
+<LoadingSpinner Loading="_loading">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Plano</th>
+                    <th>Status</th>
+                    <th>Cadastro</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in _users)
+                {
+                    <tr class="@(u.IsActive ? "" : "table-secondary text-muted")">
+                        <td>@u.Name</td>
+                        <td>@u.Email</td>
+                        <td><PlanBadge PlanName="@u.PlanName" /></td>
+                        <td>
+                            <span class="badge @(u.IsActive ? "bg-success" : "bg-danger")">
+                                @(u.IsActive ? "Ativo" : "Suspenso")
+                            </span>
+                        </td>
+                        <td class="small text-muted">@u.CreatedAt.ToString("dd/MM/yy")</td>
+                        <td>
+                            @if (u.IsActive)
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Suspend(u.Id)">Suspender</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-outline-success" @onclick="() => Reactivate(u.Id)">Reativar</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</LoadingSpinner>
+
+<ToastContainer @ref="_toast" />
+
+@code {
+    List<AdminUserDto> _users = [];
+    bool _loading = true;
+    string _search = "";
+    ToastContainer? _toast;
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    Guid _adminId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        _adminId = auth.User.GetUserId();
+        await Load();
+    }
+
+    async Task Load() { _loading = true; _users = await AdminSvc.GetUsersAsync(_search); _loading = false; }
+    async Task Search() => await Load();
+
+    async Task Suspend(Guid id)
+    {
+        await AdminSvc.SuspendUserAsync(_adminId, id);
+        await Load();
+        _toast?.Show("Usuário suspenso.", "warning");
+    }
+
+    async Task Reactivate(Guid id)
+    {
+        await AdminSvc.ReactivateUserAsync(_adminId, id);
+        await Load();
+        _toast?.Show("Usuário reativado.", "success");
+    }
+}

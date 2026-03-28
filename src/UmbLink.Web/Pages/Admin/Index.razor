@@ -1,0 +1,51 @@
+@page "/admin"
+@layout AdminLayout
+@attribute [Authorize(Policy = "AdminOnly")]
+@inject IAdminService AdminSvc
+
+<PageTitle>Admin — UmbLink</PageTitle>
+
+<h4 class="fw-bold mb-4">Visão Geral</h4>
+
+<LoadingSpinner Loading="_loading">
+    @if (_stats is not null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold text-primary">@_stats.TotalUsers</div>
+                    <div class="text-muted small">Usuários</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold text-success">@_stats.TotalPages</div>
+                    <div class="text-muted small">Páginas</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold text-info">@_stats.TotalClicks</div>
+                    <div class="text-muted small">Cliques totais</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold text-warning">R$@_stats.SimulatedRevenue.ToString("F2")</div>
+                    <div class="text-muted small">Receita simulada/mês</div>
+                </div>
+            </div>
+        </div>
+    }
+</LoadingSpinner>
+
+@code {
+    AdminStatsDto? _stats;
+    bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await AdminSvc.GetGlobalStatsAsync();
+        _loading = false;
+    }
+}

@@ -1,0 +1,115 @@
+@page "/my-plan"
+@attribute [Authorize]
+@inject ISubscriptionService SubSvc
+@inject IPageService PageSvc
+@inject NavigationManager Nav
+
+<PageTitle>Meu Plano — UmbLink</PageTitle>
+
+<div class="container py-4" style="max-width:640px">
+    <h4 class="fw-bold mb-4">Meu Plano</h4>
+
+    <LoadingSpinner Loading="_loading">
+        @if (_sub is not null)
+        {
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0 fw-bold">@_sub.PlanName</h5>
+                            <span class="badge @StatusBadge(_sub.Status)">@StatusLabel(_sub.Status)</span>
+                        </div>
+                        <a href="/plans" class="btn btn-outline-primary btn-sm">Mudar plano</a>
+                    </div>
+
+                    @if (_sub.Status == SubscriptionStatus.Trial && _sub.TrialEndsAt.HasValue)
+                    {
+                        <div class="alert alert-info mt-3 mb-0 py-2 small">
+                            Trial termina em <strong>@_sub.TrialEndsAt.Value.ToString("dd/MM/yyyy")</strong>
+                        </div>
+                    }
+                    @if (_sub.CurrentPeriodEnd.HasValue)
+                    {
+                        <p class="text-muted small mt-2 mb-0">Próxima cobrança: @_sub.CurrentPeriodEnd.Value.ToString("dd/MM/yyyy")</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Usage -->
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Uso atual</div>
+                <div class="card-body d-flex flex-column gap-3">
+                    <UsageMeter Label="Páginas" Current="_pageCount" Max="_sub.Limits.MaxPages" />
+                    <UsageMeter Label="Links (maior página)" Current="_maxLinks" Max="_sub.Limits.MaxLinksPerPage" />
+                </div>
+            </div>
+
+            <!-- Limits summary -->
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Recursos do plano</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td>Páginas</td><td>@(_sub.Limits.MaxPages < 0 ? "Ilimitadas" : _sub.Limits.MaxPages.ToString())</td></tr>
+                            <tr><td>Links por página</td><td>@(_sub.Limits.MaxLinksPerPage < 0 ? "Ilimitados" : _sub.Limits.MaxLinksPerPage.ToString())</td></tr>
+                            <tr><td>Histórico de métricas</td><td>@(_sub.Limits.AnalyticsDays < 0 ? "Ilimitado" : $"{_sub.Limits.AnalyticsDays} dias")</td></tr>
+                            <tr><td>Domínio customizado</td><td>@(_sub.Limits.AllowCustomDomain ? "✓" : "✗")</td></tr>
+                            <tr><td>Remover branding</td><td>@(_sub.Limits.AllowRemoveBranding ? "✓" : "✗")</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (_sub.Status == SubscriptionStatus.Active)
+            {
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => _showCancel = true">Cancelar assinatura</button>
+            }
+        }
+    </LoadingSpinner>
+</div>
+
+<ConfirmModal @bind-Visible="_showCancel"
+    Title="Cancelar assinatura"
+    Message="Você voltará ao plano Free. Seus dados serão preservados, mas recursos extras serão desativados."
+    ConfirmText="Cancelar assinatura"
+    OnConfirm="CancelSubscription" />
+
+@code {
+    SubscriptionDto? _sub;
+    bool _loading = true;
+    bool _showCancel;
+    int _pageCount;
+    int _maxLinks;
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+        _sub = await SubSvc.GetAsync(userId);
+        var pages = await PageSvc.GetUserPagesAsync(userId);
+        _pageCount = pages.Count;
+        _maxLinks = pages.Any() ? pages.Max(p => p.LinkCount) : 0;
+        _loading = false;
+    }
+
+    async Task CancelSubscription()
+    {
+        var auth = await AuthState;
+        await SubSvc.CancelAsync(auth.User.GetUserId());
+        Nav.NavigateTo("/dashboard");
+    }
+
+    static string StatusBadge(SubscriptionStatus s) => s switch {
+        SubscriptionStatus.Active  => "bg-success",
+        SubscriptionStatus.Trial   => "bg-info text-dark",
+        _                          => "bg-secondary"
+    };
+
+    static string StatusLabel(SubscriptionStatus s) => s switch {
+        SubscriptionStatus.Active  => "Ativo",
+        SubscriptionStatus.Trial   => "Trial",
+        _                          => "Free"
+    };
+}

@@ -6,7 +6,8 @@
         <div class="ms-auto d-flex align-items-center gap-2">
             <AuthorizeView>
                 <Authorized>
-                    <a href="/plans/my" class="btn btn-sm btn-outline-light">Meu Plano</a>
+                    <a href="/dashboard" class="btn btn-sm btn-outline-light">Dashboard</a>
+                    <a href="/my-plan" class="btn btn-sm btn-outline-light">Meu Plano</a>
                     <form action="/auth/logout" method="post">
                         <AntiforgeryToken />
                         <button type="submit" class="btn btn-sm btn-danger">Sair</button>

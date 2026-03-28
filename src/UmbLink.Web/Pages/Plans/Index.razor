@@ -1,0 +1,154 @@
+@page "/plans"
+@attribute [Authorize]
+@inject ISubscriptionService SubSvc
+@inject NavigationManager Nav
+
+<PageTitle>Planos — UmbLink</PageTitle>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Escolha seu plano</h2>
+        <p class="text-muted">Sem taxas ocultas. Cancele quando quiser.</p>
+
+        <!-- Billing toggle -->
+        <div class="btn-group mt-2" role="group">
+            <button class="btn @(_period == "Monthly" ? "btn-primary" : "btn-outline-secondary") btn-sm"
+                    @onclick='() => _period = "Monthly"'>Mensal</button>
+            <button class="btn @(_period == "Quarterly" ? "btn-primary" : "btn-outline-secondary") btn-sm"
+                    @onclick='() => _period = "Quarterly"'>
+                Trimestral <span class="badge bg-success ms-1">-15%</span>
+            </button>
+            <button class="btn @(_period == "Annual" ? "btn-primary" : "btn-outline-secondary") btn-sm"
+                    @onclick='() => _period = "Annual"'>
+                Anual <span class="badge bg-success ms-1">-25%</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <!-- Free -->
+        <div class="col-md-4">
+            <div class="card h-100 @(_currentPlan == "Free" ? "border-primary" : "")">
+                <div class="card-body text-center p-4">
+                    <h5 class="fw-bold">Free</h5>
+                    <div class="display-6 fw-bold my-3">R$0</div>
+                    <p class="text-muted small">Para sempre gratuito</p>
+                    <hr />
+                    <ul class="list-unstyled text-start small">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>1 página</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>3 links por página</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas 7 dias</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-x-circle me-2"></i>Domínio customizado</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    @if (_currentPlan == "Free")
+                    {
+                        <button class="btn btn-outline-secondary w-100" disabled>Plano atual</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-primary w-100" @onclick="() => Downgrade()">Fazer downgrade</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Pro -->
+        <div class="col-md-4">
+            <div class="card h-100 border-primary shadow @(_currentPlan == "Pro" ? "border-2" : "")">
+                <div class="card-header text-center bg-primary text-white">Mais popular</div>
+                <div class="card-body text-center p-4">
+                    <h5 class="fw-bold">Pro</h5>
+                    <div class="display-6 fw-bold my-3">R$@GetPrice("Pro")<span class="fs-6 text-muted">/mês</span></div>
+                    <p class="text-muted small">@GetTotalLabel("Pro")</p>
+                    <hr />
+                    <ul class="list-unstyled text-start small">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>3 páginas</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>5 links por página</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas 365 dias</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Domínio customizado</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    @if (_currentPlan == "Pro")
+                    {
+                        <button class="btn btn-primary w-100" disabled>Plano atual</button>
+                    }
+                    else
+                    {
+                        <a href="/plans/checkout?plan=Pro&period=@_period" class="btn btn-primary w-100">Assinar Pro</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Business -->
+        <div class="col-md-4">
+            <div class="card h-100 @(_currentPlan == "Business" ? "border-warning border-2" : "")">
+                <div class="card-body text-center p-4">
+                    <h5 class="fw-bold">Business</h5>
+                    <div class="display-6 fw-bold my-3">R$@GetPrice("Business")<span class="fs-6 text-muted">/mês</span></div>
+                    <p class="text-muted small">@GetTotalLabel("Business")</p>
+                    <hr />
+                    <ul class="list-unstyled text-start small">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Páginas ilimitadas</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Links ilimitados</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas ilimitadas</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Domínio customizado</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Remover branding</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    @if (_currentPlan == "Business")
+                    {
+                        <button class="btn btn-warning w-100" disabled>Plano atual</button>
+                    }
+                    else
+                    {
+                        <a href="/plans/checkout?plan=Business&period=@_period" class="btn btn-outline-dark w-100">Assinar Business</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    string _period = "Monthly";
+    string _currentPlan = "Free";
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        var sub = await SubSvc.GetAsync(auth.User.GetUserId());
+        _currentPlan = sub.PlanName;
+    }
+
+    string GetPrice(string plan) => (_period, plan) switch {
+        ("Monthly",   "Pro")      => "19",
+        ("Quarterly", "Pro")      => "16",
+        ("Annual",    "Pro")      => "14",
+        ("Monthly",   "Business") => "75",
+        ("Quarterly", "Business") => "64",
+        ("Annual",    "Business") => "56",
+        _ => "0"
+    };
+
+    string GetTotalLabel(string plan) => _period switch {
+        "Quarterly" => $"R${(_period == "Quarterly" && plan == "Pro" ? "48" : "192")} cobrado trimestralmente",
+        "Annual"    => $"R${(plan == "Pro" ? "168" : "672")} cobrado anualmente",
+        _ => "cobrado mensalmente"
+    };
+
+    async Task Downgrade()
+    {
+        var auth = await AuthState;
+        await SubSvc.CancelAsync(auth.User.GetUserId());
+        Nav.NavigateTo("/dashboard");
+    }
+}

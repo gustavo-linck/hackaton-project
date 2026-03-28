@@ -1,0 +1,87 @@
+@page "/plans/checkout"
+@attribute [Authorize]
+@inject ISubscriptionService SubSvc
+@inject NavigationManager Nav
+
+<PageTitle>Checkout — UmbLink</PageTitle>
+
+<div class="container py-5" style="max-width:480px">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-1">Finalizar assinatura</h4>
+            <p class="text-muted small mb-4">Plano <strong>@Plan</strong> — @GetPeriodLabel()</p>
+
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle me-1"></i>
+                Esta é uma demonstração. Nenhum pagamento real será processado.
+            </div>
+
+            <div class="border rounded p-3 mb-4">
+                <div class="d-flex justify-content-between">
+                    <span>@Plan @GetPeriodLabel()</span>
+                    <strong>R$@GetTotal()</strong>
+                </div>
+                <div class="text-muted small mt-1">R$@GetMonthly()/mês equivalente</div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-danger py-2">@_error</div>
+            }
+
+            <button class="btn btn-primary w-100 @(_loading ? "disabled" : "")" @onclick="Confirm">
+                @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Confirmar assinatura (demo)
+            </button>
+            <a href="/plans" class="btn btn-link w-100 mt-2">Voltar aos planos</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] string Plan { get; set; } = "";
+    [SupplyParameterFromQuery] string Period { get; set; } = "Monthly";
+    bool _loading;
+    string _error = "";
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    string GetPeriodLabel() => Period switch { "Quarterly" => "Trimestral", "Annual" => "Anual", _ => "Mensal" };
+
+    string GetMonthly() => (Plan, Period) switch {
+        ("Pro",      "Monthly")   => "19",
+        ("Pro",      "Quarterly") => "16",
+        ("Pro",      "Annual")    => "14",
+        ("Business", "Monthly")   => "75",
+        ("Business", "Quarterly") => "64",
+        ("Business", "Annual")    => "56",
+        _ => "0"
+    };
+
+    string GetTotal() => (Plan, Period) switch {
+        ("Pro",      "Quarterly") => "48",
+        ("Pro",      "Annual")    => "168",
+        ("Business", "Quarterly") => "192",
+        ("Business", "Annual")    => "672",
+        _ => GetMonthly()
+    };
+
+    async Task Confirm()
+    {
+        _loading = true; _error = "";
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+
+        var planId = Plan == "Pro" ? 2 : 3; // Pro=2, Business=3 (seed order)
+        var period = Enum.Parse<BillingPeriod>(Period);
+
+        var result = await SubSvc.ActivatePlanAsync(userId, planId, period);
+        if (result.IsSuccess)
+            Nav.NavigateTo("/dashboard?subscribed=1");
+        else
+        {
+            _error = result.Error!;
+            _loading = false;
+        }
+    }
+}

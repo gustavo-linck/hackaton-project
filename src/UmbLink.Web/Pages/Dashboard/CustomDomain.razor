@@ -1,0 +1,75 @@
+@page "/editor/{pageId:guid}/domain"
+@attribute [Authorize]
+@inject ISubscriptionService SubSvc
+@inject NavigationManager Nav
+
+<PageTitle>Domínio Customizado — UmbLink</PageTitle>
+
+<div class="container py-4" style="max-width:540px">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/editor/@PageId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <h4 class="fw-bold mb-0">Domínio Customizado</h4>
+    </div>
+
+    @if (!_allowed)
+    {
+        <div class="card border-warning">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-lock-fill fs-2 text-warning mb-3 d-block"></i>
+                <h5>Recurso Pro/Business</h5>
+                <p class="text-muted">Domínios customizados estão disponíveis nos planos Pro e Business.</p>
+                <a href="/plans" class="btn btn-primary">Ver planos</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-4">
+                <p class="text-muted small mb-3">Configure um domínio próprio para esta página apontando o CNAME:</p>
+                <div class="alert alert-secondary font-monospace small py-2">
+                    CNAME → pages.umblink.com
+                </div>
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <div class="alert alert-danger py-2">@_error</div>
+                }
+                @if (!string.IsNullOrEmpty(_success))
+                {
+                    <div class="alert alert-success py-2">@_success</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label">Seu domínio</label>
+                    <input @bind="_domain" class="form-control" placeholder="meusite.com.br" />
+                </div>
+                <button class="btn btn-primary" @onclick="Save">Salvar domínio</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid PageId { get; set; }
+    bool _allowed;
+    string _domain = "", _error = "", _success = "";
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        var sub = await SubSvc.GetAsync(auth.User.GetUserId());
+        _allowed = sub.Limits.AllowCustomDomain;
+    }
+
+    Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_domain)) { _error = "Informe o domínio."; return Task.CompletedTask; }
+        // In production: save to CustomDomains table and trigger DNS verification
+        _success = $"Domínio {_domain} salvo. Aguarde a propagação do DNS (até 48h).";
+        _error = "";
+        return Task.CompletedTask;
+    }
+}
