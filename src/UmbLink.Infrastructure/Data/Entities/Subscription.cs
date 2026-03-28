@@ -20,5 +20,3 @@ public class Subscription
     public Plan Plan { get; set; } = null!;
     public PlanPrice? PlanPrice { get; set; }
 }
-
-public enum SubscriptionStatus { Free, Trial, Active, Cancelled, Expired }

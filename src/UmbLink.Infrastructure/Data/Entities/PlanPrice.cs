@@ -10,5 +10,3 @@ public class PlanPrice
     public int DiscountPercent { get; set; }
     public Plan Plan { get; set; } = null!;
 }
-
-public enum BillingPeriod { Monthly, Quarterly, Annual }

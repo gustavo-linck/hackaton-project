@@ -15,5 +15,3 @@ public class AppUser : IdentityUser<Guid>
     public ICollection<TrialUsage> TrialUsages { get; set; } = [];
     public ICollection<AuditLog> AuditLogs { get; set; } = [];
 }
-
-public enum UserRole { User, Admin }

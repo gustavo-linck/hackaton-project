@@ -12,5 +12,3 @@ public class TrialUsage
     public AppUser User { get; set; } = null!;
     public Plan Plan { get; set; } = null!;
 }
-
-public enum TrialStatus { Active, Expired, Converted }

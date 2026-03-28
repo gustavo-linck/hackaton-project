@@ -19,5 +19,3 @@ public class Page
     public ICollection<PageView> Views { get; set; } = [];
     public CustomDomain? CustomDomain { get; set; }
 }
-
-public enum PageStatus { Draft, Published, Suspended }

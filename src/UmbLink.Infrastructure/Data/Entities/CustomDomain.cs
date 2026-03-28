@@ -9,5 +9,3 @@ public class CustomDomain
     public DomainStatus Status { get; set; } = DomainStatus.Pending;
     public Page Page { get; set; } = null!;
 }
-
-public enum DomainStatus { Pending, Active, Failed }

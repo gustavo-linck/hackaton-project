@@ -8,4 +8,5 @@ public class Plan
     public PlanLimit Limit { get; set; } = null!;
     public ICollection<PlanPrice> Prices { get; set; } = [];
     public ICollection<Subscription> Subscriptions { get; set; } = [];
+    public ICollection<TrialUsage> TrialUsages { get; set; } = [];
 }
