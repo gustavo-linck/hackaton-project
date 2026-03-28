@@ -1,0 +1,253 @@
+@page "/editor/{pageId:guid}"
+@attribute [Authorize]
+@inject IPageService PageSvc
+@inject ILinkService LinkSvc
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<PageTitle>Editor — UmbLink</PageTitle>
+
+@if (_page is null && !_loading)
+{
+    <div class="container py-4 text-center text-muted">Página não encontrada.</div>
+}
+else
+{
+    <div class="d-flex flex-column" style="height:100vh">
+        <!-- Toolbar -->
+        <nav class="navbar navbar-light bg-white border-bottom px-3 py-2">
+            <a href="/dashboard" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <span class="navbar-brand mb-0 fw-semibold fs-6">@_page?.Title</span>
+            <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-sm btn-outline-success" @onclick="SavePage" disabled="@_saving">
+                    @if (_saving) { <span class="spinner-border spinner-border-sm"></span> }
+                    else { <i class="bi bi-check-lg me-1"></i> }
+                    Salvar
+                </button>
+            </div>
+        </nav>
+
+        <div class="row g-0 flex-grow-1 overflow-hidden">
+            <!-- Editor panel -->
+            <div class="col-lg-7 overflow-auto p-3 border-end">
+                <LoadingSpinner Loading="_loading">
+                    @if (!string.IsNullOrEmpty(_error))
+                    {
+                        <div class="alert alert-danger py-2">@_error</div>
+                    }
+
+                    <!-- Page settings -->
+                    <div class="card mb-3">
+                        <div class="card-header fw-semibold">Informações da página</div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label small">Título</label>
+                                <input @bind="_editTitle" class="form-control form-control-sm" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small">Endereço</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text text-muted">umblink.com/p/</span>
+                                    <input @bind="_editSlug" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label small">Bio</label>
+                                <textarea @bind="_editBio" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Links -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">Links</span>
+                            <button class="btn btn-sm btn-primary" @onclick="() => _showAddLink = true">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (_links.Count == 0)
+                            {
+                                <p class="text-muted text-center py-3 small">Nenhum link ainda.</p>
+                            }
+                            else
+                            {
+                                <ul class="list-group list-group-flush" @ref="_sortableEl">
+                                    @foreach (var link in _links)
+                                    {
+                                        <li class="list-group-item d-flex align-items-center gap-2 @(link.IsActive ? "" : "opacity-50")">
+                                            <span class="drag-handle text-muted" style="cursor:grab"><i class="bi bi-grip-vertical"></i></span>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">@link.Title</div>
+                                                <div class="text-muted" style="font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">@link.Url</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ToggleLink(link)" title="@(link.IsActive ? "Desativar" : "Ativar")">
+                                                <i class="bi @(link.IsActive ? "bi-eye" : "bi-eye-slash")"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLink(link)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                </LoadingSpinner>
+            </div>
+
+            <!-- Preview panel -->
+            <div class="col-lg-5 d-none d-lg-flex align-items-center justify-content-center bg-light overflow-auto py-4">
+                @if (_page is not null)
+                {
+                    <PagePreview Page="_page" Links="_links" />
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add link modal -->
+@if (_showAddLink)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adicionar Link</h5>
+                    <button class="btn-close" @onclick="() => _showAddLink = false"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_linkError))
+                    {
+                        <div class="alert alert-danger py-2">@_linkError</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input @bind="_newLinkTitle" class="form-control" placeholder="Meu Instagram" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL</label>
+                        <input @bind="_newLinkUrl" type="url" class="form-control" placeholder="https://..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => _showAddLink = false">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddLink">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<UpgradeModal @bind-Visible="_showUpgrade" Message="@_upgradeMessage" />
+<ToastContainer @ref="_toast" />
+
+@code {
+    [Parameter] public Guid PageId { get; set; }
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    PageDto? _page;
+    List<LinkDto> _links = [];
+    bool _loading = true;
+    bool _saving;
+    string _error = "", _linkError = "";
+    string _editTitle = "", _editSlug = "", _editBio = "";
+    bool _showAddLink;
+    string _newLinkTitle = "", _newLinkUrl = "";
+    bool _showUpgrade;
+    string _upgradeMessage = "";
+    ToastContainer? _toast;
+    ElementReference _sortableEl;
+    DotNetObjectReference<Editor>? _dotnetRef;
+    Guid _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        _userId = auth.User.GetUserId();
+        var pages = await PageSvc.GetUserPagesAsync(_userId);
+        _page = pages.FirstOrDefault(p => p.Id == PageId);
+        if (_page is not null)
+        {
+            _editTitle = _page.Title;
+            _editSlug = _page.Slug;
+            _editBio = _page.Bio ?? "";
+            _links = await PageSvc.GetLinksAsync(PageId);
+        }
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _page is not null)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("umblink.initSortable", _sortableEl, _dotnetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnReorder(int oldIndex, int newIndex)
+    {
+        var item = _links[oldIndex];
+        _links.RemoveAt(oldIndex);
+        _links.Insert(newIndex, item);
+        var orderedIds = _links.Select(l => l.Id).ToList();
+        await LinkSvc.ReorderAsync(_userId, PageId, orderedIds);
+        StateHasChanged();
+    }
+
+    async Task SavePage()
+    {
+        _saving = true; _error = "";
+        var result = await PageSvc.UpdateAsync(_userId, PageId, new() {
+            Title = _editTitle, Slug = _editSlug, Bio = _editBio
+        });
+        if (result.IsSuccess)
+        {
+            _page = result.Value;
+            _toast?.Show("Página salva!");
+        }
+        else _error = result.Error!;
+        _saving = false;
+    }
+
+    async Task AddLink()
+    {
+        _linkError = "";
+        var result = await LinkSvc.AddAsync(_userId, PageId, new() { Title = _newLinkTitle, Url = _newLinkUrl });
+        if (result.IsFailure)
+        {
+            if (result.LimitError is not null) { _showUpgrade = true; _upgradeMessage = result.LimitError.Message; _showAddLink = false; }
+            else _linkError = result.Error!;
+            return;
+        }
+        _links.Add(result.Value!);
+        _showAddLink = false;
+        _newLinkTitle = _newLinkUrl = "";
+    }
+
+    async Task ToggleLink(LinkDto link)
+    {
+        await LinkSvc.ToggleActiveAsync(_userId, link.Id);
+        var idx = _links.IndexOf(link);
+        _links[idx] = link with { IsActive = !link.IsActive };
+    }
+
+    async Task DeleteLink(LinkDto link)
+    {
+        await LinkSvc.DeleteAsync(_userId, link.Id);
+        _links.Remove(link);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotnetRef?.Dispose();
+        await ValueTask.CompletedTask;
+    }
+}

@@ -1,0 +1,41 @@
+@page "/p/{slug}"
+@layout PublicLayout
+@inject IPageService PageSvc
+@inject IMetricsService Metrics
+
+@if (_page is null && !_loading)
+{
+    <div class="min-vh-100 d-flex align-items-center justify-content-center text-muted">
+        <div class="text-center">
+            <i class="bi bi-emoji-frown fs-1 d-block mb-3"></i>
+            <h5>Página não encontrada</h5>
+            <a href="/" class="btn btn-outline-secondary mt-2">Ir para o início</a>
+        </div>
+    </div>
+}
+else if (_page is not null)
+{
+    <PagePreview Page="_page" Links="_links" />
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    PageDto? _page;
+    List<LinkDto> _links = [];
+    bool _loading = true;
+
+    [Inject] IHttpContextAccessor HttpCtx { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _page = await PageSvc.GetBySlugAsync(Slug);
+        if (_page is not null)
+        {
+            _links = await PageSvc.GetLinksAsync(_page.Id);
+            var referrer = HttpCtx.HttpContext?.Request.Headers.Referer.ToString();
+            await Metrics.TrackViewAsync(_page.Id, string.IsNullOrEmpty(referrer) ? null : referrer);
+        }
+        _loading = false;
+    }
+}

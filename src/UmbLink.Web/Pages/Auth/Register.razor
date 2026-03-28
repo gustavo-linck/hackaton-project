@@ -1,0 +1,95 @@
+@page "/auth/register"
+@layout PublicLayout
+@inject UserManager<AppUser> UserMgr
+@inject SignInManager<AppUser> SignInMgr
+@inject NavigationManager Nav
+@inject ISubscriptionService SubscriptionService
+@using Microsoft.AspNetCore.Identity
+@using UmbLink.Infrastructure.Identity
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="card shadow-sm" style="width:100%;max-width:420px">
+        <div class="card-body p-4">
+            <h4 class="card-title mb-1 fw-bold">Criar conta</h4>
+            <p class="text-muted small mb-4">Comece grátis. Sem cartão necessário.</p>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert alert-danger py-2">@_error</div>
+            }
+
+            <EditForm Model="_model" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
+                <div class="mb-3">
+                    <label class="form-label">Nome</label>
+                    <InputText @bind-Value="_model.Name" class="form-control" placeholder="Seu nome" />
+                    <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">E-mail</label>
+                    <InputText @bind-Value="_model.Email" type="email" class="form-control" placeholder="voce@exemplo.com" />
+                    <ValidationMessage For="() => _model.Email" class="text-danger small" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <InputText @bind-Value="_model.Password" type="password" class="form-control" />
+                    <ValidationMessage For="() => _model.Password" class="text-danger small" />
+                </div>
+                <button class="btn btn-primary w-100 @(_loading ? "disabled" : "")" type="submit">
+                    @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                    Criar conta
+                </button>
+            </EditForm>
+
+            @if (_googleEnabled)
+            {
+                <div class="text-center my-3 text-muted small">ou</div>
+                <a href="/auth/google-login" class="btn btn-outline-secondary w-100">
+                    <img src="https://www.google.com/favicon.ico" width="16" class="me-2" alt="" />
+                    Continuar com Google
+                </a>
+            }
+
+            <p class="text-center mt-3 small">Já tem conta? <a href="/auth/login">Entrar</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    readonly RegisterModel _model = new();
+    bool _loading;
+    string _error = "";
+    bool _googleEnabled;
+
+    [Inject] IConfiguration Config { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _googleEnabled = !string.IsNullOrEmpty(Config["Google:ClientId"]);
+    }
+
+    async Task HandleRegister()
+    {
+        _loading = true;
+        _error = "";
+        var user = new AppUser { Name = _model.Name!, Email = _model.Email, UserName = _model.Email };
+        var result = await UserMgr.CreateAsync(user, _model.Password!);
+        if (!result.Succeeded)
+        {
+            _error = string.Join(", ", result.Errors.Select(e => e.Description));
+            _loading = false;
+            return;
+        }
+        await UserMgr.AddToRoleAsync(user, "User");
+        // Free subscription created automatically
+        await SignInMgr.SignInAsync(user, isPersistent: false);
+        Nav.NavigateTo("/dashboard");
+    }
+
+    class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required] public string? Name { get; set; }
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string? Email { get; set; }
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(6)] public string? Password { get; set; }
+    }
+}

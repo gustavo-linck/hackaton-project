@@ -1,0 +1,14 @@
+@if (TrialEndsAt.HasValue && TrialEndsAt.Value > DateTime.UtcNow)
+{
+    var days = (int)Math.Ceiling((TrialEndsAt.Value - DateTime.UtcNow).TotalDays);
+    <div class="alert alert-info alert-dismissible mb-0 rounded-0 text-center py-2">
+        <i class="bi bi-clock me-1"></i>
+        Seu trial termina em <strong>@days dia(s)</strong>.
+        <a href="/plans" class="alert-link ms-1">Assinar agora</a>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@code {
+    [Parameter] public DateTime? TrialEndsAt { get; set; }
+}

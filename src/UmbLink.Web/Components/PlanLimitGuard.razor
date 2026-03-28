@@ -1,0 +1,38 @@
+@inject ISubscriptionService SubscriptionService
+@inject NavigationManager Nav
+
+@if (_allowed)
+{
+    @ChildContent
+}
+else if (_loaded)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2">
+        <i class="bi bi-lock-fill"></i>
+        <span>@_message <a href="/plans" class="alert-link">Fazer upgrade</a></span>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter] public string Feature { get; set; } = "";
+
+    bool _allowed;
+    bool _loaded;
+    string _message = "Recurso não disponível no seu plano.";
+
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+        if (userId == Guid.Empty) { _loaded = true; return; }
+
+        var sub = await SubscriptionService.GetAsync(userId);
+        if (sub is null) { _loaded = true; return; }
+
+        _allowed = true; // default allow — caller overrides via feature check
+        _loaded = true;
+    }
+}

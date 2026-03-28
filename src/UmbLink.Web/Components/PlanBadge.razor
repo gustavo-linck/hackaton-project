@@ -1,0 +1,15 @@
+@if (!string.IsNullOrEmpty(PlanName))
+{
+    <span class="badge @BadgeClass">@PlanName</span>
+}
+
+@code {
+    [Parameter] public string PlanName { get; set; } = "";
+
+    string BadgeClass => PlanName switch {
+        "Business" => "bg-warning text-dark",
+        "Pro"      => "bg-primary",
+        "Free"     => "bg-secondary",
+        _          => "bg-secondary"
+    };
+}

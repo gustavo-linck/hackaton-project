@@ -1,0 +1,35 @@
+@if (_toasts.Count > 0)
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+        @foreach (var t in _toasts)
+        {
+            <div class="toast show align-items-center text-bg-@t.Color border-0 mb-2" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">@t.Message</div>
+                    <button class="btn-close btn-close-white me-2 m-auto" @onclick="() => Remove(t)"></button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    record Toast(string Message, string Color);
+    readonly List<Toast> _toasts = [];
+
+    public void Show(string message, string color = "success")
+    {
+        var t = new Toast(message, color);
+        _toasts.Add(t);
+        StateHasChanged();
+        _ = RemoveAfterDelay(t);
+    }
+
+    void Remove(Toast t) { _toasts.Remove(t); StateHasChanged(); }
+
+    async Task RemoveAfterDelay(Toast t)
+    {
+        await Task.Delay(3500);
+        Remove(t);
+    }
+}

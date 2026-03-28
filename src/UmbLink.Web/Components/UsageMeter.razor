@@ -1,0 +1,27 @@
+@if (Max > 0)
+{
+    var pct = Math.Min(100, Current * 100 / Max);
+    var barClass = pct >= 90 ? "bg-danger" : pct >= 70 ? "bg-warning" : "bg-success";
+    <div>
+        <div class="d-flex justify-content-between small mb-1">
+            <span>@Label</span>
+            <span>@Current / @Max</span>
+        </div>
+        <div class="progress" style="height:6px">
+            <div class="progress-bar @barClass" style="width:@pct%"></div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between small">
+        <span>@Label</span>
+        <span class="text-success">@Current / ∞</span>
+    </div>
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public int Current { get; set; }
+    [Parameter] public int Max { get; set; } // -1 = unlimited
+}

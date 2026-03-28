@@ -1,0 +1,95 @@
+@using System.Text.Json
+
+@* Mobile preview of a link-bio page based on ThemeConfig JSON *@
+<div class="border rounded shadow-sm overflow-hidden" style="width:320px;min-height:560px;@_containerStyle">
+    <div class="d-flex flex-column align-items-center px-3 py-4" style="@_bodyStyle;min-height:560px">
+        <!-- Avatar -->
+        @if (!string.IsNullOrEmpty(Page.AvatarUrl))
+        {
+            <img src="@Page.AvatarUrl" class="mb-3" style="width:80px;height:80px;object-fit:cover;border-radius:@_avatarRadius" alt="avatar" />
+        }
+        else
+        {
+            <div class="mb-3 d-flex align-items-center justify-content-center bg-secondary bg-opacity-25"
+                 style="width:80px;height:80px;border-radius:@_avatarRadius">
+                <i class="bi bi-person-fill fs-3" style="color:@_textColor"></i>
+            </div>
+        }
+
+        <!-- Title & Bio -->
+        <h5 class="fw-bold mb-1" style="color:@_textColor;font-family:@_titleFont">@Page.Title</h5>
+        @if (!string.IsNullOrEmpty(Page.Bio))
+        {
+            <p class="text-center small mb-3" style="color:@_textColor;opacity:.8">@Page.Bio</p>
+        }
+
+        <!-- Links -->
+        <div class="w-100 d-flex flex-column gap-2 mt-1">
+            @foreach (var link in Links.Where(l => l.IsActive))
+            {
+                <a href="@link.Url" target="_blank" class="text-decoration-none w-100 text-center py-2 px-3"
+                   style="@_buttonStyle">
+                    @link.Title
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public PageDto Page { get; set; } = default!;
+    [Parameter] public List<LinkDto> Links { get; set; } = [];
+
+    string _containerStyle = "";
+    string _bodyStyle = "";
+    string _buttonStyle = "";
+    string _textColor = "#111111";
+    string _titleFont = "inherit";
+    string _avatarRadius = "50%";
+
+    protected override void OnParametersSet()
+    {
+        try
+        {
+            var cfg = JsonDocument.Parse(Page.ThemeConfig).RootElement;
+            var bgColor = GetStr(cfg, "bgColor", "#ffffff");
+            var btnColor = GetStr(cfg, "buttonColor", "#111111");
+            var btnTextColor = GetStr(cfg, "buttonTextColor", "#ffffff");
+            var btnStyle = GetStr(cfg, "buttonStyle", "rounded");
+            _textColor = GetStr(cfg, "textColor", "#111111");
+            _titleFont = GetStr(cfg, "titleFont", "inherit");
+            var themeId = GetStr(cfg, "themeId", "minimal-light");
+            var avatarShape = GetStr(cfg, "avatarShape", "circle");
+
+            _avatarRadius = avatarShape == "square" ? "8px" : "50%";
+            _bodyStyle = $"background:{BuildBackground(themeId, bgColor)};";
+            _containerStyle = "";
+
+            var borderRadius = btnStyle switch {
+                "pill"    => "50px",
+                "square"  => "4px",
+                _         => "8px"
+            };
+            var borderPart = btnStyle == "outline"
+                ? $"border:2px solid {btnColor};background:transparent;color:{btnColor}"
+                : $"background:{btnColor};border:none;color:{btnTextColor}";
+
+            _buttonStyle = $"{borderPart};border-radius:{borderRadius};font-family:inherit;transition:opacity .15s";
+        }
+        catch
+        {
+            _bodyStyle = "background:#ffffff;";
+            _buttonStyle = "background:#111;color:#fff;border-radius:8px;border:none";
+        }
+    }
+
+    static string BuildBackground(string themeId, string bgColor) => themeId switch {
+        "gradient-sunset" => "linear-gradient(135deg,#ffecd2,#fcb69f)",
+        "gradient-ocean"  => "linear-gradient(135deg,#667eea,#764ba2)",
+        "glass-morphism"  => bgColor,
+        _                 => bgColor
+    };
+
+    static string GetStr(JsonElement el, string key, string fallback) =>
+        el.TryGetProperty(key, out var v) ? v.GetString() ?? fallback : fallback;
+}

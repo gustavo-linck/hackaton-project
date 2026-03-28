@@ -1,0 +1,194 @@
+@page "/dashboard"
+@attribute [Authorize]
+@inject IPageService PageSvc
+@inject ISubscriptionService SubSvc
+@inject NavigationManager Nav
+
+<PageTitle>Dashboard — UmbLink</PageTitle>
+
+<TrialBanner TrialEndsAt="_sub?.TrialEndsAt" />
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">Minhas Páginas</h4>
+            @if (_sub is not null)
+            {
+                <span class="text-muted small">Plano <PlanBadge PlanName="@_sub.PlanName" /></span>
+            }
+        </div>
+        <button class="btn btn-primary" @onclick="ShowCreateModal">
+            <i class="bi bi-plus-lg me-1"></i>Nova página
+        </button>
+    </div>
+
+    <LoadingSpinner Loading="_loading">
+        @if (_pages.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-grid fs-1 d-block mb-3"></i>
+                <p>Você ainda não tem nenhuma página.</p>
+                <button class="btn btn-primary" @onclick="ShowCreateModal">Criar minha primeira página</button>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var pg in _pages)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0 fw-semibold">@pg.Title</h6>
+                                    <span class="badge @(pg.Status == PageStatus.Published ? "bg-success" : "bg-secondary") ms-2">
+                                        @(pg.Status == PageStatus.Published ? "Publicada" : "Rascunho")
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-1">umblink.com/p/@pg.Slug</p>
+                                <p class="text-muted small">@pg.LinkCount link(s)</p>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex gap-2">
+                                <a href="/editor/@pg.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                    <i class="bi bi-pencil me-1"></i>Editar
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
+                                    <i class="bi bi-link-45deg"></i>
+                                </button>
+                                <button class="btn btn-sm @(pg.Status == PageStatus.Published ? "btn-warning" : "btn-success")"
+                                        @onclick="() => TogglePublish(pg)">
+                                    <i class="bi @(pg.Status == PageStatus.Published ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(pg)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </LoadingSpinner>
+</div>
+
+<!-- Create modal -->
+@if (_showCreate)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Página</h5>
+                    <button class="btn-close" @onclick="() => _showCreate = false"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_createError))
+                    {
+                        <div class="alert alert-danger py-2">@_createError</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input @bind="_createTitle" class="form-control" placeholder="Minha Página" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Endereço (slug)</label>
+                        <div class="input-group">
+                            <span class="input-group-text text-muted small">umblink.com/p/</span>
+                            <input @bind="_createSlug" class="form-control" placeholder="meu-slug" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bio (opcional)</label>
+                        <textarea @bind="_createBio" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => _showCreate = false">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="CreatePage">Criar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<UpgradeModal @bind-Visible="_showUpgrade" Message="@_upgradeMessage" />
+<ConfirmModal @bind-Visible="_showConfirm" Title="Excluir página"
+    Message="Tem certeza? Todos os links e dados serão removidos."
+    OnConfirm="DeleteConfirmed" />
+<ToastContainer @ref="_toast" />
+
+@code {
+    bool _loading = true;
+    List<PageDto> _pages = [];
+    SubscriptionDto? _sub;
+    bool _showCreate;
+    string _createTitle = "", _createSlug = "", _createBio = "";
+    string _createError = "";
+    bool _showUpgrade;
+    string _upgradeMessage = "";
+    bool _showConfirm;
+    PageDto? _toDelete;
+    ToastContainer? _toast;
+
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+        _sub = await SubSvc.GetAsync(userId);
+        _pages = await PageSvc.GetUserPagesAsync(userId);
+        _loading = false;
+    }
+
+    void ShowCreateModal() => _showCreate = true;
+
+    async Task CreatePage()
+    {
+        _createError = "";
+        var auth = await AuthState;
+        var userId = auth.User.GetUserId();
+        var result = await PageSvc.CreateAsync(userId, new() { Title = _createTitle, Slug = _createSlug, Bio = _createBio });
+        if (result.IsFailure)
+        {
+            if (result.LimitError is not null)
+            {
+                _upgradeMessage = result.LimitError.Message;
+                _showCreate = false;
+                _showUpgrade = true;
+            }
+            else _createError = result.Error!;
+            return;
+        }
+        _pages = await PageSvc.GetUserPagesAsync(userId);
+        _showCreate = false;
+        _createTitle = _createSlug = _createBio = "";
+        Nav.NavigateTo($"/editor/{result.Value!.Id}");
+    }
+
+    async Task TogglePublish(PageDto page)
+    {
+        var auth = await AuthState;
+        await PageSvc.PublishAsync(auth.User.GetUserId(), page.Id);
+        var userId = auth.User.GetUserId();
+        _pages = await PageSvc.GetUserPagesAsync(userId);
+    }
+
+    void ConfirmDelete(PageDto page) { _toDelete = page; _showConfirm = true; }
+
+    async Task DeleteConfirmed()
+    {
+        if (_toDelete is null) return;
+        var auth = await AuthState;
+        await PageSvc.DeleteAsync(auth.User.GetUserId(), _toDelete.Id);
+        _pages = _pages.Where(p => p.Id != _toDelete.Id).ToList();
+        _toast?.Show("Página excluída.");
+    }
+
+    async Task CopyLink(string slug)
+    {
+        var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", $"https://umblink.com/p/{slug}");
+        if (copied) _toast?.Show("Link copiado!");
+    }
+}

@@ -1,0 +1,141 @@
+@page "/dashboard/metrics/{pageId:guid}"
+@attribute [Authorize]
+@inject IMetricsService MetricsSvc
+@inject IPageService PageSvc
+@inject ISubscriptionService SubSvc
+
+<PageTitle>Métricas — UmbLink</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/dashboard" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h4 class="fw-bold mb-0">Métricas — @_pageTitle</h4>
+        <div class="ms-auto">
+            <select class="form-select form-select-sm" @bind="_days" @bind:after="LoadMetrics">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+            </select>
+        </div>
+    </div>
+
+    <LoadingSpinner Loading="_loading">
+        @if (_metrics is not null)
+        {
+            <!-- Summary cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3">
+                        <div class="fs-2 fw-bold text-primary">@_metrics.TotalViews</div>
+                        <div class="text-muted small">Visualizações</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3">
+                        <div class="fs-2 fw-bold text-success">@_metrics.TotalClicks</div>
+                        <div class="text-muted small">Cliques</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3">
+                        <div class="fs-2 fw-bold text-info">
+                            @(_metrics.TotalViews > 0
+                                ? $"{Math.Round((double)_metrics.TotalClicks / _metrics.TotalViews * 100, 1)}%"
+                                : "—")
+                        </div>
+                        <div class="text-muted small">CTR Geral</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card mb-4 p-3">
+                <h6 class="fw-semibold mb-3">Visualizações diárias</h6>
+                <canvas id="views-chart" height="100"></canvas>
+            </div>
+
+            <!-- Link table -->
+            @if (_metrics.LinkMetrics.Count > 0)
+            {
+                <div class="card p-3">
+                    <h6 class="fw-semibold mb-3">Performance por link</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Link</th>
+                                    <th class="text-end">Cliques</th>
+                                    <th class="text-end">CTR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var lm in _metrics.LinkMetrics)
+                                {
+                                    <tr>
+                                        <td>@lm.Title</td>
+                                        <td class="text-end">@lm.Clicks</td>
+                                        <td class="text-end">@lm.ClickRate%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+    </LoadingSpinner>
+</div>
+
+@code {
+    [Parameter] public Guid PageId { get; set; }
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    MetricsSummaryDto? _metrics;
+    bool _loading = true;
+    int _days = 30;
+    string _pageTitle = "";
+    Guid _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        _userId = auth.User.GetUserId();
+        var pages = await PageSvc.GetUserPagesAsync(_userId);
+        _pageTitle = pages.FirstOrDefault(p => p.Id == PageId)?.Title ?? "";
+        await LoadMetrics();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_metrics is not null)
+            await RenderChart();
+    }
+
+    async Task LoadMetrics()
+    {
+        _loading = true;
+        _metrics = await MetricsSvc.GetPageMetricsAsync(_userId, PageId, _days);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    async Task RenderChart()
+    {
+        if (_metrics is null) return;
+        var labels = _metrics.DailyViews.Select(d => d.Date.ToString("dd/MM")).ToArray();
+        var data = _metrics.DailyViews.Select(d => d.Views).ToArray();
+        await JS.InvokeVoidAsync("umblink.renderChart", "views-chart", "line",
+            labels,
+            new[] { new {
+                label = "Visualizações",
+                data,
+                borderColor = "#0d6efd",
+                backgroundColor = "rgba(13,110,253,.1)",
+                fill = true,
+                tension = 0.4
+            }});
+    }
+}
