@@ -105,6 +105,72 @@ else
                             }
                         </div>
                     </div>
+
+                    <!-- Appearance -->
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center"
+                             style="cursor:pointer" @onclick="() => _showThemePanel = !_showThemePanel">
+                            <span class="fw-semibold">Aparência</span>
+                            <i class="bi @(_showThemePanel ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                        </div>
+                        @if (_showThemePanel)
+                        {
+                            <div class="card-body">
+                                <!-- Theme picker grid -->
+                                <label class="form-label small fw-semibold">Tema</label>
+                                <div class="row g-2 mb-3">
+                                    @foreach (var theme in Themes.All)
+                                    {
+                                        <div class="col-6">
+                                            <div class="border rounded p-2 d-flex align-items-center gap-2 @(_selectedThemeId == theme.Id ? "border-primary bg-primary bg-opacity-10" : "")"
+                                                 style="cursor:pointer" @onclick="() => SelectTheme(theme)">
+                                                <div style="width:20px;height:20px;border-radius:50%;background:@theme.DefaultBg;border:1px solid rgba(0,0,0,.1)"></div>
+                                                <span class="small">@theme.Name</span>
+                                                @if (theme.IsPremium) { <span class="badge bg-warning text-dark ms-auto" style="font-size:.6rem">Pro</span> }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Button style -->
+                                <label class="form-label small fw-semibold">Estilo do botão</label>
+                                <div class="btn-group w-100 mb-3" role="group">
+                                    @foreach (var (key, label) in new[] { ("rounded","Redondo"), ("pill","Pílula"), ("square","Quadrado"), ("outline","Contorno") })
+                                    {
+                                        <button type="button" class="btn btn-sm @(_btnStyleKey == key ? "btn-primary" : "btn-outline-secondary")"
+                                                @onclick="() => { _btnStyleKey = key; ApplyTheme(); }">@label</button>
+                                    }
+                                </div>
+
+                                <!-- Colors -->
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small">Cor do botão</label>
+                                        <input type="color" class="form-control form-control-color w-100" value="@_btnColor"
+                                               @oninput="e => { _btnColor = e.Value?.ToString() ?? _btnColor; ApplyTheme(); }" />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Cor do texto</label>
+                                        <input type="color" class="form-control form-control-color w-100" value="@_textColor"
+                                               @oninput="e => { _textColor = e.Value?.ToString() ?? _textColor; ApplyTheme(); }" />
+                                    </div>
+                                </div>
+
+                                <!-- Avatar shape -->
+                                <label class="form-label small fw-semibold">Formato do avatar</label>
+                                <div class="btn-group w-100">
+                                    <button type="button" class="btn btn-sm @(_avatarShape == "circle" ? "btn-primary" : "btn-outline-secondary")"
+                                            @onclick='() => { _avatarShape = "circle"; ApplyTheme(); }'>
+                                        <i class="bi bi-circle me-1"></i>Círculo
+                                    </button>
+                                    <button type="button" class="btn btn-sm @(_avatarShape == "square" ? "btn-primary" : "btn-outline-secondary")"
+                                            @onclick='() => { _avatarShape = "square"; ApplyTheme(); }'>
+                                        <i class="bi bi-square me-1"></i>Quadrado
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </LoadingSpinner>
             </div>
 
@@ -175,6 +241,15 @@ else
     DotNetObjectReference<Editor>? _dotnetRef;
     Guid _userId;
 
+    // Theme editor state
+    string _selectedThemeId = "minimal-light";
+    string _btnColor = "#111111";
+    string _btnTextColor = "#ffffff";
+    string _textColor = "#111111";
+    string _btnStyleKey = "rounded";
+    string _avatarShape = "circle";
+    bool _showThemePanel = false;
+
     protected override async Task OnInitializedAsync()
     {
         var auth = await AuthState;
@@ -187,6 +262,17 @@ else
             _editSlug = _page.Slug;
             _editBio = _page.Bio ?? "";
             _links = await PageSvc.GetLinksAsync(PageId);
+
+            try {
+                var cfg = System.Text.Json.JsonDocument.Parse(_page.ThemeConfig).RootElement;
+                string GetStr(string k, string fb) => cfg.TryGetProperty(k, out var v) ? v.GetString() ?? fb : fb;
+                _selectedThemeId = GetStr("themeId", "minimal-light");
+                _btnColor        = GetStr("buttonColor", "#111111");
+                _btnTextColor    = GetStr("buttonTextColor", "#ffffff");
+                _textColor       = GetStr("textColor", "#111111");
+                _btnStyleKey     = GetStr("buttonStyle", "rounded");
+                _avatarShape     = GetStr("avatarShape", "circle");
+            } catch { }
         }
         _loading = false;
     }
@@ -215,7 +301,8 @@ else
     {
         _saving = true; _error = "";
         var result = await PageSvc.UpdateAsync(_userId, PageId, new() {
-            Title = _editTitle, Slug = _editSlug, Bio = _editBio
+            Title = _editTitle, Slug = _editSlug, Bio = _editBio,
+            ThemeConfig = BuildThemeConfig()
         });
         if (result.IsSuccess)
         {
@@ -224,6 +311,38 @@ else
         }
         else _error = result.Error!;
         _saving = false;
+    }
+
+    string BuildThemeConfig()
+    {
+        var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
+        return System.Text.Json.JsonSerializer.Serialize(new {
+            themeId         = _selectedThemeId,
+            bgColor         = theme.DefaultBg,
+            buttonStyle     = _btnStyleKey,
+            buttonColor     = _btnColor,
+            buttonTextColor = _btnTextColor,
+            textColor       = _textColor,
+            titleFont       = "inter",
+            linkFont        = "inter",
+            spacing         = "normal",
+            avatarShape     = _avatarShape
+        });
+    }
+
+    void ApplyTheme()
+    {
+        var newConfig = BuildThemeConfig();
+        _page = _page! with { ThemeConfig = newConfig };
+    }
+
+    void SelectTheme(ThemeDefinition theme)
+    {
+        _selectedThemeId = theme.Id;
+        _btnColor        = theme.DefaultButtonColor;
+        _btnTextColor    = theme.DefaultButtonTextColor;
+        _textColor       = theme.DefaultTextColor;
+        ApplyTheme();
     }
 
     async Task AddLink()
