@@ -1,45 +1,164 @@
 @page "/"
 @layout PublicLayout
 
-<div class="min-vh-100 d-flex flex-column" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e)">
-    <!-- Navbar -->
-    <nav class="navbar px-4 py-3">
-        <span class="navbar-brand text-white fw-bold fs-5">UmbLink</span>
-        <div class="ms-auto d-flex gap-2">
-            <a href="/auth/login" class="btn btn-sm btn-outline-light">Entrar</a>
-            <a href="/auth/register" class="btn btn-sm btn-primary">Criar grátis</a>
-        </div>
-    </nav>
-
-    <!-- Hero -->
-    <div class="flex-grow-1 d-flex align-items-center justify-content-center text-white text-center px-3">
-        <div>
-            <span class="badge bg-primary mb-3 px-3 py-2">Novo — planos a partir de R$19/mês</span>
-            <h1 class="display-4 fw-bold mb-3">
-                Todos os seus links<br />em <span class="text-warning">um só lugar</span>
-            </h1>
-            <p class="lead text-white-50 mb-5" style="max-width:520px;margin:0 auto">
-                Crie sua página personalizada em segundos e compartilhe com o mundo. Ideal para criadores, profissionais e marcas.
-            </p>
-            <div class="d-flex gap-3 justify-content-center flex-wrap">
-                <a href="/auth/register" class="btn btn-primary btn-lg px-4">
-                    <i class="bi bi-rocket-takeoff me-2"></i>Começar grátis
-                </a>
-                <a href="/p/joao-silva" class="btn btn-outline-light btn-lg px-4" target="_blank">
-                    <i class="bi bi-eye me-2"></i>Ver exemplo
-                </a>
-            </div>
-            <p class="text-white-50 small mt-3">Sem cartão de crédito. Plano gratuito para sempre.</p>
+<!-- Hero Section (always dark) -->
+<div class="hero-section">
+    <div class="hero-nav">
+        <a href="/" class="nav-brand" style="color:#fff;font-size:1.35rem">UmbLink</a>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="/auth/login" class="hero-cta-secondary" style="padding:.5rem 1.25rem;font-size:.875rem">Entrar</a>
+            <a href="/auth/register" class="hero-cta-primary" style="padding:.5rem 1.25rem;font-size:.875rem">Criar grátis</a>
         </div>
     </div>
 
-    <!-- Features strip -->
-    <div class="py-4 px-3 text-center text-white-50 small border-top border-secondary">
-        <div class="d-flex justify-content-center gap-4 flex-wrap">
-            <span><i class="bi bi-check-circle-fill text-success me-1"></i>Página gratuita</span>
-            <span><i class="bi bi-check-circle-fill text-success me-1"></i>Analytics em tempo real</span>
-            <span><i class="bi bi-check-circle-fill text-success me-1"></i>Temas personalizáveis</span>
-            <span><i class="bi bi-check-circle-fill text-success me-1"></i>Domínio próprio (Pro)</span>
+    <div class="hero-content">
+        <div class="animate-fade-in-up">
+            <div class="hero-badge animate-fade-in-up delay-1">
+                <i class="bi bi-stars"></i>
+                Novo — planos a partir de R$19/mês
+            </div>
+            <h1 class="hero-title animate-fade-in-up delay-2">
+                Todos os seus links<br/>em <span class="highlight">um só lugar</span>
+            </h1>
+            <p class="hero-subtitle animate-fade-in-up delay-3">
+                Crie sua página personalizada em segundos e compartilhe com o mundo.
+                Ideal para criadores, profissionais e marcas.
+            </p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap animate-fade-in-up delay-4">
+                <a href="/auth/register" class="hero-cta-primary">
+                    <i class="bi bi-rocket-takeoff"></i>Começar grátis
+                </a>
+                <a href="/p/joao-silva" class="hero-cta-secondary" target="_blank">
+                    <i class="bi bi-eye"></i>Ver exemplo
+                </a>
+            </div>
+            <p class="animate-fade-in-up delay-5" style="color:rgba(255,255,255,0.4);font-size:.85rem;margin-top:1rem">
+                Sem cartão de crédito. Plano gratuito para sempre.
+            </p>
         </div>
     </div>
 </div>
+
+<!-- Como funciona -->
+<div class="section-steps section-padding bg-theme-secondary">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-title animate-fade-in-up">Como funciona</h2>
+            <p class="section-subtitle animate-fade-in-up delay-1">Em menos de 3 minutos você tem sua página pronta</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="step-card animate-fade-in-up delay-2">
+                    <div class="step-icon" style="background:rgba(99,102,241,0.1);color:var(--accent)">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div class="badge-accent badge-theme mb-2">Passo 1</div>
+                    <h5>Crie sua conta</h5>
+                    <p>Cadastre-se gratuitamente em segundos. Sem cartão de crédito.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card animate-fade-in-up delay-3">
+                    <div class="step-icon" style="background:rgba(245,158,11,0.1);color:var(--warning)">
+                        <i class="bi bi-palette"></i>
+                    </div>
+                    <div class="badge-theme" style="background:rgba(245,158,11,0.1);color:var(--warning)">Passo 2</div>
+                    <h5>Personalize</h5>
+                    <p>Escolha um tema, adicione seus links e customize as cores da sua página.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="step-card animate-fade-in-up delay-4">
+                    <div class="step-icon" style="background:rgba(16,185,129,0.1);color:var(--success)">
+                        <i class="bi bi-share"></i>
+                    </div>
+                    <div class="badge-theme" style="background:rgba(16,185,129,0.1);color:var(--success)">Passo 3</div>
+                    <h5>Compartilhe</h5>
+                    <p>Um único link para todas as suas redes, projetos e contatos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recursos -->
+<div class="section-features section-padding bg-theme-primary">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-title animate-fade-in-up">Tudo que você precisa</h2>
+            <p class="section-subtitle animate-fade-in-up delay-1">Gratuito para sempre, com planos premium para quem quer mais</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4 animate-fade-in-up delay-2">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-bar-chart-fill"></i></div>
+                    <div>
+                        <h6>Analytics em tempo real</h6>
+                        <p>Veja quantas pessoas visitam sua página e quais links clicam mais.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-in-up delay-2">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-palette2"></i></div>
+                    <div>
+                        <h6>Temas personalizáveis</h6>
+                        <p>Escolha entre temas prontos ou customize cores, fontes e botões.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-in-up delay-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-globe2"></i></div>
+                    <div>
+                        <h6>Domínio próprio</h6>
+                        <p>Vincule seu domínio personalizado e deixe sua página ainda mais profissional.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-in-up delay-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-phone"></i></div>
+                    <div>
+                        <h6>100% responsivo</h6>
+                        <p>Perfeito em qualquer dispositivo — celular, tablet ou computador.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-in-up delay-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-arrow-up-down"></i></div>
+                    <div>
+                        <h6>Reordenação fácil</h6>
+                        <p>Arraste e solte para organizar seus links na ordem que quiser.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-in-up delay-4">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-eye-slash"></i></div>
+                    <div>
+                        <h6>Ativar / desativar links</h6>
+                        <p>Esconda links temporariamente sem precisar excluir.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Final -->
+<div class="cta-section">
+    <div class="container animate-fade-in-up">
+        <h2 style="font-weight:700;font-size:1.875rem;margin-bottom:0.75rem">Pronto para começar?</h2>
+        <p style="color:rgba(255,255,255,0.5);margin-bottom:1.5rem">Crie sua página gratuita agora. Sem cartão de crédito.</p>
+        <a href="/auth/register" class="hero-cta-primary btn-accent-lg">
+            <i class="bi bi-rocket-takeoff"></i>Criar minha página grátis
+        </a>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer-theme">
+    &copy; @DateTime.Now.Year UmbLink by Umbler — <a href="/auth/login">Entrar</a>
+</footer>
