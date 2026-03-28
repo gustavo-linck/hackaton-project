@@ -64,7 +64,7 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
             Feature.Referrer       => (limits.AllowReferrer,       "Pro",      "Origem de acesso"),
             Feature.AdvancedThemes => (limits.ThemeCount != 2,     "Pro",      "Temas avançados"),
             Feature.AdvancedFonts  => (limits.FontCount != 2,      "Pro",      "Fontes avançadas"),
-            Feature.AdvancedColors => (limits.AllowCustomDomain,   "Pro",      "Personalização de cores"),
+            Feature.AdvancedColors => (limits.ThemeCount != 2,     "Pro",      "Personalização de cores"),
             _ => (false, "Pro", feature.ToString())
         };
 
@@ -84,10 +84,23 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
     {
         var planId = await db.Subscriptions
             .Where(s => s.UserId == userId)
-            .Select(s => s.PlanId)
+            .Select(s => (int?)s.PlanId)
             .FirstOrDefaultAsync();
 
-        var limit = await db.PlanLimits.FirstAsync(pl => pl.PlanId == planId);
+        if (planId is null)
+        {
+            // Usuário sem subscription — retorna limites do Free (MaxPages=1, MaxLinksPerPage=3)
+            var freePlanId = await db.Plans
+                .Where(p => p.Name == "Free")
+                .Select(p => (int?)p.Id)
+                .FirstOrDefaultAsync();
+            planId = freePlanId ?? 0;
+        }
+
+        var limit = await db.PlanLimits.FirstOrDefaultAsync(pl => pl.PlanId == planId)
+            ?? new PlanLimit { MaxPages = 1, MaxLinksPerPage = 3, AnalyticsDays = 7,
+                AllowReferrer = false, AllowCustomDomain = false, AllowRemoveBranding = false,
+                ThemeCount = 2, FontCount = 2 };
 
         return new PlanLimitDto(
             limit.MaxPages,
