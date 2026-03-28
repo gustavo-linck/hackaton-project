@@ -2,7 +2,7 @@
 @inject IJSRuntime JS
 
 <div class="min-vh-100 d-flex flex-column" style="background:var(--bg-primary)">
-    <nav class="navbar-theme d-flex align-items-center">
+    <nav class="navbar-theme d-flex align-items-center flex-wrap">
         <a class="nav-brand" href="/dashboard">UmbLink</a>
 
         <div class="ms-auto d-flex align-items-center gap-2">
@@ -11,13 +11,25 @@
                     <span class="d-none d-md-inline text-theme-secondary" style="font-size:.8rem">
                         <i class="bi bi-person-circle me-1"></i>@context.User.FindFirst("display_name")?.Value
                     </span>
-                    <a href="/dashboard" class="nav-link-theme">Dashboard</a>
-                    <a href="/plans" class="nav-link-theme">Planos</a>
-                    <a href="/my-plan" class="nav-link-theme">Meu Plano</a>
+
+                    @* Nav links — hidden on mobile, shown on md+ *@
+                    <div class="d-none d-md-flex align-items-center gap-2">
+                        <a href="/dashboard" class="nav-link-theme">Dashboard</a>
+                        <a href="/plans" class="nav-link-theme">Planos</a>
+                        <a href="/my-plan" class="nav-link-theme">Meu Plano</a>
+                    </div>
+
                     <button class="theme-toggle" @onclick="ToggleTheme" title="Alternar tema">
                         <i class="bi @(_isDark ? "bi-sun" : "bi-moon-stars")"></i>
                     </button>
-                    <form action="/auth/logout" method="post">
+
+                    @* Hamburger — visible only on mobile *@
+                    <button class="btn-ghost d-md-none" @onclick="ToggleMenu" aria-label="Menu">
+                        <i class="bi @(_menuOpen ? "bi-x-lg" : "bi-list") fs-5"></i>
+                    </button>
+
+                    @* Logout — always visible on desktop, hidden on mobile (in dropdown instead) *@
+                    <form action="/auth/logout" method="post" class="d-none d-md-block">
                         <AntiforgeryToken />
                         <button type="submit" class="btn-ghost" style="color:var(--danger)">
                             <i class="bi bi-box-arrow-right"></i> Sair
@@ -34,6 +46,35 @@
         </div>
     </nav>
 
+    @* Mobile dropdown menu *@
+    <AuthorizeView>
+        <Authorized>
+            @if (_menuOpen)
+            {
+                <div class="d-md-none px-3 py-2 border-bottom"
+                     style="background:var(--navbar-bg);backdrop-filter:blur(12px)">
+                    <a href="/dashboard" class="nav-link-theme d-block py-2" @onclick="CloseMenu">
+                        <i class="bi bi-grid me-2"></i>Dashboard
+                    </a>
+                    <a href="/plans" class="nav-link-theme d-block py-2" @onclick="CloseMenu">
+                        <i class="bi bi-card-list me-2"></i>Planos
+                    </a>
+                    <a href="/my-plan" class="nav-link-theme d-block py-2" @onclick="CloseMenu">
+                        <i class="bi bi-person-badge me-2"></i>Meu Plano
+                    </a>
+                    <div class="border-top mt-2 pt-2">
+                        <form action="/auth/logout" method="post">
+                            <AntiforgeryToken />
+                            <button type="submit" class="btn-ghost w-100 text-start" style="color:var(--danger)">
+                                <i class="bi bi-box-arrow-right me-2"></i>Sair
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </Authorized>
+    </AuthorizeView>
+
     <main class="flex-grow-1">
         @Body
     </main>
@@ -45,6 +86,7 @@
 
 @code {
     bool _isDark;
+    bool _menuOpen;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -61,4 +103,7 @@
         _isDark = !_isDark;
         await JS.InvokeVoidAsync("umblink.setTheme", _isDark ? "dark" : "light");
     }
+
+    void ToggleMenu() => _menuOpen = !_menuOpen;
+    void CloseMenu() => _menuOpen = false;
 }
