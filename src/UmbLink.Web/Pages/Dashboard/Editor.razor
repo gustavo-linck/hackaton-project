@@ -68,7 +68,7 @@ else
                                 <label class="form-label-theme">Endereço</label>
                                 <div class="d-flex">
                                     <span class="form-control-theme d-flex align-items-center text-theme-muted"
-                                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.75rem;padding:.4rem .5rem;white-space:nowrap">umblink.com/p/</span>
+                                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.75rem;padding:.4rem .5rem;white-space:nowrap">@PublicPagePrefix</span>
                                     <input @bind="_editSlug" class="form-control-theme w-100" style="border-radius:0 10px 10px 0" />
                                 </div>
                             </div>
@@ -474,6 +474,8 @@ else
         _editAvatarUrl = e.Value?.ToString() ?? string.Empty;
         if (_page is not null) _page = _page with { AvatarUrl = string.IsNullOrEmpty(_editAvatarUrl) ? null : _editAvatarUrl };
     }
+
+    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
 
     public async ValueTask DisposeAsync()
     {

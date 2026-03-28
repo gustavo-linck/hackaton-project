@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using UmbLink.Application;
 using UmbLink.Application.DTOs;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Models;
@@ -7,20 +8,30 @@ using UmbLink.Infrastructure.Data.Entities;
 
 namespace UmbLink.Application.Services;
 
-public class SubscriptionService(AppDbContext db, IAuditService audit) : ISubscriptionService
+public class SubscriptionService(AppDbContext db, IAuditService audit, ICacheService cache) : ISubscriptionService
 {
     public async Task<SubscriptionDto> GetAsync(Guid userId)
     {
+        var cached = await cache.GetAsync<SubscriptionDto>(CacheKeys.UserSubscription(userId));
+        if (cached is not null) return cached;
+
         var sub = await db.Subscriptions
             .Include(s => s.Plan).ThenInclude(p => p.Limit!)
             .FirstOrDefaultAsync(s => s.UserId == userId);
 
+        SubscriptionDto dto;
         if (sub is null)
         {
             var freePlan = await db.Plans.Include(p => p.Limit).FirstAsync(p => p.Name == "Free");
-            return BuildDto(null, freePlan);
+            dto = BuildDto(null, freePlan);
         }
-        return BuildDto(sub, sub.Plan);
+        else
+        {
+            dto = BuildDto(sub, sub.Plan);
+        }
+
+        await cache.SetAsync(CacheKeys.UserSubscription(userId), dto, TimeSpan.FromMinutes(5));
+        return dto;
     }
 
     public async Task<Result<SubscriptionDto>> StartTrialAsync(Guid userId, int planId, BillingPeriod period)
@@ -49,6 +60,7 @@ public class SubscriptionService(AppDbContext db, IAuditService audit) : ISubscr
 
         db.TrialUsages.Add(new TrialUsage { UserId = userId, PlanId = planId, Status = TrialStatus.Active, StartedAt = now });
         await db.SaveChangesAsync();
+        await cache.RemoveAsync(CacheKeys.UserSubscription(userId));
         await audit.LogAsync(userId, "subscription.trial_started", new { planId });
         return Result<SubscriptionDto>.Ok(BuildDto(sub, plan));
     }
@@ -82,6 +94,7 @@ public class SubscriptionService(AppDbContext db, IAuditService audit) : ISubscr
         sub.UpdatedAt = now;
 
         await db.SaveChangesAsync();
+        await cache.RemoveAsync(CacheKeys.UserSubscription(userId));
         await audit.LogAsync(userId, "subscription.activated", new { planId, period = period.ToString() });
         return Result<SubscriptionDto>.Ok(BuildDto(sub, plan));
     }
@@ -126,6 +139,7 @@ public class SubscriptionService(AppDbContext db, IAuditService audit) : ISubscr
         }
 
         await db.SaveChangesAsync();
+        await cache.RemoveAsync(CacheKeys.UserSubscription(userId));
         await audit.LogAsync(userId, "subscription.cancelled", null);
         return Result<bool>.Ok(true);
     }

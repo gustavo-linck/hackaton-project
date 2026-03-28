@@ -1,20 +1,20 @@
 @if (Visible)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title"><i class="bi bi-stars me-2 text-warning"></i>Limite atingido</h5>
-                    <button class="btn-close" @onclick="() => VisibleChanged.InvokeAsync(false)"></button>
-                </div>
-                <div class="modal-body">
-                    <p>@Message</p>
-                    <p class="text-muted small">Faça upgrade para continuar criando.</p>
-                </div>
-                <div class="modal-footer border-0">
-                    <button class="btn btn-secondary" @onclick="() => VisibleChanged.InvokeAsync(false)">Fechar</button>
-                    <a href="/plans" class="btn btn-primary">Ver planos</a>
-                </div>
+    <div class="modal-theme-backdrop" @onclick="() => VisibleChanged.InvokeAsync(false)">
+        <div class="modal-theme" @onclick:stopPropagation="true">
+            <div class="modal-theme-header" style="border-bottom:none">
+                <h5><i class="bi bi-stars me-2 text-warning"></i>Limite atingido</h5>
+                <button class="btn-ghost" style="padding:.25rem .5rem" @onclick="() => VisibleChanged.InvokeAsync(false)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-theme-body">
+                <p class="mb-1">@Message</p>
+                <p class="text-theme-muted small mb-0">Faça upgrade para continuar criando.</p>
+            </div>
+            <div class="modal-theme-footer" style="border-top:none">
+                <button class="btn btn-secondary" @onclick="() => VisibleChanged.InvokeAsync(false)">Fechar</button>
+                <a href="/plans" class="btn btn-primary">Ver planos</a>
             </div>
         </div>
     </div>

@@ -1,17 +1,17 @@
 @if (Visible)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@Title</h5>
-                    <button class="btn-close" @onclick="Cancel"></button>
-                </div>
-                <div class="modal-body">@Message</div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="Cancel">Cancelar</button>
-                    <button class="btn @ConfirmClass" @onclick="Confirm">@ConfirmText</button>
-                </div>
+    <div class="modal-theme-backdrop" @onclick="Cancel">
+        <div class="modal-theme" @onclick:stopPropagation="true">
+            <div class="modal-theme-header">
+                <h5>@Title</h5>
+                <button class="btn-ghost" style="padding:.25rem .5rem" @onclick="Cancel">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-theme-body text-theme-secondary">@Message</div>
+            <div class="modal-theme-footer">
+                <button class="btn btn-secondary" @onclick="Cancel">Cancelar</button>
+                <button class="btn @ConfirmClass" @onclick="Confirm">@ConfirmText</button>
             </div>
         </div>
     </div>

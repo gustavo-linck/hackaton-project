@@ -62,7 +62,7 @@
                                         @(pg.Status == PageStatus.Published ? "Publicada" : "Rascunho")
                                     </span>
                                 </div>
-                                <p class="text-theme-muted" style="font-size:.8rem;margin-bottom:.25rem">umblink.com/p/@pg.Slug</p>
+                                <p class="text-theme-muted" style="font-size:.8rem;margin-bottom:.25rem">@GetPublicPageUrl(pg.Slug)</p>
                                 <p class="text-theme-secondary" style="font-size:.8rem;margin:0">@pg.LinkCount link(s)</p>
                             </div>
                             <div class="page-card-footer">
@@ -119,7 +119,7 @@
                     <label class="form-label-theme">Endereço (slug)</label>
                     <div class="d-flex">
                         <span class="form-control-theme d-flex align-items-center text-theme-muted"
-                              style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">umblink.com/p/</span>
+                              style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
                         <input value="@_createSlug" @oninput="OnCreateSlugInput" class="form-control-theme w-100"
                                style="border-radius:0 10px 10px 0" placeholder="meu-slug" />
                     </div>
@@ -241,9 +241,17 @@
         _toast?.Show("Página excluída.");
     }
 
+    string PublicPagePrefix => GetPublicPageUrl(string.Empty);
+
+    string GetPublicPageUrl(string slug)
+    {
+        var path = string.IsNullOrWhiteSpace(slug) ? "p/" : $"p/{slug}";
+        return new Uri(new Uri(Nav.BaseUri), path).ToString();
+    }
+
     async Task CopyLink(string slug)
     {
-        var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", $"https://umblink.com/p/{slug}");
+        var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", GetPublicPageUrl(slug));
         if (copied) _toast?.Show("Link copiado!");
     }
 }

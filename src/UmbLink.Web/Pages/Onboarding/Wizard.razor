@@ -42,7 +42,7 @@
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">Endereço da sua página</label>
                                 <div class="input-group">
-                                    <span class="input-group-text text-theme-muted small">umblink.com/p/</span>
+                                    <span class="input-group-text text-theme-muted small">@PublicPagePrefix</span>
                                     <input class="form-control-theme"
                                            placeholder="seu-slug"
                                            value="@_pageSlug"
@@ -154,7 +154,7 @@
                         <p class="text-theme-muted mb-4">Parabéns! Compartilhe com o mundo.</p>
 
                         <div class="input-group mb-4">
-                            <input class="form-control-theme" readonly value="https://umblink.com/p/@_createdSlug" />
+                            <input class="form-control-theme" readonly value="@CreatedPageUrl" />
                             <button class="btn btn-ghost" @onclick="CopyUrl">Copiar</button>
                         </div>
 
@@ -186,6 +186,11 @@
     Guid _createdPageId;
     string _createdSlug = "";
     Guid _userId;
+
+    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
+    string CreatedPageUrl => string.IsNullOrWhiteSpace(_createdSlug)
+        ? PublicPagePrefix
+        : new Uri(new Uri(Nav.BaseUri), $"p/{_createdSlug}").ToString();
 
     protected override async Task OnInitializedAsync()
     {
@@ -266,7 +271,7 @@
 
     async Task CopyUrl()
     {
-        await JS.InvokeAsync<bool>("umblink.copyToClipboard", $"https://umblink.com/p/{_createdSlug}");
+        await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
     }
 
     void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");

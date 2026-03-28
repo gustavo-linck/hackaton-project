@@ -5,7 +5,7 @@
 
 <PageTitle>Checkout — UmbLink</PageTitle>
 
-<div class="container py-5" style="max-width:480px">
+<div class="container py-5" style="max-width:480px;color:var(--text-primary)">
     <h4 class="fw-bold mb-1">Finalizar assinatura</h4>
     <p class="text-theme-muted small mb-4">Plano <strong>@_planName</strong> — @_priceLabel</p>
 
@@ -14,29 +14,29 @@
         <div class="alert alert-danger py-2">@_error</div>
     }
 
-    <div class="card shadow-sm" style="background:var(--bg-card);border-color:var(--border)">
+    <div class="card shadow-sm" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
         <div class="card-body">
             <div class="mb-3">
-                <label class="form-label">Número do cartão</label>
+                <label class="form-label-theme">Número do cartão</label>
                 <input @bind="_cardNumber" class="form-control-theme" placeholder="0000 0000 0000 0000"
                        maxlength="19" inputmode="numeric" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Nome no cartão</label>
+                <label class="form-label-theme">Nome no cartão</label>
                 <input @bind="_cardName" class="form-control-theme" placeholder="NOME SOBRENOME" />
             </div>
             <div class="row g-2 mb-3">
                 <div class="col-6">
-                    <label class="form-label">Validade</label>
+                    <label class="form-label-theme">Validade</label>
                     <input @bind="_expiry" class="form-control-theme" placeholder="MM/AA" maxlength="5" />
                 </div>
                 <div class="col-6">
-                    <label class="form-label">CVV</label>
+                    <label class="form-label-theme">CVV</label>
                     <input @bind="_cvv" class="form-control-theme" placeholder="123" maxlength="4" type="password" />
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">CPF do titular</label>
+                <label class="form-label-theme">CPF do titular</label>
                 <input @bind="_cpf" class="form-control-theme" placeholder="000.000.000-00" maxlength="14" />
             </div>
 

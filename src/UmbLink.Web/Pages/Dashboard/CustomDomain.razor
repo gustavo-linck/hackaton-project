@@ -38,7 +38,7 @@
                 <div class="d-flex">
                     <span class="form-control-theme d-flex align-items-center text-theme-muted"
                           style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">
-                        umblink.com/p/
+                        @PublicPagePrefix
                     </span>
                     <input value="@_slug" @oninput="OnSlugInput" class="form-control-theme w-100"
                            style="border-radius:0 10px 10px 0" placeholder="meu-slug" maxlength="60" />
@@ -66,7 +66,7 @@
                 <!-- Preview -->
                 <div class="alert-theme" style="margin-bottom:1rem;font-size:.85rem">
                     <i class="bi bi-link-45deg text-accent"></i>
-                    <span style="font-family:monospace">umblink.com/p/<strong>@_slug</strong></span>
+                    <span style="font-family:monospace">@PublicPagePrefix<strong>@_slug</strong></span>
                 </div>
             }
 
@@ -105,6 +105,8 @@
     bool _checking;
     bool _saving;
     CancellationTokenSource? _debounce;
+
+    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
 

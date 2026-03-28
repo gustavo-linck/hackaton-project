@@ -6,7 +6,7 @@
 
 <PageTitle>Planos — UmbLink</PageTitle>
 
-<div class="container py-5">
+<div class="container py-5" style="color:var(--text-primary)">
     <div class="text-center mb-5">
         <h2 class="fw-bold">Escolha seu plano</h2>
         <p class="text-theme-muted">Sem taxas ocultas. Cancele quando quiser.</p>
@@ -29,7 +29,7 @@
     <div class="row justify-content-center g-4">
         <!-- Free -->
         <div class="col-md-4">
-            <div class="card h-100 @(_currentPlan == "Free" ? "border-primary" : "")" style="background:var(--bg-card);border-color:var(--border)">
+            <div class="card h-100 @(_currentPlan == "Free" ? "border-primary" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
                 <div class="card-body text-center p-4">
                     <h5 class="fw-bold">Free</h5>
                     <div class="display-6 fw-bold my-3">R$0</div>
@@ -43,7 +43,7 @@
                         <li class="mb-2 text-theme-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
                     @if (_currentPlan == "Free")
                     {
                         <button class="btn btn-ghost w-100" disabled>Plano atual</button>
@@ -58,7 +58,7 @@
 
         <!-- Pro -->
         <div class="col-md-4">
-            <div class="card h-100 border-primary shadow @(_currentPlan == "Pro" ? "border-2" : "")" style="background:var(--bg-card)">
+            <div class="card h-100 border-primary shadow @(_currentPlan == "Pro" ? "border-2" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
                 <div class="card-header text-center bg-primary text-white">Mais popular</div>
                 <div class="card-body text-center p-4">
                     <h5 class="fw-bold">Pro</h5>
@@ -73,7 +73,7 @@
                         <li class="mb-2 text-theme-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
                     @if (_currentPlan == "Pro")
                     {
                         <button class="btn btn-primary w-100" disabled>Plano atual</button>
@@ -97,7 +97,7 @@
 
         <!-- Business -->
         <div class="col-md-4">
-            <div class="card h-100 @(_currentPlan == "Business" ? "border-warning border-2" : "")" style="background:var(--bg-card);border-color:var(--border)">
+            <div class="card h-100 @(_currentPlan == "Business" ? "border-warning border-2" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
                 <div class="card-body text-center p-4">
                     <h5 class="fw-bold">Business</h5>
                     <div class="display-6 fw-bold my-3">R$@GetPrice("Business")<span class="fs-6 text-theme-muted">/mês</span></div>
@@ -111,7 +111,7 @@
                         <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
                     @if (_currentPlan == "Business")
                     {
                         <button class="btn btn-warning w-100" disabled>Plano atual</button>

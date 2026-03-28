@@ -9,6 +9,7 @@ using UmbLink.Application.Interfaces;
 using UmbLink.Application.Requests;
 using UmbLink.Application.Services;
 using UmbLink.Application.BackgroundServices;
+using UmbLink.Web.Cache;
 using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Identity;
 using UmbLink.Infrastructure.Seed;
@@ -69,6 +70,19 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IMetricsService, MetricsService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+
+// Cache
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConn))
+{
+    builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisConn);
+    builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+}
+else
+{
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+}
 
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreatePageRequestValidator>();

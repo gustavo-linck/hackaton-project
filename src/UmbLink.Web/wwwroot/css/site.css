@@ -37,6 +37,23 @@ html, body {
     --warning: #f59e0b;
     --danger: #ef4444;
     --info: #3b82f6;
+    --bs-body-bg: var(--bg-primary);
+    --bs-body-color: var(--text-primary);
+    --bs-secondary-color: var(--text-secondary);
+    --bs-secondary-bg: var(--bg-secondary);
+    --bs-tertiary-bg: var(--bg-hover);
+    --bs-border-color: var(--border);
+    --bs-card-bg: var(--bg-card);
+    --bs-card-color: var(--text-primary);
+    --bs-modal-bg: var(--bg-card);
+    --bs-modal-color: var(--text-primary);
+    --bs-modal-header-border-color: var(--border);
+    --bs-modal-footer-border-color: var(--border);
+    --bs-table-color: var(--text-primary);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border);
+    --bs-heading-color: var(--text-primary);
+    --bs-emphasis-color: var(--text-primary);
     color-scheme: light;
 }
 
@@ -62,6 +79,24 @@ html, body {
     --warning: #fbbf24;
     --danger: #f87171;
     --info: #60a5fa;
+    --bs-body-bg: var(--bg-primary);
+    --bs-body-color: var(--text-primary);
+    --bs-secondary-color: var(--text-secondary);
+    --bs-secondary-bg: var(--bg-secondary);
+    --bs-tertiary-bg: var(--bg-hover);
+    --bs-border-color: var(--border);
+    --bs-card-bg: var(--bg-card);
+    --bs-card-color: var(--text-primary);
+    --bs-modal-bg: var(--bg-card);
+    --bs-modal-color: var(--text-primary);
+    --bs-modal-header-border-color: var(--border);
+    --bs-modal-footer-border-color: var(--border);
+    --bs-table-color: var(--text-primary);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border);
+    --bs-heading-color: var(--text-primary);
+    --bs-emphasis-color: var(--text-primary);
+    --bs-btn-close-filter: invert(1) grayscale(100%) brightness(200%);
     color-scheme: dark;
 }
 
@@ -69,6 +104,19 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     transition: background 0.3s ease, color 0.3s ease;
+}
+
+.card,
+.table,
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+    border-color: var(--border);
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
 }
 
 /* ===== Animations ===== */
@@ -348,6 +396,7 @@ body {
 
 .modal-theme-body {
     padding: 1.5rem;
+    color: var(--text-primary);
 }
 
 .modal-theme-footer {
