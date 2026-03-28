@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
+
+<div class="d-flex min-vh-100">
+    <aside class="bg-dark text-white p-3 flex-shrink-0" style="width:220px">
+        <h6 class="text-uppercase text-muted small mb-3">Admin Umbler</h6>
+        <nav class="nav flex-column gap-1">
+            <a href="/admin" class="nav-link text-white">Usuários</a>
+            <a href="/admin/stats" class="nav-link text-white">Métricas Globais</a>
+        </nav>
+    </aside>
+    <main class="flex-grow-1 p-4">@Body</main>
+</div>

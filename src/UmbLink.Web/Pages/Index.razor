@@ -1,7 +1,11 @@
-﻿@page "/"
+@page "/"
+@layout PublicLayout
 
-<PageTitle>Index</PageTitle>
-
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-dark text-white">
+    <div class="text-center px-3">
+        <h1 class="display-4 fw-bold mb-3">UmbLink</h1>
+        <p class="lead mb-4">Reúna todos os seus links em uma única página.</p>
+        <a href="/auth/register" class="btn btn-primary btn-lg me-2">Criar minha página</a>
+        <a href="/auth/login" class="btn btn-outline-light btn-lg">Entrar</a>
+    </div>
+</div>

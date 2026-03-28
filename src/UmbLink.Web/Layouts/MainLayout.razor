@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+
+<div class="min-vh-100 d-flex flex-column">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <a class="navbar-brand fw-bold" href="/dashboard">UmbLink</a>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <AuthorizeView>
+                <Authorized>
+                    <a href="/plans/my" class="btn btn-sm btn-outline-light">Meu Plano</a>
+                    <form action="/auth/logout" method="post">
+                        <AntiforgeryToken />
+                        <button type="submit" class="btn btn-sm btn-danger">Sair</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/auth/login" class="btn btn-sm btn-outline-light">Entrar</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </nav>
+    <main class="flex-grow-1 container-fluid py-4">
+        @Body
+    </main>
+    <footer class="text-center text-muted py-2 small">
+        &copy; @DateTime.Now.Year UmbLink by Umbler
+    </footer>
+</div>

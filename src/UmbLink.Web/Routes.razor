@@ -1,0 +1,30 @@
+<Router AppAssembly="typeof(App).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+            <NotAuthorized>
+                @if (!context.User.Identity!.IsAuthenticated)
+                {
+                    <RedirectToLogin />
+                }
+                else
+                {
+                    <LayoutView Layout="typeof(MainLayout)">
+                        <div class="container py-5 text-center">
+                            <h4>Acesso negado</h4>
+                            <a href="/dashboard" class="btn btn-primary mt-3">Voltar ao início</a>
+                        </div>
+                    </LayoutView>
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayout)">
+            <div class="container py-5 text-center">
+                <h4>Página não encontrada</h4>
+                <a href="/dashboard" class="btn btn-primary mt-3">Voltar ao início</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
