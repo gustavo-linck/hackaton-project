@@ -1,9 +1,5 @@
 @page "/auth/login"
 @layout PublicLayout
-@inject SignInManager<AppUser> SignInMgr
-@inject NavigationManager Nav
-@using Microsoft.AspNetCore.Identity
-@using UmbLink.Infrastructure.Identity
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="card shadow-sm" style="width:100%;max-width:420px">
@@ -11,32 +7,39 @@
             <h4 class="card-title mb-1 fw-bold">Entrar</h4>
             <p class="text-muted small mb-4">Bem-vindo de volta!</p>
 
-            @if (!string.IsNullOrEmpty(_error))
+            @if (!string.IsNullOrEmpty(_errorMsg))
             {
-                <div class="alert alert-danger py-2">@_error</div>
+                <div class="alert alert-danger py-2">@_errorMsg</div>
             }
 
-            <EditForm Model="_model" OnValidSubmit="HandleLogin">
-                <DataAnnotationsValidator />
+            <form method="post" action="/auth/do-login">
+                <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
                 <div class="mb-3">
                     <label class="form-label">E-mail</label>
-                    <InputText @bind-Value="_model.Email" type="email" class="form-control" />
-                    <ValidationMessage For="() => _model.Email" class="text-danger small" />
+                    <input name="email" type="email" class="form-control" placeholder="voce@exemplo.com" required />
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
-                    <InputText @bind-Value="_model.Password" type="password" class="form-control" />
-                    <ValidationMessage For="() => _model.Password" class="text-danger small" />
+                    <div class="input-group">
+                        <input name="password" type="@(_showPassword ? "text" : "password")"
+                               class="form-control" required />
+                        <button type="button" class="btn btn-outline-secondary"
+                                @onclick="() => _showPassword = !_showPassword"
+                                tabindex="-1">
+                            <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                        </button>
+                    </div>
                 </div>
+
                 <div class="form-check mb-3">
-                    <InputCheckbox @bind-Value="_model.RememberMe" class="form-check-input" id="remember" />
+                    <input name="remember" value="true" type="checkbox" class="form-check-input" id="remember" />
                     <label class="form-check-label" for="remember">Lembrar-me</label>
                 </div>
-                <button class="btn btn-primary w-100 @(_loading ? "disabled" : "")" type="submit">
-                    @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
-                    Entrar
-                </button>
-            </EditForm>
+
+                <button class="btn btn-primary w-100" type="submit">Entrar</button>
+            </form>
 
             @if (_googleEnabled)
             {
@@ -56,37 +59,22 @@
 </div>
 
 @code {
-    readonly LoginModel _model = new();
-    bool _loading;
-    string _error = "";
-    bool _googleEnabled;
-
-    [Inject] IConfiguration Config { get; set; } = default!;
     [SupplyParameterFromQuery] string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] string? Error { get; set; }
+    [Inject] IConfiguration Config { get; set; } = default!;
+
+    bool _showPassword;
+    bool _googleEnabled;
+    string _errorMsg = "";
 
     protected override void OnInitialized()
     {
         _googleEnabled = !string.IsNullOrEmpty(Config["Google:ClientId"]);
-    }
-
-    async Task HandleLogin()
-    {
-        _loading = true;
-        _error = "";
-        var result = await SignInMgr.PasswordSignInAsync(_model.Email!, _model.Password!, _model.RememberMe, lockoutOnFailure: true);
-        if (result.Succeeded)
-        {
-            Nav.NavigateTo(ReturnUrl ?? "/dashboard");
-            return;
-        }
-        _error = result.IsLockedOut ? "Conta bloqueada temporariamente." : "E-mail ou senha inválidos.";
-        _loading = false;
-    }
-
-    class LoginModel
-    {
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string? Email { get; set; }
-        [System.ComponentModel.DataAnnotations.Required] public string? Password { get; set; }
-        public bool RememberMe { get; set; }
+        _errorMsg = Error switch {
+            "invalid" => "E-mail ou senha inválidos.",
+            "locked"  => "Conta bloqueada temporariamente. Tente novamente em breve.",
+            "required"=> "Preencha todos os campos.",
+            _         => ""
+        };
     }
 }

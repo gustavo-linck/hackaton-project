@@ -1,11 +1,5 @@
 @page "/auth/register"
 @layout PublicLayout
-@inject UserManager<AppUser> UserMgr
-@inject SignInManager<AppUser> SignInMgr
-@inject NavigationManager Nav
-@inject ISubscriptionService SubscriptionService
-@using Microsoft.AspNetCore.Identity
-@using UmbLink.Infrastructure.Identity
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="card shadow-sm" style="width:100%;max-width:420px">
@@ -13,33 +7,38 @@
             <h4 class="card-title mb-1 fw-bold">Criar conta</h4>
             <p class="text-muted small mb-4">Comece grátis. Sem cartão necessário.</p>
 
-            @if (!string.IsNullOrEmpty(_error))
+            @if (!string.IsNullOrEmpty(_errorMsg))
             {
-                <div class="alert alert-danger py-2">@_error</div>
+                <div class="alert alert-danger py-2">@_errorMsg</div>
             }
 
-            <EditForm Model="_model" OnValidSubmit="HandleRegister">
-                <DataAnnotationsValidator />
+            <form method="post" action="/auth/do-register">
                 <div class="mb-3">
                     <label class="form-label">Nome</label>
-                    <InputText @bind-Value="_model.Name" class="form-control" placeholder="Seu nome" />
-                    <ValidationMessage For="() => _model.Name" class="text-danger small" />
+                    <input name="name" type="text" class="form-control" placeholder="Seu nome" required />
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">E-mail</label>
-                    <InputText @bind-Value="_model.Email" type="email" class="form-control" placeholder="voce@exemplo.com" />
-                    <ValidationMessage For="() => _model.Email" class="text-danger small" />
+                    <input name="email" type="email" class="form-control" placeholder="voce@exemplo.com" required />
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
-                    <InputText @bind-Value="_model.Password" type="password" class="form-control" />
-                    <ValidationMessage For="() => _model.Password" class="text-danger small" />
+                    <div class="input-group">
+                        <input name="password" type="@(_showPassword ? "text" : "password")"
+                               class="form-control" minlength="6" required />
+                        <button type="button" class="btn btn-outline-secondary"
+                                @onclick="() => _showPassword = !_showPassword"
+                                tabindex="-1">
+                            <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">Mínimo 8 caracteres com número.</div>
                 </div>
-                <button class="btn btn-primary w-100 @(_loading ? "disabled" : "")" type="submit">
-                    @if (_loading) { <span class="spinner-border spinner-border-sm me-2"></span> }
-                    Criar conta
-                </button>
-            </EditForm>
+
+                <button class="btn btn-primary w-100" type="submit">Criar conta</button>
+            </form>
 
             @if (_googleEnabled)
             {
@@ -56,40 +55,20 @@
 </div>
 
 @code {
-    readonly RegisterModel _model = new();
-    bool _loading;
-    string _error = "";
-    bool _googleEnabled;
-
+    [SupplyParameterFromQuery] string? Error { get; set; }
     [Inject] IConfiguration Config { get; set; } = default!;
+
+    bool _showPassword;
+    bool _googleEnabled;
+    string _errorMsg = "";
 
     protected override void OnInitialized()
     {
         _googleEnabled = !string.IsNullOrEmpty(Config["Google:ClientId"]);
-    }
-
-    async Task HandleRegister()
-    {
-        _loading = true;
-        _error = "";
-        var user = new AppUser { Name = _model.Name!, Email = _model.Email, UserName = _model.Email };
-        var result = await UserMgr.CreateAsync(user, _model.Password!);
-        if (!result.Succeeded)
-        {
-            _error = string.Join(", ", result.Errors.Select(e => e.Description));
-            _loading = false;
-            return;
-        }
-        await UserMgr.AddToRoleAsync(user, "User");
-        // Free subscription created automatically
-        await SignInMgr.SignInAsync(user, isPersistent: false);
-        Nav.NavigateTo("/dashboard");
-    }
-
-    class RegisterModel
-    {
-        [System.ComponentModel.DataAnnotations.Required] public string? Name { get; set; }
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress] public string? Email { get; set; }
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(6)] public string? Password { get; set; }
+        _errorMsg = Error switch {
+            "required"   => "Preencha todos os campos.",
+            null or ""   => "",
+            var e        => Uri.UnescapeDataString(e)
+        };
     }
 }

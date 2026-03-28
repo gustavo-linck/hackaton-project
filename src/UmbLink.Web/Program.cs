@@ -122,6 +122,64 @@ app.Use(async (ctx, next) =>
 });
 
 // Auth endpoints
+app.MapPost("/auth/do-login", async (
+    HttpContext ctx,
+    SignInManager<AppUser> sm) =>
+{
+    var form = ctx.Request.Form;
+    var email      = form["email"].ToString();
+    var password   = form["password"].ToString();
+    var remember   = form["remember"] == "true";
+    var returnUrl  = form["returnUrl"].ToString();
+
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        return Results.Redirect("/auth/login?error=required");
+
+    var result = await sm.PasswordSignInAsync(email, password, remember, lockoutOnFailure: true);
+
+    if (result.Succeeded)
+        return Results.Redirect(string.IsNullOrEmpty(returnUrl) ? "/dashboard" : returnUrl);
+
+    var code = result.IsLockedOut ? "locked" : "invalid";
+    var ret  = string.IsNullOrEmpty(returnUrl) ? "" : $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
+    return Results.Redirect($"/auth/login?error={code}{ret}");
+}).DisableAntiforgery();
+
+app.MapPost("/auth/do-register", async (
+    HttpContext ctx,
+    UserManager<AppUser> um,
+    SignInManager<AppUser> sm,
+    AppDbContext db) =>
+{
+    var form     = ctx.Request.Form;
+    var name     = form["name"].ToString().Trim();
+    var email    = form["email"].ToString().Trim();
+    var password = form["password"].ToString();
+
+    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        return Results.Redirect("/auth/register?error=required");
+
+    var user = new AppUser { Name = name, Email = email, UserName = email };
+    var result = await um.CreateAsync(user, password);
+    if (!result.Succeeded)
+    {
+        var msg = Uri.EscapeDataString(result.Errors.First().Description);
+        return Results.Redirect($"/auth/register?error={msg}");
+    }
+
+    await um.AddToRoleAsync(user, "User");
+    var freePlan = await db.Plans.FirstAsync(p => p.Name == "Free");
+    db.Subscriptions.Add(new UmbLink.Infrastructure.Data.Entities.Subscription
+    {
+        UserId = user.Id,
+        PlanId = freePlan.Id,
+        Status = UmbLink.Infrastructure.Data.Entities.SubscriptionStatus.Free
+    });
+    await db.SaveChangesAsync();
+    await sm.SignInAsync(user, isPersistent: false);
+    return Results.Redirect("/dashboard");
+}).DisableAntiforgery();
+
 app.MapPost("/auth/logout", async (SignInManager<AppUser> sm) =>
 {
     await sm.SignOutAsync();
