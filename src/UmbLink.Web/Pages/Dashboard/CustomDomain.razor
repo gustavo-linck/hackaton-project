@@ -1,75 +1,224 @@
 @page "/editor/{pageId:guid}/domain"
 @attribute [Authorize]
-@inject ISubscriptionService SubSvc
+@inject IPageService PageSvc
 @inject NavigationManager Nav
 
-<PageTitle>Domínio Customizado — UmbLink</PageTitle>
+<PageTitle>Personalizar Link — UmbLink</PageTitle>
 
 <div class="container py-4" style="max-width:540px">
     <div class="d-flex align-items-center gap-3 mb-4">
-        <a href="/editor/@PageId" class="btn btn-sm btn-ghost"><i class="bi bi-arrow-left"></i></a>
-        <h4 class="fw-bold mb-0">Domínio Customizado</h4>
+        <a href="/editor/@PageId" class="btn-ghost" style="padding:.375rem .625rem"><i class="bi bi-arrow-left"></i></a>
+        <h4 style="font-weight:700;color:var(--text-primary);margin:0">Personalizar Link</h4>
     </div>
 
-    @if (!_allowed)
-    {
-        <div class="card border-warning" style="background:var(--bg-card)">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-lock-fill fs-2 text-warning mb-3 d-block"></i>
-                <h5>Recurso Pro/Business</h5>
-                <p class="text-theme-muted">Domínios customizados estão disponíveis nos planos Pro e Business.</p>
-                <a href="/plans" class="btn btn-accent">Ver planos</a>
+    <div class="editor-card">
+        <div class="editor-card-header">Endereço da sua página</div>
+        <div class="editor-card-body">
+            <p class="text-theme-muted" style="font-size:.85rem;margin-bottom:1rem">
+                Escolha um slug personalizado para sua página. Este é o endereço que aparecerá no link compartilhável.
+            </p>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                    <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
+                    @_error
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_success))
+            {
+                <div class="alert-theme mb-3" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">
+                    <i class="bi bi-check-circle" style="color:var(--success)"></i>
+                    @_success
+                </div>
+            }
+
+            <div style="margin-bottom:.75rem">
+                <label class="form-label-theme">Slug</label>
+                <div class="d-flex">
+                    <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">
+                        umblink.com/p/
+                    </span>
+                    <input value="@_slug" @oninput="OnSlugInput" class="form-control-theme w-100"
+                           style="border-radius:0 10px 10px 0" placeholder="meu-slug" maxlength="60" />
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="card" style="background:var(--bg-card);border-color:var(--border)">
-            <div class="card-body p-4">
-                <p class="text-theme-muted small mb-3">Configure um domínio próprio para esta página apontando o CNAME:</p>
-                <div class="alert-theme font-monospace small py-2 px-3 mb-3" style="border-radius:.375rem">
-                    CNAME → pages.umblink.com
+
+            <!-- Validation feedback -->
+            @if (!string.IsNullOrEmpty(_slug))
+            {
+                <div style="margin-bottom:1rem;font-size:.8rem">
+                    @if (_checking)
+                    {
+                        <span class="text-theme-muted"><i class="bi bi-hourglass-split me-1"></i>Verificando disponibilidade...</span>
+                    }
+                    else if (!string.IsNullOrEmpty(_validationError))
+                    {
+                        <span style="color:var(--danger)"><i class="bi bi-x-circle me-1"></i>@_validationError</span>
+                    }
+                    else if (_isAvailable)
+                    {
+                        <span style="color:var(--success)"><i class="bi bi-check-circle me-1"></i>Disponível!</span>
+                    }
                 </div>
 
-                @if (!string.IsNullOrEmpty(_error))
-                {
-                    <div class="alert alert-danger py-2">@_error</div>
-                }
-                @if (!string.IsNullOrEmpty(_success))
-                {
-                    <div class="alert alert-success py-2">@_success</div>
-                }
-
-                <div class="mb-3">
-                    <label class="form-label">Seu domínio</label>
-                    <input @bind="_domain" class="form-control-theme" placeholder="meusite.com.br" />
+                <!-- Preview -->
+                <div class="alert-theme" style="margin-bottom:1rem;font-size:.85rem">
+                    <i class="bi bi-link-45deg text-accent"></i>
+                    <span style="font-family:monospace">umblink.com/p/<strong>@_slug</strong></span>
                 </div>
-                <button class="btn btn-accent" @onclick="Save">Salvar domínio</button>
+            }
+
+            <div style="display:flex;gap:.5rem">
+                <button class="btn-accent" @onclick="Save" disabled="@(!_isAvailable || _saving || _checking)">
+                    @if (_saving) { <span class="spinner-border spinner-border-sm"></span> }
+                    else { <i class="bi bi-check-lg"></i> }
+                    Salvar
+                </button>
+                <a href="/editor/@PageId" class="btn-ghost">Cancelar</a>
             </div>
         </div>
-    }
+    </div>
+
+    <!-- Rules -->
+    <div style="margin-top:1rem;padding:1rem;font-size:.8rem;color:var(--text-muted)">
+        <strong style="color:var(--text-secondary)">Regras do slug:</strong>
+        <ul style="margin:.5rem 0 0;padding-left:1.25rem">
+            <li>Entre 3 e 60 caracteres</li>
+            <li>Apenas letras minúsculas, números e hífens</li>
+            <li>Não pode começar ou terminar com hífen</li>
+            <li>Deve ser único</li>
+        </ul>
+    </div>
 </div>
 
 @code {
     [Parameter] public Guid PageId { get; set; }
-    bool _allowed;
-    string _domain = "", _error = "", _success = "";
+
+    string _slug = "";
+    string _originalSlug = "";
+    string _error = "";
+    string _success = "";
+    string _validationError = "";
+    bool _isAvailable;
+    bool _checking;
+    bool _saving;
+    CancellationTokenSource? _debounce;
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         var auth = await AuthState;
-        var sub = await SubSvc.GetAsync(auth.User.GetUserId());
-        _allowed = sub.Limits.AllowCustomDomain;
+        var userId = auth.User.GetUserId();
+        var pages = await PageSvc.GetUserPagesAsync(userId);
+        var page = pages.FirstOrDefault(p => p.Id == PageId);
+        if (page is not null)
+        {
+            _slug = page.Slug;
+            _originalSlug = page.Slug;
+        }
     }
 
-    Task Save()
+    async Task OnSlugInput(ChangeEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_domain)) { _error = "Informe o domínio."; return Task.CompletedTask; }
-        // In production: save to CustomDomains table and trigger DNS verification
-        _success = $"Domínio {_domain} salvo. Aguarde a propagação do DNS (até 48h).";
+        _slug = (e.Value?.ToString() ?? "").Trim().ToLowerInvariant();
+        _success = "";
         _error = "";
-        return Task.CompletedTask;
+        _isAvailable = false;
+        _validationError = "";
+
+        // Cancel previous debounce
+        _debounce?.Cancel();
+
+        // Validate format
+        if (_slug.Length < 3)
+        {
+            _validationError = "Mínimo de 3 caracteres.";
+            return;
+        }
+        if (_slug.Length > 60)
+        {
+            _validationError = "Máximo de 60 caracteres.";
+            return;
+        }
+        if (!System.Text.RegularExpressions.Regex.IsMatch(_slug, @"^[a-z0-9][a-z0-9\-]*[a-z0-9]$"))
+        {
+            _validationError = "Apenas letras minúsculas, números e hífens. Não pode começar/terminar com hífen.";
+            return;
+        }
+        if (_slug.Contains("--"))
+        {
+            _validationError = "Não pode conter hífens consecutivos.";
+            return;
+        }
+
+        // Same as current? Always available
+        if (_slug == _originalSlug)
+        {
+            _isAvailable = true;
+            return;
+        }
+
+        // Debounce 400ms then check availability
+        _checking = true;
+        _debounce = new CancellationTokenSource();
+        var token = _debounce.Token;
+
+        try
+        {
+            await Task.Delay(400, token);
+            if (token.IsCancellationRequested) return;
+
+            _isAvailable = await PageSvc.IsSlugAvailableAsync(_slug, PageId);
+            if (!_isAvailable)
+                _validationError = "Este slug já está em uso.";
+        }
+        catch (TaskCanceledException) { }
+        finally
+        {
+            _checking = false;
+        }
+    }
+
+    async Task Save()
+    {
+        if (!_isAvailable || _saving) return;
+        _saving = true;
+        _error = "";
+        _success = "";
+
+        try
+        {
+            var auth = await AuthState;
+            var userId = auth.User.GetUserId();
+            var pages = await PageSvc.GetUserPagesAsync(userId);
+            var page = pages.FirstOrDefault(p => p.Id == PageId);
+            if (page is null) { _error = "Página não encontrada."; return; }
+
+            var result = await PageSvc.UpdateAsync(userId, PageId, new UpdatePageRequest
+            {
+                Slug = _slug,
+                Title = page.Title,
+                Bio = page.Bio,
+                AvatarUrl = page.AvatarUrl,
+                ThemeConfig = page.ThemeConfig
+            });
+
+            if (result.IsSuccess)
+            {
+                _originalSlug = _slug;
+                _success = "Slug atualizado com sucesso!";
+            }
+            else
+            {
+                _error = result.Error ?? "Erro ao atualizar.";
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 }

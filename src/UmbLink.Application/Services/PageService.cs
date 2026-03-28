@@ -106,6 +106,15 @@ public class PageService(AppDbContext db, IPlanLimitService limits, IAuditServic
         return new LinkDto(link.Id, link.PageId, link.Title, link.Url, link.IconName, link.IsActive, link.Order);
     }
 
+    public async Task<bool> IsSlugAvailableAsync(string slug, Guid? excludePageId = null)
+    {
+        if (string.IsNullOrWhiteSpace(slug)) return false;
+        var query = db.Pages.Where(p => p.Slug == slug);
+        if (excludePageId.HasValue)
+            query = query.Where(p => p.Id != excludePageId.Value);
+        return !await query.AnyAsync();
+    }
+
     static PageDto ToDto(Page p, int linkCount) =>
         new(p.Id, p.UserId, p.Slug, p.Title, p.Bio, p.AvatarUrl, p.Status, p.ThemeConfig, linkCount);
 }

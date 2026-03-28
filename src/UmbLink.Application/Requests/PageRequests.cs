@@ -24,7 +24,7 @@ public class CreatePageRequestValidator : AbstractValidator<CreatePageRequest>
         RuleFor(x => x.Slug)
             .NotEmpty()
             .MinimumLength(3)
-            .MaximumLength(30)
+            .MaximumLength(60)
             .Matches("^[a-z0-9-]+$")
             .WithMessage("O endereço deve conter apenas letras minúsculas, números e hífens.");
         RuleFor(x => x.Title)
@@ -40,7 +40,7 @@ public class UpdatePageRequestValidator : AbstractValidator<UpdatePageRequest>
         RuleFor(x => x.Slug)
             .NotEmpty()
             .MinimumLength(3)
-            .MaximumLength(30)
+            .MaximumLength(60)
             .Matches("^[a-z0-9-]+$")
             .WithMessage("O endereço deve conter apenas letras minúsculas, números e hífens.");
         RuleFor(x => x.Title)
