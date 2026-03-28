@@ -65,6 +65,19 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
         builder.Entity<CustomDomain>()
             .Property(cd => cd.Status).HasConversion<string>();
 
+        // CustomDomain: unique index on Domain
+        builder.Entity<CustomDomain>()
+            .HasIndex(cd => cd.Domain)
+            .IsUnique();
+
+        // Decimal precision for PlanPrice
+        builder.Entity<PlanPrice>()
+            .Property(p => p.PricePerMonth)
+            .HasPrecision(10, 2);
+        builder.Entity<PlanPrice>()
+            .Property(p => p.TotalCharged)
+            .HasPrecision(10, 2);
+
         // Indexes for common query patterns
         builder.Entity<ClickEvent>()
             .HasIndex(c => new { c.LinkId, c.Timestamp });
