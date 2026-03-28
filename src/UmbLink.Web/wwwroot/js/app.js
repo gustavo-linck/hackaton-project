@@ -30,5 +30,14 @@ window.umblink = {
             return false;
         }
     },
-    scrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+    getTheme: () => localStorage.getItem('umblink-theme') || 'light',
+    setTheme: (theme) => {
+        localStorage.setItem('umblink-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+    },
+    initTheme: () => {
+        const saved = localStorage.getItem('umblink-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+    }
 };
