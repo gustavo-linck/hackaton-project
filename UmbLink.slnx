@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UmbLink.Application/UmbLink.Application.csproj" />
+    <Project Path="src/UmbLink.Infrastructure/UmbLink.Infrastructure.csproj" />
+    <Project Path="src/UmbLink.Web/UmbLink.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UmbLink.UnitTests/UmbLink.UnitTests.csproj" />
+  </Folder>
+</Solution>
