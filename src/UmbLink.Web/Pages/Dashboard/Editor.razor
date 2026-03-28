@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IPageService PageSvc
 @inject ILinkService LinkSvc
+@inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
 @implements IAsyncDisposable
 
@@ -9,161 +10,193 @@
 
 @if (_page is null && !_loading)
 {
-    <div class="container py-4 text-center text-muted">Página não encontrada.</div>
+    <div class="d-flex align-items-center justify-content-center" style="height:100vh;color:var(--text-muted)">
+        Página não encontrada.
+    </div>
 }
 else
 {
-    <div class="d-flex flex-column" style="height:100vh">
+    <div class="d-flex flex-column" style="height:100vh;background:var(--bg-primary)">
         <!-- Toolbar -->
-        <nav class="navbar navbar-light bg-white border-bottom px-3 py-2">
-            <a href="/dashboard" class="btn btn-sm btn-outline-secondary me-2">
+        <div class="editor-toolbar">
+            <a href="/dashboard" class="btn-ghost" style="padding:.375rem .625rem">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            <span class="navbar-brand mb-0 fw-semibold fs-6">@_page?.Title</span>
-            <div class="ms-auto d-flex gap-2">
+            <span style="font-weight:600;font-size:.9rem;color:var(--text-primary)">@_page?.Title</span>
+            <div class="ms-auto d-flex gap-2 align-items-center">
                 @if (_page is not null)
                 {
-                    <a href="/p/@_editSlug" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver página">
-                        <i class="bi bi-eye me-1"></i>Ver
+                    <a href="/p/@_editSlug" target="_blank" class="btn-ghost" title="Ver página">
+                        <i class="bi bi-eye"></i><span class="d-none d-md-inline">Ver</span>
                     </a>
-                    <a href="/dashboard/metrics/@PageId" class="btn btn-sm btn-outline-info" title="Métricas">
+                    <a href="/dashboard/metrics/@PageId" class="btn-ghost" title="Métricas">
                         <i class="bi bi-bar-chart"></i>
                     </a>
+                    <a href="/editor/@PageId/domain" class="btn-ghost" title="Domínio">
+                        <i class="bi bi-globe"></i>
+                    </a>
                 }
-                <button class="btn btn-sm btn-success" @onclick="SavePage" disabled="@_saving">
+                <button class="btn-accent" @onclick="SavePage" disabled="@_saving" style="padding:.375rem 1rem">
                     @if (_saving) { <span class="spinner-border spinner-border-sm"></span> }
-                    else { <i class="bi bi-check-lg me-1"></i> }
+                    else { <i class="bi bi-check-lg"></i> }
                     Salvar
                 </button>
             </div>
-        </nav>
+        </div>
 
         <div class="row g-0 flex-grow-1 overflow-hidden">
             <!-- Editor panel -->
-            <div class="col-lg-7 overflow-auto p-3 border-end">
+            <div class="col-lg-7 editor-panel">
                 <LoadingSpinner Loading="_loading">
                     @if (!string.IsNullOrEmpty(_error))
                     {
-                        <div class="alert alert-danger py-2">@_error</div>
+                        <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                            <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
+                            @_error
+                        </div>
                     }
 
                     <!-- Page settings -->
-                    <div class="card mb-3">
-                        <div class="card-header fw-semibold">Informações da página</div>
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <label class="form-label small">Título</label>
-                                <input @bind="_editTitle" class="form-control form-control-sm" />
+                    <div class="editor-card">
+                        <div class="editor-card-header">Informações da página</div>
+                        <div class="editor-card-body">
+                            <div style="margin-bottom:.75rem">
+                                <label class="form-label-theme">Título</label>
+                                <input value="@_editTitle" @oninput="OnTitleInput" class="form-control-theme w-100" />
                             </div>
-                            <div class="mb-2">
-                                <label class="form-label small">Endereço</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text text-muted">umblink.com/p/</span>
-                                    <input @bind="_editSlug" class="form-control" />
+                            <div style="margin-bottom:.75rem">
+                                <label class="form-label-theme">Endereço</label>
+                                <div class="d-flex">
+                                    <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.75rem;padding:.4rem .5rem;white-space:nowrap">umblink.com/p/</span>
+                                    <input @bind="_editSlug" class="form-control-theme w-100" style="border-radius:0 10px 10px 0" />
                                 </div>
                             </div>
-                            <div class="mb-0">
-                                <label class="form-label small">Bio</label>
-                                <textarea @bind="_editBio" class="form-control form-control-sm" rows="2"></textarea>
+                            <div style="margin-bottom:.75rem">
+                                <label class="form-label-theme">Bio</label>
+                                <textarea value="@_editBio" @oninput="OnBioInput" class="form-control-theme w-100" rows="2"></textarea>
+                            </div>
+                            <div>
+                                <label class="form-label-theme">Avatar (URL da imagem)</label>
+                                <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." />
                             </div>
                         </div>
                     </div>
 
                     <!-- Links -->
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold">Links</span>
-                            <button class="btn btn-sm btn-primary" @onclick="() => _showAddLink = true">
+                    <div class="editor-card">
+                        <div class="editor-card-header">
+                            <span>Links</span>
+                            <button class="btn-accent" style="padding:.25rem .625rem;font-size:.75rem" @onclick="() => _showAddLink = true">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
-                        <div class="card-body p-0">
-                            @if (_links.Count == 0)
-                            {
-                                <p class="text-muted text-center py-3 small">Nenhum link ainda.</p>
-                            }
-                            else
-                            {
-                                <ul class="list-group list-group-flush" @ref="_sortableEl">
-                                    @foreach (var link in _links)
-                                    {
-                                        <li class="list-group-item d-flex align-items-center gap-2 @(link.IsActive ? "" : "opacity-50")">
-                                            <span class="drag-handle text-muted" style="cursor:grab"><i class="bi bi-grip-vertical"></i></span>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">@link.Title</div>
-                                                <div class="text-muted" style="font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">@link.Url</div>
-                                            </div>
-                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ToggleLink(link)" title="@(link.IsActive ? "Desativar" : "Ativar")">
-                                                <i class="bi @(link.IsActive ? "bi-eye" : "bi-eye-slash")"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLink(link)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        </div>
+                        @if (_links.Count == 0)
+                        {
+                            <div class="text-center" style="padding:2rem 1rem">
+                                <i class="bi bi-link-45deg" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:.5rem"></i>
+                                <p class="text-theme-muted" style="font-size:.85rem;margin-bottom:.75rem">Você ainda não tem links.</p>
+                                <button class="btn-accent" style="font-size:.8rem" @onclick="() => _showAddLink = true">
+                                    <i class="bi bi-plus-lg"></i>Adicionar meu primeiro link
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div @ref="_sortableEl">
+                                @foreach (var link in _links)
+                                {
+                                    <div class="link-item" style="@(link.IsActive ? "" : "opacity:.5")">
+                                        <span class="drag-handle text-theme-muted" style="cursor:grab"><i class="bi bi-grip-vertical"></i></span>
+                                        <div class="flex-grow-1" style="min-width:0">
+                                            <div style="font-weight:600;font-size:.85rem;color:var(--text-primary)">@link.Title</div>
+                                            <div class="text-theme-muted" style="font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@link.Url</div>
+                                        </div>
+                                        <button class="btn-ghost" style="padding:.25rem .5rem" @onclick="() => ToggleLink(link)"
+                                                title="@(link.IsActive ? "Desativar" : "Ativar")">
+                                            <i class="bi @(link.IsActive ? "bi-eye" : "bi-eye-slash")"></i>
+                                        </button>
+                                        <button class="btn-ghost" style="padding:.25rem .5rem;color:var(--danger)" @onclick="() => DeleteLink(link)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
 
                     <!-- Appearance -->
-                    <div class="card mt-3">
-                        <div class="card-header d-flex justify-content-between align-items-center"
-                             style="cursor:pointer" @onclick="() => _showThemePanel = !_showThemePanel">
-                            <span class="fw-semibold">Aparência</span>
-                            <i class="bi @(_showThemePanel ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                    <div class="editor-card">
+                        <div class="editor-card-header" style="cursor:pointer" @onclick="() => _showThemePanel = !_showThemePanel">
+                            <span>Aparência</span>
+                            <i class="bi @(_showThemePanel ? "bi-chevron-up" : "bi-chevron-down")" style="color:var(--text-muted)"></i>
                         </div>
                         @if (_showThemePanel)
                         {
-                            <div class="card-body">
-                                <!-- Theme picker grid -->
-                                <label class="form-label small fw-semibold">Tema</label>
+                            <div class="editor-card-body">
+                                <label class="form-label-theme" style="font-weight:600">Tema</label>
                                 <div class="row g-2 mb-3">
                                     @foreach (var theme in Themes.All)
                                     {
+                                        var isLocked = theme.IsPremium && !(_sub?.PlanName is "Pro" or "Business");
                                         <div class="col-6">
-                                            <div class="border rounded p-2 d-flex align-items-center gap-2 @(_selectedThemeId == theme.Id ? "border-primary bg-primary bg-opacity-10" : "")"
-                                                 style="cursor:pointer" @onclick="() => SelectTheme(theme)">
-                                                <div style="width:20px;height:20px;border-radius:50%;background:@theme.DefaultBg;border:1px solid rgba(0,0,0,.1)"></div>
-                                                <span class="small">@theme.Name</span>
-                                                @if (theme.IsPremium) { <span class="badge bg-warning text-dark ms-auto" style="font-size:.6rem">Pro</span> }
+                                            <div style="border:1px solid @(_selectedThemeId == theme.Id ? "var(--accent)" : "var(--border)");
+                                                        border-radius:10px;padding:.5rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;
+                                                        background:@(_selectedThemeId == theme.Id ? "rgba(99,102,241,0.08)" : "transparent");
+                                                        opacity:@(isLocked ? ".6" : "1");transition:all .2s ease"
+                                                 @onclick="() => SelectThemeOrUpgrade(theme)">
+                                                <div style="width:20px;height:20px;border-radius:50%;background:@theme.DefaultBg;border:1px solid var(--border);flex-shrink:0"></div>
+                                                <span style="font-size:.8rem;color:var(--text-primary)">@theme.Name</span>
+                                                @if (isLocked)
+                                                {
+                                                    <span class="ms-auto"><i class="bi bi-lock-fill" style="font-size:.65rem;color:var(--warning)"></i></span>
+                                                }
+                                                else if (theme.IsPremium)
+                                                {
+                                                    <span class="badge-theme ms-auto" style="background:rgba(245,158,11,0.1);color:var(--warning);font-size:.55rem">Pro</span>
+                                                }
                                             </div>
                                         </div>
                                     }
                                 </div>
 
-                                <!-- Button style -->
-                                <label class="form-label small fw-semibold">Estilo do botão</label>
-                                <div class="btn-group w-100 mb-3" role="group">
+                                <label class="form-label-theme" style="font-weight:600">Estilo do botão</label>
+                                <div class="d-flex gap-1 mb-3 flex-wrap">
                                     @foreach (var (key, label) in new[] { ("rounded","Redondo"), ("pill","Pílula"), ("square","Quadrado"), ("outline","Contorno") })
                                     {
-                                        <button type="button" class="btn btn-sm @(_btnStyleKey == key ? "btn-primary" : "btn-outline-secondary")"
+                                        <button type="button"
+                                                class="@(_btnStyleKey == key ? "btn-accent" : "btn-ghost")"
+                                                style="font-size:.75rem;padding:.3rem .75rem"
                                                 @onclick="() => { _btnStyleKey = key; ApplyTheme(); }">@label</button>
                                     }
                                 </div>
 
-                                <!-- Colors -->
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
-                                        <label class="form-label small">Cor do botão</label>
+                                        <label class="form-label-theme">Cor do botão</label>
                                         <input type="color" class="form-control form-control-color w-100" value="@_btnColor"
+                                               style="border-radius:10px;border:1px solid var(--border)"
                                                @oninput="e => { _btnColor = e.Value?.ToString() ?? _btnColor; ApplyTheme(); }" />
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label small">Cor do texto</label>
+                                        <label class="form-label-theme">Cor do texto</label>
                                         <input type="color" class="form-control form-control-color w-100" value="@_textColor"
+                                               style="border-radius:10px;border:1px solid var(--border)"
                                                @oninput="e => { _textColor = e.Value?.ToString() ?? _textColor; ApplyTheme(); }" />
                                     </div>
                                 </div>
 
-                                <!-- Avatar shape -->
-                                <label class="form-label small fw-semibold">Formato do avatar</label>
-                                <div class="btn-group w-100">
-                                    <button type="button" class="btn btn-sm @(_avatarShape == "circle" ? "btn-primary" : "btn-outline-secondary")"
+                                <label class="form-label-theme" style="font-weight:600">Formato do avatar</label>
+                                <div class="d-flex gap-1">
+                                    <button type="button"
+                                            class="@(_avatarShape == "circle" ? "btn-accent" : "btn-ghost")"
+                                            style="font-size:.75rem;padding:.3rem .75rem"
                                             @onclick='() => { _avatarShape = "circle"; ApplyTheme(); }'>
                                         <i class="bi bi-circle me-1"></i>Círculo
                                     </button>
-                                    <button type="button" class="btn btn-sm @(_avatarShape == "square" ? "btn-primary" : "btn-outline-secondary")"
+                                    <button type="button"
+                                            class="@(_avatarShape == "square" ? "btn-accent" : "btn-ghost")"
+                                            style="font-size:.75rem;padding:.3rem .75rem"
                                             @onclick='() => { _avatarShape = "square"; ApplyTheme(); }'>
                                         <i class="bi bi-square me-1"></i>Quadrado
                                     </button>
@@ -175,7 +208,7 @@ else
             </div>
 
             <!-- Preview panel -->
-            <div class="col-lg-5 d-none d-lg-flex align-items-center justify-content-center bg-light overflow-auto py-4">
+            <div class="col-lg-5 d-none d-lg-flex preview-panel">
                 @if (_page is not null)
                 {
                     <PagePreview Page="_page" Links="_links" />
@@ -188,31 +221,34 @@ else
 <!-- Add link modal -->
 @if (_showAddLink)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Adicionar Link</h5>
-                    <button class="btn-close" @onclick="() => _showAddLink = false"></button>
-                </div>
-                <div class="modal-body">
-                    @if (!string.IsNullOrEmpty(_linkError))
-                    {
-                        <div class="alert alert-danger py-2">@_linkError</div>
-                    }
-                    <div class="mb-3">
-                        <label class="form-label">Título</label>
-                        <input @bind="_newLinkTitle" class="form-control" placeholder="Meu Instagram" />
+    <div class="modal-theme-backdrop">
+        <div class="modal-theme">
+            <div class="modal-theme-header">
+                <h5>Adicionar Link</h5>
+                <button class="btn-ghost" @onclick="() => _showAddLink = false" style="padding:.25rem .5rem">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-theme-body">
+                @if (!string.IsNullOrEmpty(_linkError))
+                {
+                    <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                        <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
+                        @_linkError
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">URL</label>
-                        <input @bind="_newLinkUrl" type="url" class="form-control" placeholder="https://..." />
-                    </div>
+                }
+                <div style="margin-bottom:1rem">
+                    <label class="form-label-theme">Título</label>
+                    <input @bind="_newLinkTitle" class="form-control-theme w-100" placeholder="Meu Instagram" />
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => _showAddLink = false">Cancelar</button>
-                    <button class="btn btn-primary" @onclick="AddLink">Adicionar</button>
+                <div>
+                    <label class="form-label-theme">URL</label>
+                    <input @bind="_newLinkUrl" type="url" class="form-control-theme w-100" placeholder="https://..." />
                 </div>
+            </div>
+            <div class="modal-theme-footer">
+                <button class="btn-ghost" @onclick="() => _showAddLink = false">Cancelar</button>
+                <button class="btn-accent" @onclick="AddLink">Adicionar</button>
             </div>
         </div>
     </div>
@@ -228,10 +264,11 @@ else
 
     PageDto? _page;
     List<LinkDto> _links = [];
+    SubscriptionDto? _sub;
     bool _loading = true;
     bool _saving;
     string _error = "", _linkError = "";
-    string _editTitle = "", _editSlug = "", _editBio = "";
+    string _editTitle = "", _editSlug = "", _editBio = "", _editAvatarUrl = "";
     bool _showAddLink;
     string _newLinkTitle = "", _newLinkUrl = "";
     bool _showUpgrade;
@@ -248,7 +285,8 @@ else
     string _textColor = "#111111";
     string _btnStyleKey = "rounded";
     string _avatarShape = "circle";
-    bool _showThemePanel = false;
+    bool _showThemePanel = true;
+    bool _sortableInitialized;
 
     protected override async Task OnInitializedAsync()
     {
@@ -261,7 +299,9 @@ else
             _editTitle = _page.Title;
             _editSlug = _page.Slug;
             _editBio = _page.Bio ?? "";
+            _editAvatarUrl = _page.AvatarUrl ?? "";
             _links = await PageSvc.GetLinksAsync(PageId);
+            _sub = await SubSvc.GetAsync(_userId);
 
             try {
                 var cfg = System.Text.Json.JsonDocument.Parse(_page.ThemeConfig).RootElement;
@@ -279,8 +319,11 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && _page is not null)
+        // Only initialize sortable when the <ul> element is actually in the DOM (has links)
+        // Prevents a JS circuit crash when element reference is null/empty
+        if (!_sortableInitialized && _page is not null && _sortableEl.Id is not null)
         {
+            _sortableInitialized = true;
             _dotnetRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("umblink.initSortable", _sortableEl, _dotnetRef);
         }
@@ -302,6 +345,7 @@ else
         _saving = true; _error = "";
         var result = await PageSvc.UpdateAsync(_userId, PageId, new() {
             Title = _editTitle, Slug = _editSlug, Bio = _editBio,
+            AvatarUrl = _editAvatarUrl,
             ThemeConfig = BuildThemeConfig()
         });
         if (result.IsSuccess)
@@ -334,6 +378,18 @@ else
     {
         var newConfig = BuildThemeConfig();
         _page = _page! with { ThemeConfig = newConfig };
+    }
+
+    void SelectThemeOrUpgrade(ThemeDefinition theme)
+    {
+        var isLocked = theme.IsPremium && !(_sub?.PlanName is "Pro" or "Business");
+        if (isLocked)
+        {
+            _upgradeMessage = $"O tema \"{theme.Name}\" está disponível nos planos Pro e Business. Faça upgrade para desbloquear!";
+            _showUpgrade = true;
+            return;
+        }
+        SelectTheme(theme);
     }
 
     void SelectTheme(ThemeDefinition theme)
@@ -371,6 +427,24 @@ else
     {
         await LinkSvc.DeleteAsync(_userId, link.Id);
         _links.Remove(link);
+    }
+
+    void OnTitleInput(ChangeEventArgs e)
+    {
+        _editTitle = e.Value?.ToString() ?? string.Empty;
+        if (_page is not null) _page = _page with { Title = _editTitle };
+    }
+
+    void OnBioInput(ChangeEventArgs e)
+    {
+        _editBio = e.Value?.ToString() ?? string.Empty;
+        if (_page is not null) _page = _page with { Bio = string.IsNullOrEmpty(_editBio) ? null : _editBio };
+    }
+
+    void OnAvatarInput(ChangeEventArgs e)
+    {
+        _editAvatarUrl = e.Value?.ToString() ?? string.Empty;
+        if (_page is not null) _page = _page with { AvatarUrl = string.IsNullOrEmpty(_editAvatarUrl) ? null : _editAvatarUrl };
     }
 
     public async ValueTask DisposeAsync()
