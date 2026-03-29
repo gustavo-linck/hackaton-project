@@ -1,46 +1,68 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Nav
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = "AdminOnly")]
 
-@* Mobile top bar — visible only on small screens *@
-<div class="d-flex d-md-none align-items-center bg-dark text-white px-3 py-2 sticky-top" style="z-index:1045">
-    <button class="btn btn-sm btn-outline-secondary text-white border-secondary me-2"
-            type="button"
+@* Mobile top bar *@
+<div class="d-flex d-md-none align-items-center px-3 py-2 sticky-top"
+     style="background:var(--bg-card);border-bottom:1px solid var(--border);z-index:1045">
+    <button class="btn-ghost me-2" type="button"
             data-bs-toggle="offcanvas"
             data-bs-target="#adminSidebar"
             aria-controls="adminSidebar">
         <i class="bi bi-list fs-5"></i>
     </button>
-    <span class="fw-bold text-white">Admin Umbler</span>
+    <span style="font-weight:700;font-size:.95rem;color:var(--text-primary)">Admin</span>
 </div>
 
-@* Offcanvas sidebar — slides in on mobile *@
-<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarLabel" style="width:220px">
-    <div class="offcanvas-header border-bottom border-secondary">
-        <h6 class="offcanvas-title text-uppercase text-muted small mb-0" id="adminSidebarLabel">Admin Umbler</h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+@* Offcanvas sidebar mobile *@
+<div class="offcanvas offcanvas-start" tabindex="-1" id="adminSidebar"
+     style="width:220px;background:var(--bg-card);border-right:1px solid var(--border)">
+    <div class="offcanvas-header" style="border-bottom:1px solid var(--border)">
+        <span style="font-weight:700;font-size:.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em">Admin</span>
+        <button type="button" class="btn-ghost" data-bs-dismiss="offcanvas" aria-label="Fechar">
+            <i class="bi bi-x-lg"></i>
+        </button>
     </div>
     <div class="offcanvas-body p-3 d-flex flex-column">
         <nav class="nav flex-column gap-1">
-            <a href="/admin" class="nav-link text-white"><i class="bi bi-bar-chart me-2"></i>Dashboard</a>
-            <a href="/admin/users" class="nav-link text-white"><i class="bi bi-people me-2"></i>Usuários</a>
+            <a href="/admin" class="admin-nav-link @(IsActive("/admin") && !Nav.Uri.Contains("/admin/") ? "active" : "")">
+                <i class="bi bi-bar-chart me-2"></i>Dashboard
+            </a>
+            <a href="/admin/users" class="admin-nav-link @(IsActive("/admin/users") ? "active" : "")">
+                <i class="bi bi-people me-2"></i>Usuários
+            </a>
         </nav>
-        <div class="mt-auto pt-3 border-top border-secondary">
-            <a href="/dashboard" class="nav-link text-muted small"><i class="bi bi-arrow-left me-1"></i>Voltar ao app</a>
+        <div class="mt-auto pt-3" style="border-top:1px solid var(--border)">
+            <a href="/dashboard" class="admin-nav-link" style="font-size:.82rem">
+                <i class="bi bi-arrow-left me-1"></i>Voltar ao app
+            </a>
         </div>
     </div>
 </div>
 
 <div class="d-flex min-vh-100">
-    @* Desktop sidebar — hidden on mobile *@
-    <aside class="bg-dark text-white p-3 flex-shrink-0 d-none d-md-flex flex-column" style="width:220px">
-        <h6 class="text-uppercase text-muted small mb-3">Admin Umbler</h6>
+    @* Desktop sidebar *@
+    <aside class="d-none d-md-flex flex-column flex-shrink-0 p-3"
+           style="width:220px;background:var(--bg-card);border-right:1px solid var(--border)">
+        <span style="font-weight:700;font-size:.85rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;display:block">Admin</span>
         <nav class="nav flex-column gap-1">
-            <a href="/admin" class="nav-link text-white"><i class="bi bi-bar-chart me-2"></i>Dashboard</a>
-            <a href="/admin/users" class="nav-link text-white"><i class="bi bi-people me-2"></i>Usuários</a>
+            <a href="/admin" class="admin-nav-link @(IsActive("/admin") && !Nav.Uri.Contains("/admin/") ? "active" : "")">
+                <i class="bi bi-bar-chart me-2"></i>Dashboard
+            </a>
+            <a href="/admin/users" class="admin-nav-link @(IsActive("/admin/users") ? "active" : "")">
+                <i class="bi bi-people me-2"></i>Usuários
+            </a>
         </nav>
-        <div class="mt-auto pt-3 border-top border-secondary">
-            <a href="/dashboard" class="nav-link text-muted small"><i class="bi bi-arrow-left me-1"></i>Voltar ao app</a>
+        <div class="mt-auto pt-3" style="border-top:1px solid var(--border)">
+            <a href="/dashboard" class="admin-nav-link" style="font-size:.82rem">
+                <i class="bi bi-arrow-left me-1"></i>Voltar ao app
+            </a>
         </div>
     </aside>
-    <main class="flex-grow-1 p-3 p-md-4">@Body</main>
+    <main class="flex-grow-1 p-3 p-md-4" style="background:var(--bg-primary)">@Body</main>
 </div>
+
+@code {
+    bool IsActive(string href) =>
+        Nav.Uri.TrimEnd('/').EndsWith(href.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+}

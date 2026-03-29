@@ -1217,3 +1217,27 @@ body {
         padding: .08rem .25rem;
     }
 }
+
+/* ===== Admin Sidebar ===== */
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    padding: .5rem .75rem;
+    border-radius: 8px;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+
+.admin-nav-link:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--text-primary);
+}
+
+.admin-nav-link.active {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    font-weight: 600;
+}
