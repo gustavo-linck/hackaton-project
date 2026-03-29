@@ -799,6 +799,11 @@ else
                     if (_page is not null) _page = _page with { AvatarUrl = _editAvatarUrl };
                     _avatarLocalPreview = ""; // limpa preview local — usa a URL definitiva
                 }
+                else
+                {
+                    _avatarUploadError = "Erro ao processar resposta do servidor.";
+                    _avatarLocalPreview = "";
+                }
             }
             else
             {
