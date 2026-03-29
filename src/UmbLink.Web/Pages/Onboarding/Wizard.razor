@@ -433,14 +433,20 @@
             .Where(l => !string.IsNullOrWhiteSpace(l.Title) && !string.IsNullOrWhiteSpace(l.Url))
             .ToList();
 
+        var linkErrors = new List<string>();
         foreach (var link in validLinks)
         {
-            await LinkSvc.AddAsync(_userId, _createdPageId, new()
+            var linkResult = await LinkSvc.AddAsync(_userId, _createdPageId, new()
             {
                 Title = link.Title,
                 Url = link.Url
             });
+            if (!linkResult.IsSuccess)
+                linkErrors.Add($"\"{link.Title}\": {linkResult.Error}");
         }
+
+        if (linkErrors.Count > 0)
+            _linkError = "Alguns links não foram salvos: " + string.Join("; ", linkErrors);
 
         _creating = false;
         _step = 4; // step 4 = success
