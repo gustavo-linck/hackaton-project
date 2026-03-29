@@ -17,6 +17,14 @@
                         <a href="/dashboard" class="nav-link-theme">Dashboard</a>
                         <a href="/plans" class="nav-link-theme">Planos</a>
                         <a href="/my-plan" class="nav-link-theme">Meu Plano</a>
+                        <a href="/account/settings" class="nav-link-theme">Configurações</a>
+                        <AuthorizeView Roles="Admin" Context="adminCtx">
+                            <Authorized>
+                                <a href="/admin" class="nav-link-theme" style="color:var(--warning)">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </a>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
 
                     <button class="theme-toggle" @onclick="ToggleTheme" title="Alternar tema">
@@ -62,6 +70,16 @@
                     <a href="/my-plan" class="nav-link-theme d-block py-2" @onclick="CloseMenu">
                         <i class="bi bi-person-badge me-2"></i>Meu Plano
                     </a>
+                    <a href="/account/settings" class="nav-link-theme d-block py-2" @onclick="CloseMenu">
+                        <i class="bi bi-gear me-2"></i>Configurações
+                    </a>
+                    <AuthorizeView Roles="Admin" Context="adminMobileCtx">
+                        <Authorized>
+                            <a href="/admin" class="nav-link-theme d-block py-2" style="color:var(--warning)" @onclick="CloseMenu">
+                                <i class="bi bi-shield-lock me-2"></i>Admin
+                            </a>
+                        </Authorized>
+                    </AuthorizeView>
                     <div class="border-top mt-2 pt-2">
                         <form action="/auth/logout" method="post">
                             <AntiforgeryToken />

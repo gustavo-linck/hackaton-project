@@ -1,0 +1,271 @@
+@page "/account/settings"
+@attribute [Authorize]
+@inject UserManager<AppUser> UserMgr
+@inject SignInManager<AppUser> SignInMgr
+@inject ISubscriptionService SubSvc
+@inject NavigationManager Nav
+@using Microsoft.AspNetCore.Identity
+@using UmbLink.Infrastructure.Identity
+@using UmbLink.Infrastructure.Repositories
+@inject IPaymentMethodRepository PaymentRepo
+
+<PageTitle>Configurações — UmbLink</PageTitle>
+
+<div class="container py-4" style="max-width:720px">
+    <h4 style="font-weight:700;color:var(--text-primary);margin-bottom:1.5rem">Configurações da Conta</h4>
+
+    @* Tabs *@
+    <div style="display:flex;gap:.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;flex-wrap:wrap">
+        @foreach (var tab in new[] { ("perfil","Perfil"), ("seguranca","Segurança"), ("plano","Plano"), ("perigo","Zona de Perigo") })
+        {
+            var tabId = tab.Item1;
+            var tabLabel = tab.Item2;
+            <button style="background:none;border:none;padding:.5rem .75rem;font-size:.9rem;font-weight:@(_tab == tabId ? "700" : "500");
+                           color:@(_tab == tabId ? "var(--accent)" : "var(--text-secondary)");
+                           border-bottom:2px solid @(_tab == tabId ? "var(--accent)" : "transparent");
+                           cursor:pointer;transition:all .2s"
+                    @onclick="() => SetTab(tabId)">
+                @tabLabel
+            </button>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(_successMsg))
+    {
+        <div class="alert-theme mb-3" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)">
+            <i class="bi bi-check-circle" style="color:var(--success)"></i> @_successMsg
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(_errorMsg))
+    {
+        <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+            <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_errorMsg
+        </div>
+    }
+
+    <LoadingSpinner Loading="_loading">
+
+    @* ─── Perfil ─── *@
+    @if (_tab == "perfil")
+    {
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+            <h6 style="font-weight:600;color:var(--text-primary);margin-bottom:1.25rem">Perfil</h6>
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Nome de exibição</label>
+                <input class="form-control-theme w-100" @bind="_displayName" maxlength="50" />
+            </div>
+            <div style="margin-bottom:1.25rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">E-mail</label>
+                <input class="form-control-theme w-100" value="@_email" disabled style="opacity:.6;cursor:not-allowed" />
+                @if (_isOAuth)
+                {
+                    <small class="text-theme-muted">E-mail gerenciado pelo provedor Google.</small>
+                }
+            </div>
+            <button class="btn-accent" @onclick="SaveProfileAsync" disabled="@_saving">
+                @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Salvar alterações
+            </button>
+        </div>
+    }
+
+    @* ─── Segurança ─── *@
+    @if (_tab == "seguranca")
+    {
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+            <h6 style="font-weight:600;color:var(--text-primary);margin-bottom:.75rem">Segurança</h6>
+            <p class="text-theme-secondary" style="font-size:.85rem">
+                Provedor de login: <strong>@(_isOAuth ? "Google" : "E-mail e senha")</strong>
+            </p>
+            @if (!_isOAuth)
+            {
+                <div style="margin-bottom:1rem">
+                    <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Senha atual</label>
+                    <input type="password" class="form-control-theme w-100" @bind="_currentPassword" />
+                </div>
+                <div style="margin-bottom:1rem">
+                    <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Nova senha</label>
+                    <input type="password" class="form-control-theme w-100" @bind="_newPassword" />
+                </div>
+                <div style="margin-bottom:1.25rem">
+                    <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Confirmar nova senha</label>
+                    <input type="password" class="form-control-theme w-100" @bind="_confirmPassword" />
+                </div>
+                <button class="btn-accent" @onclick="ChangePasswordAsync" disabled="@_saving">
+                    @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Trocar senha
+                </button>
+            }
+            else
+            {
+                <p class="text-theme-muted" style="font-size:.85rem">Gerenciamento de senha não disponível para contas Google.</p>
+            }
+        </div>
+    }
+
+    @* ─── Plano ─── *@
+    @if (_tab == "plano")
+    {
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+            <h6 style="font-weight:600;color:var(--text-primary);margin-bottom:1rem">Plano e Faturamento</h6>
+            @if (_sub is not null)
+            {
+                <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1rem">
+                    <PlanBadge PlanName="@_sub.PlanName" />
+                    <span class="text-theme-secondary" style="font-size:.85rem">
+                        Status: @_sub.Status
+                        @if (_sub.TrialEndsAt.HasValue && _sub.TrialEndsAt > DateTime.UtcNow)
+                        {
+                            <span> — Trial até @_sub.TrialEndsAt.Value.ToString("dd/MM/yyyy")</span>
+                        }
+                    </span>
+                </div>
+                <a href="/plans" class="btn-accent" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem">
+                    <i class="bi bi-arrow-up-circle"></i> Ver planos
+                </a>
+
+                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+                    <h6 style="font-weight:600;color:var(--text-primary);font-size:.85rem;margin-bottom:.75rem">Método de pagamento</h6>
+                    @if (_hasCard)
+                    {
+                        <div style="display:flex;align-items:center;gap:.75rem">
+                            <i class="bi bi-credit-card" style="color:var(--accent);font-size:1.25rem"></i>
+                            <span class="text-theme-secondary" style="font-size:.85rem">•••• •••• •••• @_cardLastFour</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-theme-muted" style="font-size:.85rem">Nenhum método de pagamento cadastrado.</p>
+                    }
+                </div>
+
+                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+                    <h6 style="font-weight:600;color:var(--text-primary);font-size:.85rem;margin-bottom:.75rem">Histórico de faturas</h6>
+                    <p class="text-theme-muted" style="font-size:.85rem">Nenhuma fatura disponível.</p>
+                </div>
+            }
+        </div>
+    }
+
+    @* ─── Zona de Perigo ─── *@
+    @if (_tab == "perigo")
+    {
+        <div style="background:var(--bg-card);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:1.5rem">
+            <h6 style="font-weight:600;color:var(--danger);margin-bottom:.5rem">Zona de Perigo</h6>
+            <p class="text-theme-secondary" style="font-size:.85rem;margin-bottom:1rem">
+                Excluir sua conta remove permanentemente todos os seus dados, páginas e links.
+            </p>
+
+            @if (!_confirmingDelete)
+            {
+                <button class="btn-ghost" style="border-color:var(--danger);color:var(--danger)" @onclick="() => _confirmingDelete = true">
+                    <i class="bi bi-trash me-1"></i> Excluir minha conta
+                </button>
+            }
+            else
+            {
+                <p class="text-theme-secondary" style="font-size:.85rem;margin-bottom:.75rem">
+                    Digite seu e-mail para confirmar: <strong>@_email</strong>
+                </p>
+                <input class="form-control-theme w-100 mb-3" placeholder="Seu e-mail" @bind="_deleteConfirmEmail" />
+                <div class="d-flex gap-2">
+                    <button class="btn-ghost" @onclick="CancelDelete">Cancelar</button>
+                    <button class="btn-ghost" style="border-color:var(--danger);color:var(--danger)"
+                            @onclick="DeleteAccountAsync" disabled="@_saving">
+                        @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Confirmar exclusão
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    </LoadingSpinner>
+</div>
+
+@code {
+    [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    string _tab = "perfil";
+    bool _loading = true, _saving;
+    string _successMsg = "", _errorMsg = "";
+
+    string _displayName = "", _email = "";
+    bool _isOAuth;
+
+    string _currentPassword = "", _newPassword = "", _confirmPassword = "";
+
+    SubscriptionDto? _sub;
+    bool _hasCard;
+    string _cardLastFour = "";
+
+    bool _confirmingDelete;
+    string _deleteConfirmEmail = "";
+
+    Guid _userId;
+
+    void SetTab(string tab) { _tab = tab; _successMsg = _errorMsg = ""; }
+    void CancelDelete() { _confirmingDelete = false; _deleteConfirmEmail = ""; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState;
+        _userId = auth.User.GetUserId();
+        var user = await UserMgr.FindByIdAsync(_userId.ToString());
+        if (user is null) { Nav.NavigateTo("/dashboard"); return; }
+
+        _displayName = user.Name;
+        _email = user.Email ?? "";
+        var logins = await UserMgr.GetLoginsAsync(user);
+        _isOAuth = logins.Any(l => l.LoginProvider == "Google");
+
+        _sub = await SubSvc.GetAsync(_userId);
+
+        var pm = await PaymentRepo.GetByUserIdAsync(_userId);
+        _hasCard = pm is not null;
+        _cardLastFour = pm?.CardLastFour ?? "";
+
+        _loading = false;
+    }
+
+    async Task SaveProfileAsync()
+    {
+        _saving = true; _successMsg = ""; _errorMsg = "";
+        var user = await UserMgr.FindByIdAsync(_userId.ToString());
+        if (user is null) { _errorMsg = "Usuário não encontrado."; _saving = false; return; }
+        user.Name = _displayName.Trim();
+        var result = await UserMgr.UpdateAsync(user);
+        if (result.Succeeded) _successMsg = "Perfil atualizado com sucesso.";
+        else _errorMsg = result.Errors.First().Description;
+        _saving = false;
+    }
+
+    async Task ChangePasswordAsync()
+    {
+        _saving = true; _successMsg = ""; _errorMsg = "";
+        if (_newPassword != _confirmPassword)
+        { _errorMsg = "As senhas não coincidem."; _saving = false; return; }
+        var user = await UserMgr.FindByIdAsync(_userId.ToString());
+        if (user is null) { _errorMsg = "Usuário não encontrado."; _saving = false; return; }
+        var result = await UserMgr.ChangePasswordAsync(user, _currentPassword, _newPassword);
+        if (result.Succeeded)
+        {
+            _successMsg = "Senha alterada com sucesso.";
+            _currentPassword = _newPassword = _confirmPassword = "";
+        }
+        else _errorMsg = result.Errors.First().Description;
+        _saving = false;
+    }
+
+    async Task DeleteAccountAsync()
+    {
+        if (_deleteConfirmEmail.Trim().ToLower() != _email.ToLower())
+        { _errorMsg = "O e-mail informado não confere."; return; }
+        _saving = true;
+        var user = await UserMgr.FindByIdAsync(_userId.ToString());
+        if (user is null) { _saving = false; return; }
+        await UserMgr.DeleteAsync(user);
+        await SignInMgr.SignOutAsync();
+        Nav.NavigateTo("/");
+    }
+}
