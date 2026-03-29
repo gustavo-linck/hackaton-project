@@ -280,8 +280,27 @@ app.MapGet("/r/{linkId:guid}", async (Guid linkId, IMetricsService metrics,
     await metrics.TrackClickAsync(linkId,
         string.IsNullOrEmpty(ua) ? null : ua[..Math.Min(150, ua.Length)],
         string.IsNullOrEmpty(referrer) ? null : referrer);
-    return Results.Redirect(link.Url);
-});
+
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+
+    // mailto: always redirect directly
+    if (link.Url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
+        return Results.Redirect(link.Url);
+
+    // Check if host is in known-safe domains (including subdomains like username.substack.com)
+    static bool IsKnownDomain(string host) =>
+        RedirectKnownDomains.KnownDomains.Contains(host) ||
+        RedirectKnownDomains.KnownDomains.Any(d => host.EndsWith("." + d, StringComparison.OrdinalIgnoreCase));
+
+    if (Uri.TryCreate(link.Url, UriKind.Absolute, out var parsedUri))
+    {
+        var host = parsedUri.Host;
+        if (IsKnownDomain(host))
+            return Results.Redirect(link.Url);
+    }
+
+    return Results.Redirect($"/redirect-warning?url={Uri.EscapeDataString(link.Url)}");
+}).RequireRateLimiting("tracking");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

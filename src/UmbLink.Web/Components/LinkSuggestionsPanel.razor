@@ -1,0 +1,44 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="d-flex flex-wrap gap-1">
+    @foreach (var platform in _platforms)
+    {
+        <button type="button" class="btn-ghost" style="font-size:.7rem;padding:.2rem .5rem"
+                @onclick="() => SelectAsync(platform)">
+            <i class="bi @platform.Icon me-1"></i>@platform.Label
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<(string Url, string Title)> OnSuggestionSelected { get; set; }
+
+    private record PlatformShortcut(string Label, string UrlPrefix, string Icon);
+
+    private static readonly PlatformShortcut[] _platforms =
+    [
+        new("Instagram",  "https://instagram.com/",        "bi-instagram"),
+        new("TikTok",     "https://tiktok.com/@",          "bi-tiktok"),
+        new("YouTube",    "https://youtube.com/",          "bi-youtube"),
+        new("Twitter/X",  "https://x.com/",                "bi-twitter-x"),
+        new("LinkedIn",   "https://linkedin.com/in/",      "bi-linkedin"),
+        new("Facebook",   "https://facebook.com/",         "bi-facebook"),
+        new("WhatsApp",   "https://wa.me/",                "bi-whatsapp"),
+        new("Telegram",   "https://t.me/",                 "bi-telegram"),
+        new("GitHub",     "https://github.com/",           "bi-github"),
+        new("Spotify",    "https://open.spotify.com/",     "bi-spotify"),
+        new("Pinterest",  "https://pinterest.com/",        "bi-pinterest"),
+        new("Twitch",     "https://twitch.tv/",            "bi-twitch"),
+        new("Behance",    "https://behance.net/",          "bi-behance"),
+        new("Dribbble",   "https://dribbble.com/",         "bi-dribbble"),
+        new("Medium",     "https://medium.com/@",          "bi-medium"),
+        new("Substack",   "https://substack.com/",         "bi-rss"),
+        new("Discord",    "https://discord.gg/",           "bi-discord"),
+        new("E-mail",     "mailto:",                       "bi-envelope"),
+    ];
+
+    private async Task SelectAsync(PlatformShortcut platform)
+    {
+        await OnSuggestionSelected.InvokeAsync((platform.UrlPrefix, platform.Label));
+    }
+}
