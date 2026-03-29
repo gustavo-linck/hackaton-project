@@ -353,7 +353,7 @@ else
                                             </button>
                                         }
                                     </div>
-                                    @if (!string.IsNullOrEmpty(_bgLocalPreview) || (!string.IsNullOrEmpty(_bgImageUrl) && _bgMode == "upload"))
+                                    @if (!string.IsNullOrEmpty(_bgLocalPreview) || !string.IsNullOrEmpty(_bgImageUrl))
                                     {
                                         var previewSrc = _bgLocalPreview != "" ? _bgLocalPreview : _bgImageUrl;
                                         <div style="margin-top:.5rem;border-radius:8px;overflow:hidden;height:60px;position:relative">
