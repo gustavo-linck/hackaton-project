@@ -198,8 +198,12 @@ body {
 }
 
 .card-theme:hover {
-    box-shadow: 0 8px 25px var(--shadow-lg);
+    box-shadow: 0 8px 24px var(--shadow-lg);
     transform: translateY(-2px);
+}
+[data-theme="dark"] .card-theme:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .card-theme-static {
@@ -225,7 +229,7 @@ body {
     padding: 0.5rem 1.25rem;
     font-weight: 600;
     font-size: 0.875rem;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, filter 0.2s ease;
     cursor: pointer;
     text-decoration: none;
     display: inline-flex;
@@ -236,7 +240,13 @@ body {
     background: var(--accent-hover);
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--accent-glow);
+    box-shadow: 0 4px 16px rgba(85, 124, 242, 0.4);
+    filter: brightness(1.08);
+}
+.btn-accent:active {
+    transform: translateY(0);
+    box-shadow: none;
+    filter: brightness(1);
 }
 
 .btn-accent-lg {
@@ -273,7 +283,7 @@ body {
     border-radius: 10px;
     padding: 0.4rem 0.75rem;
     font-size: 0.8rem;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
     cursor: pointer;
     text-decoration: none;
     display: inline-flex;
@@ -284,6 +294,10 @@ body {
     background: var(--bg-hover);
     color: var(--text-primary);
     border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+.btn-ghost:active {
+    transform: translateY(0);
 }
 
 .text-theme-primary { color: var(--text-primary); }
@@ -763,14 +777,22 @@ body {
     border-radius: 16px;
     overflow: hidden;
     transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 .page-card:hover {
-    box-shadow: 0 8px 25px var(--shadow-lg);
+    box-shadow: 0 8px 24px var(--shadow-lg);
     transform: translateY(-2px);
+}
+[data-theme="dark"] .page-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .page-card-body {
     padding: 1.25rem;
+    flex-grow: 1;
 }
 
 .page-card-footer {
@@ -779,6 +801,7 @@ body {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-top: auto;
 }
 
 .page-card-footer .btn-ghost {
@@ -1084,8 +1107,12 @@ body {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .plan-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+[data-theme="dark"] .plan-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.04);
 }
 .plan-card-active {
     border-color: var(--accent);
@@ -1228,7 +1255,7 @@ body {
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: background .15s, color .15s;
+    transition: color 0.15s ease, background-color 0.15s ease, padding-left 0.15s ease;
 }
 
 .admin-nav-link:hover {
@@ -1321,6 +1348,10 @@ body {
     border-radius: 12px;
     padding: 1rem;
     color: #fff;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 [data-theme="light"] .dashboard-glass-card {
@@ -1359,4 +1390,85 @@ body {
 
 [data-theme="light"] .dashboard-glass-card .metric-sub {
     color: var(--text-muted);
+}
+
+/* ===== Wizard Steps ===== */
+.wizard-steps { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:2rem; }
+.wizard-step { display:flex; flex-direction:column; align-items:center; gap:.35rem; min-width:80px; }
+.wizard-step-circle { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; color:var(--text-muted); background:var(--bg-card); }
+.wizard-step.active .wizard-step-circle { border-color:var(--accent); color:var(--accent); }
+.wizard-step.done .wizard-step-circle { border-color:var(--accent); background:var(--accent); color:#fff; }
+.wizard-step span { font-size:.72rem; color:var(--text-muted); font-weight:500; }
+.wizard-step.active span, .wizard-step.done span { color:var(--accent); }
+.wizard-step-line { flex:1; height:2px; background:var(--border); min-width:40px; margin-bottom:1.2rem; }
+.wizard-step-line.done { background:var(--accent); }
+
+@media (max-width: 400px) {
+    .wizard-step { min-width: 60px; }
+    .wizard-step-circle { width: 28px; height: 28px; font-size: .7rem; }
+    .wizard-step-line { min-width: 20px; }
+    .wizard-step span { font-size: .65rem; }
+}
+
+
+/* ===== Badge Pro ===== */
+.badge-pro {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+/* ===== Template/Theme Grid ===== */
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    align-items: stretch;
+}
+.templates-grid > * {
+    height: 100%;
+}
+.template-card {
+    aspect-ratio: 3/4;
+    min-height: 140px;
+}
+@media (max-width: 640px) {
+    .templates-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (min-width: 1024px) {
+    .templates-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ===== Admin card rows — uniform height ===== */
+.align-items-stretch > [class*="col"] > .card {
+    height: 100%;
+}
+
+/* ===== Grid uniformidade global ===== */
+[class*="cards-grid"] { display: grid; align-items: stretch; }
+[class*="cards-grid"] > * { height: 100%; }
+
+/* ===== Hover modernizado — template/tema cards ===== */
+.template-card-selectable, [class*="template-card"] {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.template-card-selectable:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent) !important;
+}
+[data-theme="dark"] .template-card-selectable:hover {
+    box-shadow: 0 4px 20px rgba(85, 124, 242, 0.25);
 }

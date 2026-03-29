@@ -1,5 +1,4 @@
 @page "/dashboard"
-@attribute [Authorize]
 @implements IAsyncDisposable
 @inject IPageService PageSvc
 @inject ISubscriptionService SubSvc
@@ -93,7 +92,7 @@
                 <div class="row g-3">
                     @foreach (var pg in _pages)
                     {
-                        <div class="col-md-6 col-lg-4">
+                        <div @key="pg.Id" class="col-md-6 col-lg-4">
                             <div class="page-card">
                                 <div class="page-card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -113,7 +112,7 @@
                                         <i class="bi bi-bar-chart"></i>
                                     </a>
                                     <button class="btn-ghost" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
-                                        <i class="bi bi-link-45deg"></i>
+                                        <i class="bi @(_copiedSlug == pg.Slug ? "bi-check-lg" : "bi-link-45deg")" style="color:@(_copiedSlug == pg.Slug ? "var(--success)" : "")"></i>
                                     </button>
                                     <button class="btn-ghost" @onclick="() => TogglePublish(pg)"
                                             title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")"
@@ -176,7 +175,7 @@
                         </div>
                         @foreach (var tpl in FilteredTemplates)
                         {
-                            <div class="col-sm-6 col-md-4">
+                            <div @key="tpl.Id" class="col-sm-6 col-md-4">
                                 <div style="border:2px solid @(_selectedTemplateId == tpl.Id ? "var(--accent)" : "var(--border)");
                                             border-radius:12px;padding:1rem;cursor:pointer;text-align:center;
                                             background:@(_selectedTemplateId == tpl.Id ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
@@ -266,6 +265,7 @@
     IEnumerable<PageTemplate> FilteredTemplates => _templateFilter == "todos"
         ? Templates.All
         : Templates.All.Where(t => t.Category == _templateFilter);
+    string? _copiedSlug;
     bool _showUpgrade;
     string _upgradeMessage = "";
     bool _showConfirm;
@@ -394,6 +394,14 @@
     async Task CopyLink(string slug)
     {
         var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", GetPublicPageUrl(slug));
-        if (copied) _toast?.Show("Link copiado!");
+        if (copied)
+        {
+            _toast?.Show("Link copiado!");
+            _copiedSlug = slug;
+            StateHasChanged();
+            await Task.Delay(2000);
+            _copiedSlug = null;
+            StateHasChanged();
+        }
     }
 }

@@ -1,5 +1,4 @@
 @page "/dashboard/metrics/{pageId:guid}"
-@attribute [Authorize]
 @inject IMetricsService MetricsSvc
 @inject IPageService PageSvc
 @inject ISubscriptionService SubSvc
@@ -73,7 +72,7 @@
                             <tbody>
                                 @foreach (var lm in _metrics.LinkMetrics)
                                 {
-                                    <tr>
+                                    <tr @key="lm.LinkId">
                                         <td>@lm.Title</td>
                                         <td class="text-end">@lm.Clicks</td>
                                         <td class="text-end">@lm.ClickRate%</td>

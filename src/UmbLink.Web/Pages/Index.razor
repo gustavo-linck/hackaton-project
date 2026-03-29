@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 
 <!-- Hero Section (always dark) -->
-<div class="hero-section">
+<div class="hero-section hero-gradient-interactive" @ref="_heroEl">
     <div class="hero-nav">
         <a href="/" class="nav-brand" style="color:#fff;font-size:1.35rem">UmbLink</a>
         <div class="d-flex gap-2 align-items-center">
@@ -243,6 +243,7 @@
 
 @code {
     bool _isDark;
+    ElementReference _heroEl;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -250,6 +251,7 @@
         {
             var theme = await JS.InvokeAsync<string>("umblink.getTheme");
             _isDark = theme == "dark";
+            await JS.InvokeVoidAsync("umblink.initHeroGradient", _heroEl);
             StateHasChanged();
         }
     }

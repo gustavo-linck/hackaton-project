@@ -1,0 +1,96 @@
+<h2>Tarefa 3 — Wizard Step 4: layout de adição de links</h2>
+<p class="subtitle">Atualmente o step 4 (adicionar links) não tem preview. Como mostrar o preview dos links sendo adicionados?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#f8f9ff;min-height:200px">
+      <div style="display:flex;gap:.75rem;height:100%">
+        <!-- Form side -->
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:.5rem">
+          <div style="font-size:.65rem;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:.25rem">Seus links</div>
+          <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;font-size:.7rem;color:#333">
+            <div style="font-size:.6rem;color:#999;margin-bottom:2px">Título</div>
+            <div style="background:#f0f0f0;border-radius:4px;padding:3px 6px;color:#555">Instagram</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;font-size:.7rem;color:#333">
+            <div style="font-size:.6rem;color:#999;margin-bottom:2px">Título</div>
+            <div style="background:#f0f0f0;border-radius:4px;padding:3px 6px;color:#aaa">Link 2...</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;font-size:.7rem;color:#333">
+            <div style="font-size:.6rem;color:#999;margin-bottom:2px">Título</div>
+            <div style="background:#f0f0f0;border-radius:4px;padding:3px 6px;color:#aaa">Link 3...</div>
+          </div>
+        </div>
+        <!-- Preview side -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:.6rem;color:#999;margin-bottom:.25rem">Preview</div>
+          <div style="background:#111;border-radius:12px;padding:.75rem;width:100%;text-align:center">
+            <div style="width:32px;height:32px;border-radius:50%;background:#6366f1;margin:.25rem auto .5rem;display:flex;align-items:center;justify-content:center">
+              <span style="color:#fff;font-size:.7rem">👤</span>
+            </div>
+            <div style="color:#fff;font-size:.65rem;font-weight:700;margin-bottom:.25rem">Seu Nome</div>
+            <div style="background:rgba(99,102,241,0.8);border-radius:6px;padding:3px;font-size:.6rem;color:#fff;margin-bottom:3px">Instagram</div>
+            <div style="background:rgba(99,102,241,0.4);border-radius:6px;padding:3px;font-size:.6rem;color:rgba(255,255,255,0.4)">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Split view: form + preview lado a lado</h3>
+      <p>Formulário à esquerda, phone preview à direita. Mesmo padrão do editor principal. Mobile: preview aparece abaixo (colapsável). Reutiliza PagePreview existente.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#f8f9ff;min-height:200px;display:flex;flex-direction:column;gap:.5rem">
+      <div style="font-size:.65rem;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:.25rem">Seus links</div>
+      <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;display:flex;gap:.5rem;align-items:center">
+        <div style="flex:1">
+          <div style="background:#f0f0f0;border-radius:4px;padding:3px 6px;font-size:.7rem;color:#555">Instagram</div>
+        </div>
+        <div style="width:36px;height:24px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center">
+          <span style="color:rgba(99,102,241,0.9);font-size:.6rem">▶</span>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;display:flex;gap:.5rem;align-items:center">
+        <div style="flex:1">
+          <div style="background:#f0f0f0;border-radius:4px;padding:3px 6px;font-size:.7rem;color:#aaa">Link 2...</div>
+        </div>
+        <div style="width:36px;height:24px;background:#f0f0f0;border-radius:4px"></div>
+      </div>
+      <!-- Mini inline preview pill -->
+      <div style="background:linear-gradient(90deg,rgba(99,102,241,0.1),transparent);border-left:3px solid #6366f1;border-radius:4px;padding:.4rem .6rem;font-size:.65rem;color:#555;display:flex;align-items:center;gap:.4rem">
+        <span>👁</span> Aparece no preview: <strong>Instagram</strong>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Inline feedback + mini preview compacto</h3>
+      <p>Sem phone preview completo. Cada link preenchido mostra um "pill" confirmando que apareceu. Mais limpo no mobile. Preview completo só na etapa final do wizard.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#f8f9ff;min-height:200px;display:flex;flex-direction:column;gap:.5rem">
+      <!-- Form full width -->
+      <div style="font-size:.65rem;font-weight:700;color:#6366f1;text-transform:uppercase;margin-bottom:.25rem">Seus links</div>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;font-size:.7rem">
+          <input style="border:none;background:transparent;font-size:.7rem;width:100%;color:#333" placeholder="Instagram — https://instagram.com/..." readonly value="Instagram" />
+        </div>
+        <div style="background:#fff;border:1px solid #e0e0ff;border-radius:8px;padding:.5rem;font-size:.7rem">
+          <input style="border:none;background:transparent;font-size:.7rem;width:100%;color:#aaa" placeholder="YouTube — (vazio)" readonly />
+        </div>
+      </div>
+      <!-- Collapsible preview toggle -->
+      <button style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:.35rem .75rem;font-size:.65rem;font-weight:600;cursor:pointer;width:100%">
+        👁 Ver preview ao vivo
+      </button>
+    </div>
+    <div class="card-body">
+      <h3>C — Form full-width + botão "Ver preview"</h3>
+      <p>Form ocupa toda a largura (melhor mobile). Botão toggle abre/fecha o phone preview como overlay/drawer. Menos espaço desperdiçado, preview opcional.</p>
+    </div>
+  </div>
+
+</div>

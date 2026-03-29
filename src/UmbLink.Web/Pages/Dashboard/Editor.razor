@@ -1,5 +1,4 @@
 @page "/editor/{pageId:guid}"
-@attribute [Authorize]
 @inject IPageService PageSvc
 @inject ILinkService LinkSvc
 @inject ISubscriptionService SubSvc
@@ -32,15 +31,16 @@ else
                     <a href="/dashboard/metrics/@PageId" class="btn-ghost" title="Métricas">
                         <i class="bi bi-bar-chart"></i>
                     </a>
-                    <a href="/editor/@PageId/domain" class="btn-ghost" title="Personalizar Link">
-                        <i class="bi bi-link-45deg"></i>
-                    </a>
                 }
                 <button class="btn-accent" @onclick="SavePage" disabled="@_saving" style="padding:.375rem 1rem">
                     @if (_saving) { <span class="spinner-border spinner-border-sm"></span> }
                     else { <i class="bi bi-check-lg"></i> }
                     Salvar
                 </button>
+                @if (!string.IsNullOrEmpty(_saveStatus))
+                {
+                    <span style="font-size:.8rem;color:var(--text-muted);margin-left:.5rem">@_saveStatus</span>
+                }
             </div>
         </div>
 
@@ -75,51 +75,19 @@ else
                                 <div style="font-size:.7rem;text-align:right;color:@(_editSlug.Length >= 27 ? "var(--danger)" : "var(--text-muted)")">@_editSlug.Length / 30</div>
                             </div>
                             <div style="margin-bottom:.75rem">
-                                <label class="form-label-theme">Bio</label>
+                                <div style="display:flex;justify-content:space-between;align-items:center">
+                                    <label class="form-label-theme">Bio</label>
+                                    <div style="display:flex;align-items:center;gap:.5rem">
+                                        <span style="font-size:.75rem;color:var(--text-muted)">@(_showBio ? "Visível" : "Oculta")</span>
+                                        <input type="checkbox" checked="@_showBio" @onchange="e => { _showBio = (bool)(e.Value ?? true); ScheduleAutoSave(); }" />
+                                    </div>
+                                </div>
                                 <textarea value="@_editBio" @oninput="OnBioInput" class="form-control-theme w-100" rows="2" maxlength="200"></textarea>
                                 <div style="font-size:.7rem;text-align:right;color:@(_editBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_editBio.Length / 200</div>
                             </div>
                             <div>
                                 <label class="form-label-theme">Avatar</label>
-                                <div class="d-flex gap-1 mb-2">
-                                    <button type="button" class="@(_avatarMode == "url" ? "btn-accent" : "btn-ghost")" style="font-size:.75rem;padding:.3rem .75rem"
-                                            @onclick='() => _avatarMode = "url"'>URL externa</button>
-                                    <button type="button" class="@(_avatarMode == "upload" ? "btn-accent" : "btn-ghost")" style="font-size:.75rem;padding:.3rem .75rem"
-                                            @onclick='() => _avatarMode = "upload"'>Fazer upload</button>
-                                </div>
-                                @if (_avatarMode == "url")
-                                {
-                                    <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
-                                }
-                                else
-                                {
-                                    <InputFile OnChange="HandleAvatarUpload" accept="image/jpeg,image/png,image/webp"
-                                               class="form-control-theme w-100" MaxFileSize="2097152" />
-
-                                    @if (!string.IsNullOrEmpty(_avatarLocalPreview) || (!string.IsNullOrEmpty(_editAvatarUrl) && _avatarMode == "upload"))
-                                    {
-                                        <div style="margin-top:.5rem;display:flex;align-items:center;gap:.75rem">
-                                            <img src="@(_avatarLocalPreview != "" ? _avatarLocalPreview : _editAvatarUrl)"
-                                                 alt="preview"
-                                                 style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid var(--border)" />
-                                            <span style="font-size:.72rem;color:var(--text-muted)">
-                                                @(_avatarLocalPreview != "" ? "Preview — enviando..." : "Avatar atual")
-                                            </span>
-                                        </div>
-                                    }
-                                    @if (_avatarUploading)
-                                    {
-                                        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.75rem;color:var(--text-muted)">
-                                            <span class="spinner-border spinner-border-sm"></span> Enviando...
-                                        </div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(_avatarUploadError))
-                                    {
-                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">
-                                            <i class="bi bi-exclamation-circle me-1"></i>@_avatarUploadError
-                                        </div>
-                                    }
-                                }
+                                <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
                             </div>
                         </div>
                     </div>
@@ -147,7 +115,7 @@ else
                             <div @ref="_sortableEl">
                                 @foreach (var link in _links)
                                 {
-                                    <div class="link-item" style="@(link.IsActive ? "" : "opacity:.5")">
+                                    <div @key="link.Id" class="link-item" style="@(link.IsActive ? "" : "opacity:.5")">
                                         <span class="drag-handle text-theme-muted" style="cursor:grab"><i class="bi bi-grip-vertical"></i></span>
                                         <div class="flex-grow-1" style="min-width:0">
                                             <div style="font-weight:600;font-size:.85rem;color:var(--text-primary)">@link.Title</div>
@@ -156,6 +124,9 @@ else
                                         <button class="btn-ghost" style="padding:.25rem .5rem" @onclick="() => ToggleLink(link)"
                                                 title="@(link.IsActive ? "Desativar" : "Ativar")">
                                             <i class="bi @(link.IsActive ? "bi-eye" : "bi-eye-slash")"></i>
+                                        </button>
+                                        <button class="btn-ghost" style="padding:.25rem .5rem" @onclick="() => DuplicateLink(link)" title="Duplicar link">
+                                            <i class="bi bi-copy"></i>
                                         </button>
                                         <button class="btn-ghost" style="padding:.25rem .5rem;color:var(--danger)" @onclick="() => DeleteLink(link)">
                                             <i class="bi bi-trash"></i>
@@ -248,10 +219,17 @@ else
                                 <div class="d-flex gap-1 mb-3 flex-wrap">
                                     @foreach (var (key, label) in new[] { ("solid","Cor sólida"), ("gradient","Gradiente"), ("image","Foto de fundo") })
                                     {
+                                        var bgLocked = (key == "gradient" || key == "image") && !IsPro;
                                         <button type="button"
                                                 class="@(_bgMode == key ? "btn-accent" : "btn-ghost")"
-                                                style="font-size:.75rem;padding:.3rem .75rem"
-                                                @onclick="() => SetBgMode(key)">@label</button>
+                                                style="font-size:.75rem;padding:.3rem .75rem;position:relative"
+                                                @onclick="() => TrySetBgMode(key)">
+                                            @label
+                                            @if (bgLocked)
+                                            {
+                                                <span class="badge-pro">Pro</span>
+                                            }
+                                        </button>
                                     }
                                 </div>
 
@@ -339,40 +317,48 @@ else
                                         </div>
                                     }
 
-                                    <!-- Custom upload -->
-                                    <div class="d-flex gap-2 align-items-center mt-2">
-                                        <label class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;cursor:pointer;margin:0">
-                                            <i class="bi bi-upload me-1"></i>Upload próprio
-                                            <InputFile OnChange="HandleBgUpload" accept="image/jpeg,image/png,image/webp" style="display:none" />
-                                        </label>
-                                        @if (!string.IsNullOrEmpty(_bgImageUrl))
-                                        {
+                                    @if (!string.IsNullOrEmpty(_bgImageUrl))
+                                    {
+                                        <div class="d-flex gap-2 align-items-center mt-2">
                                             <button type="button" class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;color:var(--danger)"
                                                     @onclick="ClearBgImage">
                                                 <i class="bi bi-x-lg me-1"></i>Remover fundo
                                             </button>
-                                        }
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(_bgLocalPreview) || !string.IsNullOrEmpty(_bgImageUrl))
-                                    {
-                                        var previewSrc = _bgLocalPreview != "" ? _bgLocalPreview : _bgImageUrl;
-                                        <div style="margin-top:.5rem;border-radius:8px;overflow:hidden;height:60px;position:relative">
-                                            <img src="@previewSrc" alt="Pré-visualização do fundo"
+                                        </div>
+                                        <div style="margin-top:.5rem;border-radius:8px;overflow:hidden;height:60px">
+                                            <img src="@_bgImageUrl" alt="Pré-visualização do fundo"
                                                  style="width:100%;height:100%;object-fit:cover" />
-                                            @if (_bgLocalPreview != "")
-                                            {
-                                                <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center">
-                                                    <span class="spinner-border spinner-border-sm text-white"></span>
-                                                </div>
-                                            }
+                                        </div>
+                                        <div style="margin-top:.75rem">
+                                            <label class="form-label-theme" style="font-size:.8rem">
+                                                Escurecimento do fundo: <strong>@_bgOverlay%</strong>
+                                            </label>
+                                            <input type="range" class="form-range" min="0" max="80" step="5"
+                                                   value="@_bgOverlay" @oninput='e => { _bgOverlay = int.Parse(e.Value?.ToString() ?? "0"); ApplyTheme(); }' />
                                         </div>
                                     }
-                                    @if (!string.IsNullOrEmpty(_bgUploadError))
-                                    {
-                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">
-                                            <i class="bi bi-exclamation-circle me-1"></i>@_bgUploadError
-                                        </div>
-                                    }
+
+                                    <!-- Upload de imagem de fundo (base64) -->
+                                    <div style="margin-top:.5rem">
+                                        <label class="form-label-theme" style="font-size:.75rem;color:var(--text-muted)">
+                                            ou faça upload de uma imagem (máx. 2MB):
+                                        </label>
+                                        <InputFile OnChange="HandleBgImageUpload" accept="image/jpeg,image/png,image/webp"
+                                                   class="form-control-theme form-control-sm" />
+                                        @if (_bgUploadError != "")
+                                        {
+                                            <div style="color:var(--danger);font-size:.75rem">@_bgUploadError</div>
+                                        }
+                                        @if (_bgUploading)
+                                        {
+                                            <div style="font-size:.75rem;color:var(--text-muted)">
+                                                <span class="spinner-border spinner-border-sm me-1"></span>Processando...
+                                            </div>
+                                        }
+                                        <p style="font-size:.7rem;color:var(--text-muted);margin-top:.35rem">
+                                            Imagens salvas no perfil podem aumentar o tempo de carregamento da página.
+                                        </p>
+                                    </div>
                                 }
                             </div>
                         }
@@ -381,10 +367,22 @@ else
             </div>
 
             <!-- Preview panel -->
-            <div class="col-lg-5 d-none d-lg-flex preview-panel">
+            <div class="col-lg-5 d-none d-lg-flex preview-panel flex-column">
                 @if (_page is not null)
                 {
-                    <PagePreview Page="_page" Links="_links" />
+                    <div style="display:flex;gap:.5rem;margin-bottom:.75rem;justify-content:center;padding-top:.75rem">
+                        <button class="btn-ghost @(_previewMode == "mobile" ? "active" : "")"
+                                @onclick='() => _previewMode = "mobile"' title="Preview mobile">
+                            <i class="bi bi-phone"></i>
+                        </button>
+                        <button class="btn-ghost @(_previewMode == "desktop" ? "active" : "")"
+                                @onclick='() => _previewMode = "desktop"' title="Preview desktop">
+                            <i class="bi bi-display"></i>
+                        </button>
+                    </div>
+                    <div style="@(_previewMode == "mobile" ? "max-width:375px;margin:0 auto;width:100%" : "width:100%")">
+                        <PagePreview Page="_page" Links="_links" />
+                    </div>
                 }
             </div>
         </div>
@@ -473,8 +471,6 @@ else
     [Parameter] public Guid PageId { get; set; }
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
-    [Inject] IHttpClientFactory HttpFactory { get; set; } = default!;
-    [Inject] IHttpContextAccessor HttpCtxAccessor { get; set; } = default!;
 
     PageDto? _page;
     List<LinkDto> _links = [];
@@ -494,11 +490,15 @@ else
     DotNetObjectReference<Editor>? _dotnetRef;
     Guid _userId;
 
-    // Avatar upload state
-    string _avatarMode = "url";
-    bool _avatarUploading;
-    string _avatarUploadError = "";
-    string _avatarLocalPreview = ""; // base64 data URL para preview antes do upload
+    // Auto-save state
+    System.Timers.Timer? _autoSaveTimer;
+    string _saveStatus = "";
+
+    // Preview mode
+    string _previewMode = "mobile";
+
+    // Bio visibility
+    bool _showBio = true;
 
     // Theme editor state
     string _selectedThemeId = "minimal-light";
@@ -513,9 +513,9 @@ else
     string _bgMode = "solid";
     string _bgColor = "#ffffff";
     string _bgImageUrl = "";
+    int _bgOverlay = 30; // 0–80%
     bool _bgUploading;
     string _bgUploadError = "";
-    string _bgLocalPreview = ""; // base64 preview para fundo antes do upload
 
     // Gradient editor state
     bool _useGradient;
@@ -593,8 +593,10 @@ else
                 _gradType        = GetStr("gradType", "linear");
                 _bgImageUrl      = GetStr("backgroundImageUrl", "");
                 _bgMode          = !string.IsNullOrEmpty(_bgImageUrl) ? "image" : (_useGradient ? "gradient" : "solid");
+                _bgOverlay       = cfg.TryGetProperty("bgOverlay", out var ov) ? ov.GetInt32() : 30;
                 var defaultBg    = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId)?.DefaultBg ?? "#ffffff";
                 _bgColor         = GetStr("bgColor", defaultBg);
+                _showBio         = !cfg.TryGetProperty("showBio", out var sb) || sb.GetBoolean();
             } catch { }
         }
         _loading = false;
@@ -659,7 +661,9 @@ else
             gradColor2      = _gradColor2,
             gradDirection   = _gradDirection,
             gradType        = _gradType,
-            backgroundImageUrl = _bgMode == "image" ? _bgImageUrl : (string?)null
+            backgroundImageUrl = _bgMode == "image" ? _bgImageUrl : (string?)null,
+            bgOverlay          = _bgMode == "image" ? _bgOverlay : 30,
+            showBio            = _showBio
         });
     }
 
@@ -667,6 +671,7 @@ else
     {
         var newConfig = BuildThemeConfig();
         _page = _page! with { ThemeConfig = newConfig };
+        ScheduleAutoSave();
     }
 
     void SelectThemeOrUpgrade(ThemeDefinition theme)
@@ -731,12 +736,14 @@ else
     {
         _editTitle = e.Value?.ToString() ?? string.Empty;
         if (_page is not null) _page = _page with { Title = _editTitle };
+        ScheduleAutoSave();
     }
 
     void OnBioInput(ChangeEventArgs e)
     {
         _editBio = e.Value?.ToString() ?? string.Empty;
         if (_page is not null) _page = _page with { Bio = string.IsNullOrEmpty(_editBio) ? null : _editBio };
+        ScheduleAutoSave();
     }
 
     void OnAvatarInput(ChangeEventArgs e)
@@ -752,147 +759,55 @@ else
         ApplyTheme();
     }
 
+    bool IsPro => _sub?.PlanName is "Pro" or "Business";
+
+    void TrySetBgMode(string mode)
+    {
+        if ((mode == "gradient" || mode == "image") && !IsPro)
+        {
+            _upgradeMessage = mode == "gradient"
+                ? "Gradiente customizado é exclusivo do plano Pro."
+                : "Foto de fundo é exclusiva do plano Pro.";
+            _showUpgrade = true;
+            return;
+        }
+        SetBgMode(mode);
+    }
+
     void ClearBgImage()
     {
         _bgImageUrl = "";
         ApplyTheme();
     }
 
-    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
-
-    string GetBaseUrl()
-    {
-        var req = HttpCtxAccessor.HttpContext?.Request;
-        if (req is null) return Nav.BaseUri.TrimEnd('/');
-        return $"{req.Scheme}://{req.Host}";
-    }
-
-    async Task HandleAvatarUpload(InputFileChangeEventArgs e)
-    {
-        _avatarUploading = true;
-        _avatarUploadError = "";
-        _avatarLocalPreview = "";
-        StateHasChanged();
-
-        try
-        {
-            var file = e.File;
-            if (file.Size > 2 * 1024 * 1024)
-            {
-                _avatarUploadError = "Arquivo muito grande (máx. 2 MB)";
-                return;
-            }
-
-            // Gerar preview local imediato (base64)
-            using var previewStream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
-            var buffer = new byte[file.Size];
-            await previewStream.ReadExactlyAsync(buffer);
-            _avatarLocalPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
-            StateHasChanged();
-
-            // Upload para o servidor
-            using var content = new MultipartFormDataContent();
-            using var uploadStream = new MemoryStream(buffer);
-            content.Add(new StreamContent(uploadStream), "file", file.Name);
-
-            var http = HttpFactory.CreateClient();
-            http.BaseAddress = new Uri(GetBaseUrl());
-            var cookies = HttpCtxAccessor.HttpContext?.Request.Headers.Cookie.ToString();
-            if (!string.IsNullOrEmpty(cookies)) http.DefaultRequestHeaders.Add("Cookie", cookies);
-
-            var response = await http.PostAsync("/api/upload/avatar", content);
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadFromJsonAsync<UploadResult>();
-                if (json?.Url is not null)
-                {
-                    _editAvatarUrl = json.Url;
-                    if (_page is not null) _page = _page with { AvatarUrl = _editAvatarUrl };
-                    _avatarLocalPreview = ""; // limpa preview local — usa a URL definitiva
-                }
-                else
-                {
-                    _avatarUploadError = "Erro ao processar resposta do servidor.";
-                    _avatarLocalPreview = "";
-                }
-            }
-            else
-            {
-                _avatarUploadError = response.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge
-                    ? "Arquivo muito grande (máx. 2 MB)"
-                    : "Erro ao enviar arquivo. Tente novamente.";
-                _avatarLocalPreview = "";
-            }
-        }
-        catch (Exception)
-        {
-            _avatarUploadError = "Não foi possível enviar. Verifique sua conexão e tente novamente.";
-            _avatarLocalPreview = "";
-        }
-        finally
-        {
-            _avatarUploading = false;
-            StateHasChanged();
-        }
-    }
-
-    async Task HandleBgUpload(InputFileChangeEventArgs e)
+    async Task HandleBgImageUpload(InputFileChangeEventArgs e)
     {
         _bgUploading = true;
         _bgUploadError = "";
-        _bgLocalPreview = "";
         StateHasChanged();
-
         try
         {
             var file = e.File;
             if (file.Size > 2 * 1024 * 1024)
             {
-                _bgUploadError = "Arquivo muito grande (máx. 2 MB)";
+                _bgUploadError = "Arquivo muito grande (máx. 2MB).";
                 return;
             }
-
-            using var previewStream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType))
+            {
+                _bgUploadError = "Tipo de arquivo não suportado. Use JPEG, PNG ou WebP.";
+                return;
+            }
+            using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
             var buffer = new byte[file.Size];
-            await previewStream.ReadExactlyAsync(buffer);
-            _bgLocalPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
-            StateHasChanged();
-
-            using var content = new MultipartFormDataContent();
-            using var uploadStream = new MemoryStream(buffer);
-            content.Add(new StreamContent(uploadStream), "file", file.Name);
-
-            var http = HttpFactory.CreateClient();
-            http.BaseAddress = new Uri(GetBaseUrl());
-            var cookies = HttpCtxAccessor.HttpContext?.Request.Headers.Cookie.ToString();
-            if (!string.IsNullOrEmpty(cookies)) http.DefaultRequestHeaders.Add("Cookie", cookies);
-
-            var response = await http.PostAsync($"/api/upload/background?pageId={PageId}", content);
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadFromJsonAsync<UploadResult>();
-                if (json?.Url is not null)
-                {
-                    _bgImageUrl = json.Url;
-                    _bgLocalPreview = "";
-                    ApplyTheme();
-                }
-                else
-                {
-                    _bgUploadError = "Erro ao processar resposta do servidor.";
-                    _bgLocalPreview = "";
-                }
-            }
-            else
-            {
-                _bgUploadError = "Erro ao enviar imagem de fundo. Tente novamente.";
-                _bgLocalPreview = "";
-            }
+            await stream.ReadExactlyAsync(buffer);
+            _bgImageUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            ApplyTheme();
         }
         catch (Exception)
         {
-            _bgUploadError = "Não foi possível enviar. Verifique sua conexão e tente novamente.";
-            _bgLocalPreview = "";
+            _bgUploadError = "Erro ao processar imagem. Tente novamente.";
         }
         finally
         {
@@ -901,10 +816,56 @@ else
         }
     }
 
-    record UploadResult(string? Url);
+    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
+
+    void ScheduleAutoSave()
+    {
+        _autoSaveTimer?.Stop();
+        _autoSaveTimer?.Dispose();
+        _saveStatus = "";
+        _autoSaveTimer = new System.Timers.Timer(2000);
+        _autoSaveTimer.AutoReset = false;
+        _autoSaveTimer.Elapsed += async (_, _) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                _saveStatus = "Salvando...";
+                StateHasChanged();
+                await SavePage();
+                _saveStatus = "Salvo ✓";
+                StateHasChanged();
+                await Task.Delay(2000);
+                _saveStatus = "";
+                StateHasChanged();
+            });
+        };
+        _autoSaveTimer.Start();
+    }
+
+    async Task DuplicateLink(LinkDto link)
+    {
+        var req = new CreateLinkRequest
+        {
+            Title = link.Title + " (cópia)",
+            Url = link.Url,
+            IconName = link.IconName
+        };
+        var result = await LinkSvc.AddAsync(_userId, PageId, req);
+        if (result.IsSuccess)
+        {
+            _links = await PageSvc.GetLinksAsync(PageId);
+        }
+        else if (result.LimitError is not null)
+        {
+            _upgradeMessage = result.LimitError.Message;
+            _showUpgrade = true;
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
+        _autoSaveTimer?.Stop();
+        _autoSaveTimer?.Dispose();
         _dotnetRef?.Dispose();
         await ValueTask.CompletedTask;
     }

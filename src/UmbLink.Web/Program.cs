@@ -116,7 +116,6 @@ builder.Services.AddRateLimiter(o =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
-builder.Services.AddHttpClient<GroqService>();
 
 var app = builder.Build();
 
@@ -142,19 +141,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
-// Bloqueio de /admin por middleware (não só por UI)
-app.Use(async (ctx, next) =>
-{
-    if (ctx.Request.Path.StartsWithSegments("/admin"))
-    {
-        if (!ctx.User.Identity!.IsAuthenticated || !ctx.User.IsInRole("Admin"))
-        {
-            ctx.Response.StatusCode = 403;
-            return;
-        }
-    }
-    await next();
-});
 
 // Auth endpoints
 app.MapPost("/auth/do-login", async (
@@ -217,7 +203,7 @@ app.MapPost("/auth/do-register", async (
 app.MapPost("/auth/logout", async (SignInManager<AppUser> sm) =>
 {
     await sm.SignOutAsync();
-    return Results.Redirect("/auth/login");
+    return Results.Redirect("/");
 }).RequireAuthorization();
 
 app.MapGet("/auth/google-login", () =>
@@ -423,43 +409,6 @@ app.MapPost("/api/upload/background", [Microsoft.AspNetCore.Authorization.Author
 
     return Results.Ok(new { url = $"/uploads/backgrounds/{fileName}" });
 }).DisableAntiforgery().RequireRateLimiting("tracking");
-
-// AI profile generation endpoint
-app.MapPost("/api/ai/generate-profile", [Microsoft.AspNetCore.Authorization.Authorize] async (
-    GenerateProfileRequest req,
-    GroqService groq,
-    IPageService pageSvc,
-    IAuditService audit,
-    ClaimsPrincipal user) =>
-{
-    if (string.IsNullOrWhiteSpace(req.UserDescription) || req.UserDescription.Length > 500)
-        return Results.BadRequest(new { error = "Descrição inválida." });
-
-    var userId = user.GetUserId();
-    var profile = await groq.GenerateProfileAsync(req.UserDescription, req.ProfileType ?? "geral");
-    if (profile is null)
-        return Results.Json(new { error = "Não foi possível gerar o perfil. Verifique se a chave Groq está configurada." }, statusCode: 503);
-
-    // Sanitize lengths
-    var title = (profile.Title ?? "").Length > 60
-        ? profile.Title![..60] : (profile.Title ?? "");
-    var bio = (profile.Bio ?? "").Length > 200
-        ? profile.Bio![..200] : (profile.Bio ?? "");
-    var slug = (profile.SlugSuggestion ?? "").Length > 30
-        ? profile.SlugSuggestion![..30] : (profile.SlugSuggestion ?? "");
-
-    // Ensure slug is available — if not, append 3 random digits
-    if (!await pageSvc.IsSlugAvailableAsync(slug))
-    {
-        var suffix = Random.Shared.Next(100, 999).ToString();
-        slug = slug.Length > 27 ? slug[..27] + suffix : slug + suffix;
-    }
-
-    await audit.LogAsync(userId, "AiProfileGenerated",
-        new { req.UserDescription.Length, req.ProfileType });
-
-    return Results.Ok(new GenerateProfileResponse(title, bio, slug));
-}).RequireRateLimiting("tracking");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

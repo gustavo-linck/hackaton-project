@@ -1,10 +1,9 @@
 @page "/onboarding"
 @layout PublicLayout
-@attribute [Authorize]
 @inject IPageService PageSvc
 @inject ILinkService LinkSvc
+@inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
-@inject HttpClient Http
 
 <PageTitle>Bem-vindo — UmbLink</PageTitle>
 
@@ -14,16 +13,24 @@
         <span style="font-weight:800;font-size:1.25rem;color:var(--accent)">UmbLink</span>
     </nav>
 
-    <!-- Progress bar -->
+    <!-- Progress indicator -->
     <div class="px-4 pt-3" style="max-width:700px;margin:0 auto;width:100%">
-        <div class="d-flex align-items-center gap-2 mb-1">
-            @for (int i = 1; i <= TotalVisualSteps; i++)
-            {
-                var step = i;
-                <div style="flex:1;height:4px;border-radius:4px;background:@(step <= VisualStep ? "var(--accent)" : "var(--border)");transition:background .4s ease"></div>
-            }
+        <div class="wizard-steps">
+            <div class="wizard-step @(VisualStep >= 1 ? "active" : "") @(VisualStep > 1 ? "done" : "")">
+                <div class="wizard-step-circle">@(VisualStep > 1 ? "✓" : "1")</div>
+                <span>Perfil</span>
+            </div>
+            <div class="wizard-step-line @(VisualStep > 1 ? "done" : "")"></div>
+            <div class="wizard-step @(VisualStep >= 2 ? "active" : "") @(VisualStep > 2 ? "done" : "")">
+                <div class="wizard-step-circle">@(VisualStep > 2 ? "✓" : "2")</div>
+                <span>Template</span>
+            </div>
+            <div class="wizard-step-line @(VisualStep > 2 ? "done" : "")"></div>
+            <div class="wizard-step @(VisualStep >= 3 ? "active" : "")">
+                <div class="wizard-step-circle">3</div>
+                <span>Publicar</span>
+            </div>
         </div>
-        <p class="text-theme-secondary" style="font-size:.75rem;margin:0">Passo @VisualStep de @TotalVisualSteps</p>
     </div>
 
     <!-- Content -->
@@ -69,8 +76,8 @@
             {
                 <div class="animate-fade-in-up">
                     <div class="text-center mb-4">
-                        <h3 style="font-weight:700;color:var(--text-primary)">Escolha um template</h3>
-                        <p class="text-theme-secondary">Você pode personalizar tudo depois no editor.</p>
+                        <h3 style="font-weight:700;color:var(--text-primary)">Escolha seu estilo</h3>
+                        <p class="text-theme-secondary">Selecione o template que melhor representa você. Você pode personalizar tudo depois no editor.</p>
                     </div>
 
                     <!-- Category filter -->
@@ -93,7 +100,7 @@
                                         border-radius:14px;padding:1.25rem;cursor:pointer;text-align:center;
                                         background:@(_selectedTemplateId == null ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
                                         transition:all .25s ease;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
-                                 @onclick="() => _selectedTemplateId = null">
+                                 @onclick="() => { _selectedTemplateId = null; _templateChosen = true; }">
                                 <i class="bi bi-plus-circle" style="font-size:1.5rem;color:var(--accent)"></i>
                                 <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">Em branco</span>
                                 <span style="font-size:.7rem;color:var(--text-secondary)">Começar do zero</span>
@@ -101,12 +108,19 @@
                         </div>
                         @foreach (var tpl in FilteredTemplates)
                         {
+                            var tplTheme = Themes.All.FirstOrDefault(th => th.Id == tpl.ThemeId);
+                            var tplLocked = (tplTheme?.IsPremium ?? false) && !IsPro;
                             <div class="col-sm-6 col-md-4">
-                                <div style="border:2px solid @(_selectedTemplateId == tpl.Id ? "var(--accent)" : "var(--border)");
+                                <div style="position:relative;border:2px solid @(_selectedTemplateId == tpl.Id ? "var(--accent)" : "var(--border)");
                                             border-radius:14px;padding:1.25rem;cursor:pointer;text-align:center;
                                             background:@(_selectedTemplateId == tpl.Id ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
-                                            transition:all .25s ease;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
-                                     @onclick="() => _selectedTemplateId = tpl.Id">
+                                            transition:all .25s ease;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
+                                            opacity:@(tplLocked ? ".75" : "1")"
+                                     @onclick="() => SelectTemplateOrUpgrade(tpl, tplLocked)">
+                                    @if (tplLocked)
+                                    {
+                                        <span class="badge-pro">Pro</span>
+                                    }
                                     <i class="bi @tpl.Icon" style="font-size:1.5rem;color:var(--accent)"></i>
                                     <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">@tpl.Name</span>
                                     <span style="font-size:.7rem;color:var(--text-secondary)">@tpl.Description</span>
@@ -121,7 +135,7 @@
 
                     <div class="d-flex justify-content-between mt-4">
                         <button class="btn-ghost" @onclick="() => _step = 1"><i class="bi bi-arrow-left me-1"></i> Voltar</button>
-                        <button class="btn-accent" @onclick="() => _step = 3">Continuar <i class="bi bi-arrow-right ms-1"></i></button>
+                        <button class="btn-accent" @onclick="() => _step = 3" disabled="@(!_templateChosen)">Continuar <i class="bi bi-arrow-right ms-1"></i></button>
                     </div>
                 </div>
             }
@@ -130,6 +144,10 @@
             @if (_step == 3)
             {
                 <div class="animate-fade-in-up">
+                    <div class="text-center mb-4">
+                        <h3 style="font-weight:700;color:var(--text-primary)">Configure seu perfil</h3>
+                        <p class="text-theme-secondary">Preencha as informações que aparecerão na sua página.</p>
+                    </div>
                     <div class="row g-4">
                         @* Left column: form *@
                         <div class="col-12 col-lg-7">
@@ -173,34 +191,6 @@
                                     <div style="font-size:.7rem;text-align:right;color:@(_pageBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_pageBio.Length / 200</div>
                                 </div>
 
-                                @* AI helper *@
-                                <div style="border:1px solid var(--border);border-radius:10px;padding:.875rem;background:rgba(99,102,241,0.04)">
-                                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem">
-                                        <i class="bi bi-stars" style="color:var(--accent)"></i>
-                                        <span style="font-weight:600;font-size:.82rem;color:var(--text-primary)">Gerar com IA</span>
-                                    </div>
-                                    <textarea class="form-control-theme w-100" rows="2"
-                                              placeholder="Descreva quem você é em uma frase..."
-                                              @bind="_aiDescription" style="margin-bottom:.5rem" />
-                                    @if (!string.IsNullOrEmpty(_aiError))
-                                    {
-                                        <div style="font-size:.75rem;color:var(--danger);margin-bottom:.375rem">@_aiError</div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(_aiSuccessMsg))
-                                    {
-                                        <div style="font-size:.75rem;color:var(--success);margin-bottom:.375rem">@_aiSuccessMsg</div>
-                                    }
-                                    <button class="btn-accent" style="font-size:.8rem;padding:.3rem .75rem"
-                                            @onclick="GenerateWithAI" disabled="@(_aiLoading || _aiCallCount >= 3)">
-                                        @if (_aiLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                        else { <i class="bi bi-stars me-1"></i> }
-                                        @(_aiCallCount >= 3 ? "Limite atingido" : "Gerar com IA")
-                                    </button>
-                                    @if (_aiCallCount > 0)
-                                    {
-                                        <span style="font-size:.7rem;color:var(--text-muted);margin-left:.5rem">@_aiCallCount / 3</span>
-                                    }
-                                </div>
                             </div>
 
                             @* Card: Links *@
@@ -260,7 +250,7 @@
                                 <button class="btn-ghost" @onclick="() => _step = 2">
                                     <i class="bi bi-arrow-left me-1"></i> Voltar
                                 </button>
-                                <button class="btn-accent" @onclick="CreatePageAsync" disabled="@_creating">
+                                <button class="btn-accent" @onclick="CreatePageAsync" disabled="@(_creating || _pageTitle.Length < 2 || _pageSlug.Length < 3)">
                                     @if (_creating) { <span class="spinner-border spinner-border-sm me-1"></span> }
                                     Criar minha página <i class="bi bi-arrow-right ms-1"></i>
                                 </button>
@@ -306,6 +296,8 @@
     </div>
 </div>
 
+<UpgradeModal @bind-Visible="_showUpgrade" Message="@_upgradeMessage" />
+
 @code {
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
@@ -313,6 +305,7 @@
     int _step = 1;
     string _selectedProfile = "";
     string? _selectedTemplateId;
+    bool _templateChosen;
     string _templateFilter = "todos";
     string _pageTitle = "", _pageSlug = "", _pageBio = "";
     string _error = "";
@@ -320,13 +313,11 @@
     Guid _createdPageId;
     string _createdSlug = "";
     Guid _userId;
+    SubscriptionDto? _sub;
+    bool _showUpgrade;
+    string _upgradeMessage = "";
 
-    // AI helper state
-    string _aiDescription = "";
-    bool _aiLoading;
-    string _aiError = "";
-    string _aiSuccessMsg = "";
-    int _aiCallCount = 0; // max 3 per session
+    bool IsPro => _sub?.PlanName is "Pro" or "Business";
 
     string StepMaxWidth => _step switch { 2 => "780px", 3 => "960px", _ => "640px" };
     int VisualStep => _step switch { 4 => 3, _ => _step };
@@ -372,21 +363,44 @@
         var pages = await PageSvc.GetUserPagesAsync(_userId);
         if (pages.Count > 0)
             Nav.NavigateTo("/dashboard");
+        _sub = await SubSvc.GetAsync(_userId);
     }
 
     void GoToStep2()
     {
         // Auto-select matching template based on profile
-        _selectedTemplateId = _selectedProfile switch
+        var suggested = _selectedProfile switch
         {
             "creator"  => "creator",
             "business" => "business",
             "dev"      => "dev-portfolio",
             "artist"   => "artist",
             "musician" => "musician",
-            _          => null
+            _          => (string?)null
         };
+        // Only auto-select if user can access the template
+        if (suggested is not null)
+        {
+            var tpl = Templates.All.FirstOrDefault(t => t.Id == suggested);
+            var theme = tpl is not null ? Themes.All.FirstOrDefault(th => th.Id == tpl.ThemeId) : null;
+            var locked = (theme?.IsPremium ?? false) && !IsPro;
+            if (locked) suggested = null;
+        }
+        _selectedTemplateId = suggested;
+        _templateChosen = _selectedTemplateId is not null;
         _step = 2;
+    }
+
+    void SelectTemplateOrUpgrade(PageTemplate tpl, bool locked)
+    {
+        if (locked)
+        {
+            _upgradeMessage = $"O template \"{tpl.Name}\" é exclusivo do plano Pro.";
+            _showUpgrade = true;
+            return;
+        }
+        _selectedTemplateId = tpl.Id;
+        _templateChosen = true;
     }
 
     void OnTitleInput(ChangeEventArgs e)
@@ -494,46 +508,4 @@
         return System.Text.RegularExpressions.Regex.Replace(s, @"-+", "-").Trim('-');
     }
 
-    async Task GenerateWithAI()
-    {
-        if (_aiCallCount >= 3 || string.IsNullOrWhiteSpace(_aiDescription)) return;
-        _aiLoading = true;
-        _aiError = "";
-        _aiSuccessMsg = "";
-        StateHasChanged();
-        try
-        {
-            var req = new GenerateProfileRequest(_aiDescription, _selectedProfile);
-            var resp = await Http.PostAsJsonAsync("/api/ai/generate-profile", req);
-            if (resp.IsSuccessStatusCode)
-            {
-                var profile = await resp.Content.ReadFromJsonAsync<GenerateProfileResponse>();
-                if (profile is not null)
-                {
-                    _pageTitle = profile.Title;
-                    _pageSlug = profile.SlugSuggestion;
-                    _pageBio = profile.Bio;
-                    _aiCallCount++;
-                    _aiSuccessMsg = "Gerado com IA — edite à vontade antes de continuar";
-                }
-            }
-            else if ((int)resp.StatusCode == 503)
-            {
-                _aiError = "Não foi possível gerar, tente preencher manualmente";
-            }
-            else
-            {
-                _aiError = "Erro ao gerar perfil";
-            }
-        }
-        catch
-        {
-            _aiError = "Não foi possível gerar, tente preencher manualmente";
-        }
-        finally
-        {
-            _aiLoading = false;
-            StateHasChanged();
-        }
-    }
 }

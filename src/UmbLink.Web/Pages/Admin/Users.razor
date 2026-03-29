@@ -28,7 +28,7 @@
             <tbody>
                 @foreach (var u in _users)
                 {
-                    <tr class="@(u.IsActive ? "" : "table-secondary text-muted")">
+                    <tr @key="u.Id" class="@(u.IsActive ? "" : "table-secondary text-muted")">
                         <td>@u.Name</td>
                         <td>@u.Email</td>
                         <td><PlanBadge PlanName="@u.PlanName" /></td>
@@ -98,7 +98,13 @@
         await Load();
     }
 
-    async Task Load() { _loading = true; _users = await AdminSvc.GetUsersAsync(_search); _loading = false; }
+    async Task Load()
+    {
+        _loading = true;
+        try { _users = await AdminSvc.GetUsersAsync(_search); }
+        catch { _users = []; }
+        finally { _loading = false; }
+    }
     async Task Search() => await Load();
 
     async Task Suspend(Guid id)

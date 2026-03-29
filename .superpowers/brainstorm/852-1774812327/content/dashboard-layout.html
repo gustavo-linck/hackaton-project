@@ -1,0 +1,58 @@
+<h2>Tarefa 5 — Dashboard: layout após remoção dos blocos</h2>
+<p class="subtitle">Qual fundo animado faz mais sentido para o dashboard? O hero da Home usa gradiente interativo com mouse (mousemove → CSS vars). Escolha o estilo para o dashboard.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);padding:1.5rem;min-height:200px;position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 40% 50%,rgba(99,102,241,0.35) 0%,transparent 60%),radial-gradient(circle at 70% 30%,rgba(168,85,247,0.25) 0%,transparent 55%);animation:pulse 4s ease-in-out infinite"></div>
+      <div style="position:relative;z-index:1">
+        <div style="background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:.75rem;margin-bottom:.5rem;color:#fff;font-size:.8rem">📊 Views (30d) — <strong>142</strong></div>
+        <div style="background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:.75rem;margin-bottom:.5rem;color:#fff;font-size:.8rem">🖱 Cliques (30d) — <strong>38</strong></div>
+        <div style="background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:.75rem;color:#fff;font-size:.8rem">📄 Páginas — <strong>2</strong></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Gradiente escuro + Glass morphism</h3>
+      <p>Fundo roxo/índigo escuro animado (igual ao Hero da Home), cards com backdrop-filter blur. Mesmo feel da landing page. Funciona bem no tema escuro, adaptável no claro.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(160deg,#f8f9ff 0%,#eef0ff 40%,#f3f0ff 100%);padding:1.5rem;min-height:200px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(99,102,241,0.08);animation:float 6s ease-in-out infinite"></div>
+      <div style="position:absolute;bottom:-30px;left:-30px;width:150px;height:150px;border-radius:50%;background:rgba(168,85,247,0.06);animation:float 8s ease-in-out infinite reverse"></div>
+      <div style="position:relative;z-index:1">
+        <div style="background:#fff;border:1px solid rgba(99,102,241,0.15);border-radius:12px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;color:#333">📊 Views (30d) — <strong>142</strong></div>
+        <div style="background:#fff;border:1px solid rgba(99,102,241,0.15);border-radius:12px;padding:.75rem;margin-bottom:.5rem;font-size:.8rem;color:#333">🖱 Cliques (30d) — <strong>38</strong></div>
+        <div style="background:#fff;border:1px solid rgba(99,102,241,0.15);border-radius:12px;padding:.75rem;font-size:.8rem;color:#333">📄 Páginas — <strong>2</strong></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Orbs flutuantes suaves (light-friendly)</h3>
+      <p>Círculos grandes e desfocados animando lentamente. Funciona bem no tema claro. No escuro usa versão mais intensa. Mais sutil e menos "aggressivo" que o Hero.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a0f;padding:1.5rem;min-height:200px;position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(99,102,241,0.15) 1px,transparent 1px);background-size:24px 24px;animation:gridpulse 3s ease-in-out infinite"></div>
+      <div style="position:relative;z-index:1">
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:.75rem;margin-bottom:.5rem;color:#a5b4fc;font-size:.8rem">📊 Views (30d) — <strong>142</strong></div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:.75rem;margin-bottom:.5rem;color:#a5b4fc;font-size:.8rem">🖱 Cliques (30d) — <strong>38</strong></div>
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:.75rem;color:#a5b4fc;font-size:.8rem">📄 Páginas — <strong>2</strong></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Grid de pontos animado (dark only)</h3>
+      <p>Padrão de pontos pulsando no fundo escuro. Visual mais "tech/SaaS". Só funciona bem no tema escuro — no claro seria neutro.</p>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:.8} 50%{opacity:1} }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
+@keyframes gridpulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+</style>

@@ -32,7 +32,7 @@
             <div class="w-100 d-flex flex-column gap-2 mt-2">
                 @foreach (var link in Links.Where(l => l.IsActive))
                 {
-                    <div class="text-center py-2 px-3 w-100" style="@_btnStyle;cursor:pointer">
+                    <div @key="link.Id" class="text-center py-2 px-3 w-100" style="@_btnStyle;cursor:pointer">
                         @link.Title
                     </div>
                 }

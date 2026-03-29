@@ -63,10 +63,14 @@ public class SubscriptionRepository(AppDbContext db) : ISubscriptionRepository
             .Where(s => s.Status == SubscriptionStatus.Trial && s.TrialEndsAt < DateTime.UtcNow)
             .ToListAsync();
 
-    public async Task<decimal> GetActiveSubscriptionRevenueAsync() =>
-        await db.Subscriptions
+    public async Task<decimal> GetActiveSubscriptionRevenueAsync()
+    {
+        var prices = await db.Subscriptions
             .Where(s => s.Status == SubscriptionStatus.Active && s.PlanPrice != null)
-            .SumAsync(s => (decimal?)s.PlanPrice!.PricePerMonth) ?? 0m;
+            .Select(s => s.PlanPrice!.PricePerMonth)
+            .ToListAsync();
+        return prices.Sum();
+    }
 
     public async Task<Dictionary<string, int>> GetPlanDistributionAsync()
     {

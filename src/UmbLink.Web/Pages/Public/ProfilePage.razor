@@ -4,6 +4,18 @@
 @inject IMetricsService Metrics
 @using System.Text.Json
 
+<HeadContent>
+    <title>@(_page?.Title ?? "UmbLink") — UmbLink</title>
+    <meta name="description" content="@(_page?.Bio ?? "Veja todos os links de " + (_page?.Title ?? ""))" />
+    <meta property="og:title" content="@(_page?.Title ?? "UmbLink")" />
+    <meta property="og:description" content="@(_page?.Bio ?? "")" />
+    @if (!string.IsNullOrEmpty(_page?.AvatarUrl))
+    {
+        <meta property="og:image" content="@_page.AvatarUrl" />
+    }
+    <meta property="og:type" content="profile" />
+</HeadContent>
+
 @if (_loading)
 {
     <div class="min-vh-100 d-flex align-items-center justify-content-center">
@@ -26,7 +38,7 @@ else
          style="position:relative;@_bgStyle;@_bgImageStyle">
         @if (!string.IsNullOrEmpty(_bgImageUrl))
         {
-            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:0"></div>
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,@_bgOverlayAlpha);pointer-events:none;z-index:0"></div>
         }
         <div class="w-100" style="max-width:480px;position:relative;z-index:1">
 
@@ -45,7 +57,7 @@ else
                     </div>
                 }
                 <h4 class="fw-bold mt-3 mb-1" style="color:@_textColor;font-family:@_titleFont">@_page.Title</h4>
-                @if (!string.IsNullOrEmpty(_page.Bio))
+                @if (_showBio && !string.IsNullOrEmpty(_page.Bio))
                 {
                     <p class="mb-0" style="color:@_textColor;opacity:.8;font-size:.95rem">@_page.Bio</p>
                 }
@@ -55,7 +67,7 @@ else
             <div class="d-flex flex-column gap-3 mt-4">
                 @foreach (var link in _links.Where(l => l.IsActive))
                 {
-                    <a href="/r/@link.Id" target="_blank" rel="noopener"
+                    <a @key="link.Id" href="/r/@link.Id" target="_blank" rel="noopener"
                        class="text-decoration-none text-center py-3 px-4 fw-semibold"
                        style="@_btnStyle;display:block;transition:opacity .15s,transform .1s"
                        onmouseover="this.style.opacity='.85';this.style.transform='translateY(-1px)'"
@@ -84,10 +96,13 @@ else
     List<LinkDto> _links = [];
     bool _loading = true;
     bool _removeBranding; // TODO: verificar plano do dono da página
+    bool _showBio = true;
 
     string _bgStyle = "background:#ffffff";
     string _bgImageStyle = "";
     string _bgImageUrl = "";
+    int _bgOverlay = 30;
+    string _bgOverlayAlpha => (_bgOverlay / 100.0).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
     string _btnStyle = "background:#111;color:#fff;border-radius:8px;border:none";
     string _textColor = "#111111";
     string _titleFont = "inherit";
@@ -134,6 +149,8 @@ else
             var gradDir     = Get("gradDirection", "135deg");
             var gradType    = Get("gradType", "linear");
             _bgImageUrl     = Get("backgroundImageUrl", "");
+            _bgOverlay      = cfg.TryGetProperty("bgOverlay", out var ov) ? ov.GetInt32() : 30;
+            _showBio        = !cfg.TryGetProperty("showBio", out var sb) || sb.GetBoolean();
 
             _avatarRadius = avatarShape == "square" ? "10px" : "50%";
 

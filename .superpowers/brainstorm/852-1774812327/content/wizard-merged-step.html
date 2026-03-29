@@ -1,0 +1,75 @@
+<h2>Tarefa 3 — Wizard: Step 3 unificado (título + bio + links + preview)</h2>
+<p class="subtitle">Tudo em uma só etapa. Como organizar o formulário unificado com o preview ao vivo?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:.75rem;background:#f8f9ff;min-height:220px">
+      <div style="display:flex;gap:.75rem;height:100%">
+        <!-- Form -->
+        <div style="flex:1.3;display:flex;flex-direction:column;gap:.4rem;font-size:.65rem">
+          <div style="font-weight:700;color:#6366f1">Sua página</div>
+          <div style="background:#fff;border:1px solid #dde;border-radius:6px;padding:4px 6px;color:#555">Nome: <strong>João Silva</strong></div>
+          <div style="background:#fff;border:1px solid #dde;border-radius:6px;padding:4px 6px;color:#555">Slug: <strong>joao-silva</strong></div>
+          <div style="background:#fff;border:1px solid #dde;border-radius:6px;padding:4px 6px;color:#888">Bio: criador de conteúdo...</div>
+          <div style="border-top:1px dashed #dde;margin-top:2px;padding-top:4px;font-weight:700;color:#6366f1">Links</div>
+          <div style="background:#fff;border:1px solid #dde;border-radius:6px;padding:4px 6px;color:#555">Instagram</div>
+          <div style="background:#fff;border:1px solid #dde;border-radius:6px;padding:4px 6px;color:#aaa">+ Adicionar link</div>
+          <div style="background:#6366f1;color:#fff;border-radius:6px;padding:4px 8px;text-align:center;margin-top:auto">Criar minha página →</div>
+        </div>
+        <!-- Preview -->
+        <div style="flex:.9;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:.6rem;color:#999;margin-bottom:3px">Preview</div>
+          <div style="background:#111;border-radius:10px;padding:.6rem;width:100%;text-align:center">
+            <div style="width:28px;height:28px;border-radius:50%;background:#6366f1;margin:0 auto .4rem;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">👤</div>
+            <div style="color:#fff;font-size:.6rem;font-weight:700">João Silva</div>
+            <div style="color:rgba(255,255,255,.5);font-size:.55rem;margin:.2rem 0 .4rem">criador de conteúdo...</div>
+            <div style="background:rgba(99,102,241,.8);border-radius:5px;padding:2px;font-size:.55rem;color:#fff;margin-bottom:2px">Instagram</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Scroll único: campos de cima, links embaixo</h3>
+      <p>Formulário em scroll contínuo: título → slug → bio → seção de links. Preview fixo à direita. Simples, sem separação visual forte. Bom no mobile (preview colapsa).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:.75rem;background:#f8f9ff;min-height:220px">
+      <div style="display:flex;gap:.75rem;height:100%">
+        <!-- Form com seções -->
+        <div style="flex:1.3;display:flex;flex-direction:column;gap:.35rem;font-size:.65rem">
+          <!-- Seção perfil -->
+          <div style="background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:.5rem">
+            <div style="font-weight:700;color:#6366f1;margin-bottom:.3rem">📝 Perfil</div>
+            <div style="background:#f5f5ff;border-radius:5px;padding:3px 6px;color:#555;margin-bottom:2px">Nome: <strong>João Silva</strong></div>
+            <div style="background:#f5f5ff;border-radius:5px;padding:3px 6px;color:#888">Bio: criador de conteúdo...</div>
+          </div>
+          <!-- Seção links -->
+          <div style="background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:.5rem">
+            <div style="font-weight:700;color:#6366f1;margin-bottom:.3rem">🔗 Links <span style="font-weight:400;color:#aaa;font-size:.6rem">(opcional)</span></div>
+            <div style="background:#f5f5ff;border-radius:5px;padding:3px 6px;color:#555;margin-bottom:2px">Instagram</div>
+            <div style="color:#a5b4fc;border:1px dashed #a5b4fc;border-radius:5px;padding:3px 6px;text-align:center">+ link</div>
+          </div>
+          <div style="background:#6366f1;color:#fff;border-radius:6px;padding:4px 8px;text-align:center">Criar →</div>
+        </div>
+        <!-- Preview -->
+        <div style="flex:.9;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:.6rem;color:#999;margin-bottom:3px">Preview ao vivo</div>
+          <div style="background:#111;border-radius:10px;padding:.6rem;width:100%;text-align:center">
+            <div style="width:28px;height:28px;border-radius:50%;background:#6366f1;margin:0 auto .4rem;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff">👤</div>
+            <div style="color:#fff;font-size:.6rem;font-weight:700">João Silva</div>
+            <div style="color:rgba(255,255,255,.5);font-size:.55rem;margin:.2rem 0 .4rem">criador de conteúdo...</div>
+            <div style="background:rgba(99,102,241,.8);border-radius:5px;padding:2px;font-size:.55rem;color:#fff;margin-bottom:2px">Instagram</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Dois cards agrupados: Perfil + Links</h3>
+      <p>Campos agrupados em 2 cards visuais: "Perfil" e "Links". Preview ao vivo à direita. Separação mais clara, menos "um formulário gigante". Mobile: cards empilham, preview no final.</p>
+    </div>
+  </div>
+
+</div>

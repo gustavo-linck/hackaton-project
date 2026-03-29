@@ -1,6 +1,5 @@
 @page "/my-plan"
 @page "/plans/my"
-@attribute [Authorize]
 @inject ISubscriptionService SubSvc
 @inject IPageService PageSvc
 @inject NavigationManager Nav
@@ -54,7 +53,6 @@
                             <tr><td>Páginas</td><td>@(_sub.Limits.MaxPages < 0 ? "Ilimitadas" : _sub.Limits.MaxPages.ToString())</td></tr>
                             <tr><td>Links por página</td><td>@(_sub.Limits.MaxLinksPerPage < 0 ? "Ilimitados" : _sub.Limits.MaxLinksPerPage.ToString())</td></tr>
                             <tr><td>Histórico de métricas</td><td>@(_sub.Limits.AnalyticsDays < 0 ? "Ilimitado" : $"{_sub.Limits.AnalyticsDays} dias")</td></tr>
-                            <tr><td>Domínio customizado</td><td>@(_sub.Limits.AllowCustomDomain ? "✓" : "✗")</td></tr>
                             <tr><td>Remover branding</td><td>@(_sub.Limits.AllowRemoveBranding ? "✓" : "✗")</td></tr>
                         </tbody>
                     </table>
