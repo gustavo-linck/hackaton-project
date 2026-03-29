@@ -234,7 +234,7 @@
 @if (_showCreate)
 {
     <div class="modal-theme-backdrop">
-        <div class="modal-theme" style="max-width:@(_createStep == 1 ? "720px" : "480px");width:95%">
+        <div class="modal-theme" style="max-width:720px;width:95%">
             <div class="modal-theme-header">
                 <h5>@(_createStep == 1 ? "Escolha um template" : "Detalhes da página")</h5>
                 <button class="btn-ghost" @onclick="() => _showCreate = false" style="padding:.25rem .5rem">

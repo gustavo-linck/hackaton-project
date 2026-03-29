@@ -316,7 +316,7 @@ else
                                             @foreach (var photo in cat.photos)
                                             {
                                                 var fullUrl = photo + "?w=1200&q=80";
-                                                var thumbUrl = photo + "?w=200&q=60";
+                                                var thumbUrl = photo + "?w=400&q=80";
                                                 <div class="col-4">
                                                     <div style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:4/3;
                                                                 border:2px solid @(_bgImageUrl == fullUrl ? "var(--accent)" : "transparent");transition:border .2s"

@@ -376,8 +376,13 @@ body {
     box-shadow: 0 20px 60px var(--shadow-lg);
     width: 100%;
     max-width: 480px;
+    min-height: 360px;
+    max-height: 85vh;
+    overflow-y: auto;
     margin: 1rem;
     animation: fadeInUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-theme-header {
@@ -397,6 +402,7 @@ body {
 .modal-theme-body {
     padding: 1.5rem;
     color: var(--text-primary);
+    flex: 1;
 }
 
 .modal-theme-footer {
@@ -527,6 +533,7 @@ body {
     line-height: 1.1;
     letter-spacing: -0.02em;
     margin-bottom: 1.25rem;
+    color: #ffffff; /* always white — hero is always dark */
 }
 
 .hero-title .highlight {
@@ -739,6 +746,7 @@ body {
     padding: 1rem;
     font-size: 0.8rem;
     border-top: 1px solid var(--border);
+    flex-shrink: 0; /* stays at bottom in flex layout */
 }
 .footer-theme a {
     color: var(--text-secondary);
