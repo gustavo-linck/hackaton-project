@@ -16,4 +16,5 @@ public class AppUser : IdentityUser<Guid>
     public ICollection<Page> Pages { get; set; } = [];
     public ICollection<TrialUsage> TrialUsages { get; set; } = [];
     public ICollection<AuditLog> AuditLogs { get; set; } = [];
+    public ICollection<UserActivityLog> ActivityLogs { get; set; } = [];
 }

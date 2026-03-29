@@ -74,6 +74,7 @@ builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IPlanLimitRepository, PlanLimitRepository>();
+builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>();
 
 // Application services
 builder.Services.AddScoped<IPlanLimitService, PlanLimitService>();
@@ -83,6 +84,7 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IMetricsService, MetricsService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
 
 // Cache
 var redisConn = builder.Configuration.GetConnectionString("Redis");

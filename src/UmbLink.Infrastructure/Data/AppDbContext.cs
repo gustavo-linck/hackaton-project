@@ -22,6 +22,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<PageView> PageViews => Set<PageView>();
     public DbSet<CustomDomain> CustomDomains => Set<CustomDomain>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<UserActivityLog> UserActivityLogs => Set<UserActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -85,5 +86,8 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
             .HasIndex(v => new { v.PageId, v.Timestamp });
         builder.Entity<Page>()
             .HasIndex(p => p.UserId);
+
+        builder.Entity<UserActivityLog>()
+            .HasIndex(l => new { l.UserId, l.CreatedAt });
     }
 }
