@@ -1242,6 +1242,40 @@ body {
     font-weight: 600;
 }
 
+/* ===== Table dark mode ===== */
+[data-theme="dark"] .table {
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .table thead th {
+    color: var(--text-secondary);
+    border-color: var(--border);
+    background: var(--bg-card);
+}
+
+[data-theme="dark"] .table tbody tr td {
+    border-color: var(--border);
+    background: transparent;
+}
+
+[data-theme="dark"] .table tbody tr:hover td {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+[data-theme="dark"] .table-secondary {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Garantir touch target mínimo nos botões de ação do page card */
+.page-card-footer .btn-ghost {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ===== Dashboard Animated Background ===== */
 .dashboard-animated-bg {
     --gx: 50%;
