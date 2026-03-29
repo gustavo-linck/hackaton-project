@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<CustomDomain> CustomDomains => Set<CustomDomain>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<UserActivityLog> UserActivityLogs => Set<UserActivityLog>();
+    public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -89,5 +90,10 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
 
         builder.Entity<UserActivityLog>()
             .HasIndex(l => new { l.UserId, l.CreatedAt });
+
+        builder.Entity<AppUser>()
+            .HasOne(u => u.PaymentMethod)
+            .WithOne(p => p.User)
+            .HasForeignKey<PaymentMethod>(p => p.UserId);
     }
 }
