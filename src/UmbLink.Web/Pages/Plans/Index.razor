@@ -2,131 +2,131 @@
 @attribute [Authorize]
 @inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
+@inject IPaymentMethodRepository PaymentRepo
 @using UmbLink.Infrastructure.Data.Entities
+@using UmbLink.Infrastructure.Repositories
 
 <PageTitle>Planos — UmbLink</PageTitle>
 
-<div class="container py-5" style="color:var(--text-primary)">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold">Escolha seu plano</h2>
-        <p class="text-theme-muted">Sem taxas ocultas. Cancele quando quiser.</p>
+<div class="container py-5" style="color:var(--text-primary);max-width:1040px">
+    <div class="text-center mb-5 animate-fade-in-up">
+        <h2 style="font-weight:800;margin-bottom:.25rem">Escolha seu plano</h2>
+        <p class="text-theme-secondary" style="margin-bottom:1.5rem">Sem taxas ocultas. Cancele quando quiser.</p>
 
-        <!-- Billing toggle -->
-        <div class="btn-group mt-2" role="group">
-            <button class="btn @(_period == "Monthly" ? "btn-accent" : "btn-ghost") btn-sm"
-                    @onclick='() => _period = "Monthly"'>Mensal</button>
-            <button class="btn @(_period == "Quarterly" ? "btn-accent" : "btn-ghost") btn-sm"
-                    @onclick='() => _period = "Quarterly"'>
-                Trimestral <span class="badge bg-success ms-1">-15%</span>
-            </button>
-            <button class="btn @(_period == "Annual" ? "btn-accent" : "btn-ghost") btn-sm"
-                    @onclick='() => _period = "Annual"'>
-                Anual <span class="badge bg-success ms-1">-25%</span>
-            </button>
+        <!-- Pill toggle -->
+        <div class="plans-toggle-wrapper">
+            <div class="plans-toggle">
+                <div class="plans-toggle-slider" style="transform:translateX(@ToggleOffset)"></div>
+                <button class="plans-toggle-btn @(_period == "Monthly" ? "active" : "")" @onclick='() => _period = "Monthly"'>Mensal</button>
+                <button class="plans-toggle-btn @(_period == "Quarterly" ? "active" : "")" @onclick='() => _period = "Quarterly"'>
+                    Trimestral <span class="plans-badge">-15%</span>
+                </button>
+                <button class="plans-toggle-btn @(_period == "Annual" ? "active" : "")" @onclick='() => _period = "Annual"'>
+                    Anual <span class="plans-badge">-25%</span>
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="row justify-content-center g-4">
         <!-- Free -->
-        <div class="col-md-4">
-            <div class="card h-100 @(_currentPlan == "Free" ? "border-primary" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
-                <div class="card-body text-center p-4">
-                    <h5 class="fw-bold">Free</h5>
-                    <div class="display-6 fw-bold my-3">R$0</div>
-                    <p class="text-theme-muted small">Para sempre gratuito</p>
-                    <hr />
-                    <ul class="list-unstyled text-start small">
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>1 página</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>3 links por página</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas 7 dias</li>
-                        <li class="mb-2 text-theme-muted"><i class="bi bi-x-circle me-2"></i>Domínio customizado</li>
-                        <li class="mb-2 text-theme-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
+        <div class="col-md-4 animate-fade-in-up" style="animation-delay:.1s">
+            <div class="plan-card @(_currentPlan == "Free" ? "plan-card-active" : "")">
+                <div class="plan-card-body">
+                    <h5 style="font-weight:700;margin-bottom:.5rem">Free</h5>
+                    <div class="plan-price">R$0</div>
+                    <p class="text-theme-secondary" style="font-size:.85rem;margin-bottom:1.25rem">Para sempre gratuito</p>
+                    <div class="plan-divider"></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>1 página</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>3 links por página</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Métricas 7 dias</li>
+                        <li class="text-theme-muted"><i class="bi bi-x-circle"></i>Domínio customizado</li>
+                        <li class="text-theme-muted"><i class="bi bi-x-circle"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
+                <div class="plan-card-footer">
                     @if (_currentPlan == "Free")
                     {
-                        <button class="btn btn-ghost w-100" disabled>Plano atual</button>
+                        <button class="btn-ghost w-100" style="justify-content:center;opacity:.6" disabled>Plano atual</button>
                     }
                     else
                     {
-                        <button class="btn btn-outline-primary w-100" @onclick="() => Downgrade()">Fazer downgrade</button>
+                        <button class="btn-ghost w-100" style="justify-content:center" @onclick="() => Downgrade()">Fazer downgrade</button>
                     }
                 </div>
             </div>
         </div>
 
         <!-- Pro -->
-        <div class="col-md-4">
-            <div class="card h-100 border-primary shadow @(_currentPlan == "Pro" ? "border-2" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
-                <div class="card-header text-center bg-primary text-white">Mais popular</div>
-                <div class="card-body text-center p-4">
-                    <h5 class="fw-bold">Pro</h5>
-                    <div class="display-6 fw-bold my-3">R$@GetPrice("Pro")<span class="fs-6 text-theme-muted">/mês</span></div>
-                    <p class="text-theme-muted small">@GetTotalLabel("Pro")</p>
-                    <hr />
-                    <ul class="list-unstyled text-start small">
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>3 páginas</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>5 links por página</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas 365 dias</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Domínio customizado</li>
-                        <li class="mb-2 text-theme-muted"><i class="bi bi-x-circle me-2"></i>Remover branding</li>
+        <div class="col-md-4 animate-fade-in-up" style="animation-delay:.2s">
+            <div class="plan-card plan-card-featured @(_currentPlan == "Pro" ? "plan-card-active" : "")">
+                <div class="plan-card-badge">Mais popular</div>
+                <div class="plan-card-body" style="padding-top:2.5rem">
+                    <h5 style="font-weight:700;margin-bottom:.5rem">Pro</h5>
+                    <div class="plan-price">R$@GetPrice("Pro")<span class="plan-price-suffix">/mês</span></div>
+                    <p class="text-theme-secondary" style="font-size:.85rem;margin-bottom:1.25rem">@GetTotalLabel("Pro")</p>
+                    <div class="plan-divider"></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>3 páginas</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>5 links por página</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Métricas 365 dias</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Domínio customizado</li>
+                        <li class="text-theme-muted"><i class="bi bi-x-circle"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
+                <div class="plan-card-footer">
                     @if (_currentPlan == "Pro")
                     {
-                        <button class="btn btn-primary w-100" disabled>Plano atual</button>
+                        <button class="btn-accent w-100" style="justify-content:center;opacity:.6" disabled>Plano atual</button>
                     }
                     else if (_currentPlan == "Free")
                     {
-                        <a href="/plans/checkout?planId=2&period=@_period" class="btn btn-primary w-100 mb-2">Assinar Pro</a>
-                        <button class="btn btn-outline-primary w-100" @onclick="() => StartTrial(2)" disabled="@_starting">
-                            @if (_starting) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            Iniciar trial grátis (7 dias)
+                        <a href="/plans/checkout?planId=2&period=@_period" class="btn-accent w-100" style="justify-content:center;text-decoration:none;margin-bottom:.5rem">Assinar Pro</a>
+                        <button class="btn-ghost w-100" style="justify-content:center" @onclick="() => OpenTrialModal(2)">
+                            Trial grátis (7 dias)
                         </button>
-                        @if (!string.IsNullOrEmpty(_trialError)) { <div class="text-danger small mt-1">@_trialError</div> }
+                        @if (!string.IsNullOrEmpty(_trialError)) { <div style="color:var(--danger);font-size:.75rem;margin-top:.25rem">@_trialError</div> }
                     }
                     else
                     {
-                        <a href="/plans/checkout?planId=2&period=@_period" class="btn btn-primary w-100">Assinar Pro</a>
+                        <a href="/plans/checkout?planId=2&period=@_period" class="btn-accent w-100" style="justify-content:center;text-decoration:none">Assinar Pro</a>
                     }
                 </div>
             </div>
         </div>
 
         <!-- Business -->
-        <div class="col-md-4">
-            <div class="card h-100 @(_currentPlan == "Business" ? "border-warning border-2" : "")" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
-                <div class="card-body text-center p-4">
-                    <h5 class="fw-bold">Business</h5>
-                    <div class="display-6 fw-bold my-3">R$@GetPrice("Business")<span class="fs-6 text-theme-muted">/mês</span></div>
-                    <p class="text-theme-muted small">@GetTotalLabel("Business")</p>
-                    <hr />
-                    <ul class="list-unstyled text-start small">
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Páginas ilimitadas</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Links ilimitados</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Métricas ilimitadas</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Domínio customizado</li>
-                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Remover branding</li>
+        <div class="col-md-4 animate-fade-in-up" style="animation-delay:.3s">
+            <div class="plan-card @(_currentPlan == "Business" ? "plan-card-active" : "")">
+                <div class="plan-card-body">
+                    <h5 style="font-weight:700;margin-bottom:.5rem">Business</h5>
+                    <div class="plan-price">R$@GetPrice("Business")<span class="plan-price-suffix">/mês</span></div>
+                    <p class="text-theme-secondary" style="font-size:.85rem;margin-bottom:1.25rem">@GetTotalLabel("Business")</p>
+                    <div class="plan-divider"></div>
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Páginas ilimitadas</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Links ilimitados</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Métricas ilimitadas</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Domínio customizado</li>
+                        <li><i class="bi bi-check-circle-fill" style="color:var(--success)"></i>Remover branding</li>
                     </ul>
                 </div>
-                <div class="card-footer" style="background:var(--bg-card);border-top:1px solid var(--border)">
+                <div class="plan-card-footer">
                     @if (_currentPlan == "Business")
                     {
-                        <button class="btn btn-warning w-100" disabled>Plano atual</button>
+                        <button class="btn-accent w-100" style="justify-content:center;opacity:.6" disabled>Plano atual</button>
                     }
                     else if (_currentPlan == "Free")
                     {
-                        <a href="/plans/checkout?planId=3&period=@_period" class="btn btn-accent-outline w-100 mb-2">Assinar Business</a>
-                        <button class="btn btn-ghost w-100" @onclick="() => StartTrial(3)" disabled="@_starting">
-                            @if (_starting) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                            Iniciar trial grátis (7 dias)
+                        <a href="/plans/checkout?planId=3&period=@_period" class="btn-accent w-100" style="justify-content:center;text-decoration:none;margin-bottom:.5rem">Assinar Business</a>
+                        <button class="btn-ghost w-100" style="justify-content:center" @onclick="() => OpenTrialModal(3)">
+                            Trial grátis (7 dias)
                         </button>
                     }
                     else
                     {
-                        <a href="/plans/checkout?planId=3&period=@_period" class="btn btn-accent-outline w-100">Assinar Business</a>
+                        <a href="/plans/checkout?planId=3&period=@_period" class="btn-accent w-100" style="justify-content:center;text-decoration:none">Assinar Business</a>
                     }
                 </div>
             </div>
@@ -134,15 +134,88 @@
     </div>
 </div>
 
+@if (_showTrialModal)
+{
+    <div class="modal-overlay" style="position:fixed;inset:0;background:var(--modal-bg);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;min-height:400px;max-height:85vh;overflow-y:auto;padding:2rem">
+            <div class="text-center mb-4">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(85,124,242,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem">
+                    <i class="bi bi-shield-check" style="font-size:1.5rem;color:var(--accent)"></i>
+                </div>
+                <h5 style="font-weight:700;color:var(--text-primary)">Inicie seu Trial Gratuito</h5>
+                <p class="text-theme-secondary" style="font-size:.85rem">
+                    Seu cartão <strong>não será cobrado</strong> durante os 7 dias de trial.<br/>
+                    A cobrança só ocorre após o período terminar, e você pode cancelar a qualquer momento.
+                </p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_cardError))
+            {
+                <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                    <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_cardError
+                </div>
+            }
+
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Número do cartão</label>
+                <input class="form-control-theme w-100" placeholder="0000 0000 0000 0000"
+                       maxlength="19" @bind="_cardNumber" />
+            </div>
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Nome no cartão</label>
+                <input class="form-control-theme w-100" placeholder="Nome como no cartão"
+                       maxlength="50" @bind="_cardHolder" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem">
+                <div>
+                    <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Validade (MM/AA)</label>
+                    <input class="form-control-theme w-100" placeholder="MM/AA"
+                           maxlength="5" @bind="_cardExpiry" />
+                </div>
+                <div>
+                    <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">CVV</label>
+                    <input class="form-control-theme w-100" placeholder="000"
+                           maxlength="4" type="password" @bind="_cardCvv" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn-ghost flex-grow-1" style="justify-content:center" @onclick="CloseTrialModal" disabled="@_processingTrial">
+                    Cancelar
+                </button>
+                <button class="btn-accent flex-grow-1" style="justify-content:center" @onclick="ConfirmTrialWithCard" disabled="@_processingTrial">
+                    @if (_processingTrial) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Iniciar meu Trial Gratuito
+                </button>
+            </div>
+            <p style="text-align:center;font-size:.7rem;color:var(--text-muted);margin-top:.75rem">
+                <i class="bi bi-lock-fill me-1"></i>Seus dados são protegidos com criptografia SSL
+            </p>
+        </div>
+    </div>
+}
+
 <ToastContainer @ref="_toast" />
 
 @code {
     string _period = "Monthly";
     string _currentPlan = "Free";
     SubscriptionDto? _sub;
-    bool _starting;
     string _trialError = "";
     ToastContainer? _toast;
+
+    // Trial card modal
+    bool _showTrialModal;
+    int _trialPlanId;
+    string _cardNumber = "", _cardHolder = "", _cardExpiry = "", _cardCvv = "";
+    string _cardError = "";
+    bool _processingTrial;
+
+    string ToggleOffset => _period switch {
+        "Quarterly" => "100%",
+        "Annual" => "200%",
+        _ => "0%"
+    };
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
 
@@ -151,23 +224,6 @@
         var auth = await AuthState;
         _sub = await SubSvc.GetAsync(auth.User.GetUserId());
         _currentPlan = _sub.PlanName;
-    }
-
-    async Task StartTrial(int planId)
-    {
-        _starting = true; _trialError = "";
-        var auth = await AuthState;
-        var userId = auth.User.GetUserId();
-        var period = Enum.Parse<BillingPeriod>(_period);
-        var result = await SubSvc.StartTrialAsync(userId, planId, period);
-        if (result.IsSuccess)
-        {
-            _sub = result.Value;
-            _currentPlan = _sub!.PlanName;
-            _toast?.Show("Trial iniciado! 7 dias grátis.");
-        }
-        else _trialError = result.Error!;
-        _starting = false;
     }
 
     string GetPrice(string plan) => (_period, plan) switch {
@@ -181,10 +237,68 @@
     };
 
     string GetTotalLabel(string plan) => _period switch {
-        "Quarterly" => $"R${(_period == "Quarterly" && plan == "Pro" ? "48" : "192")} cobrado trimestralmente",
+        "Quarterly" => $"R${(plan == "Pro" ? "48" : "192")} cobrado trimestralmente",
         "Annual"    => $"R${(plan == "Pro" ? "168" : "672")} cobrado anualmente",
         _ => "cobrado mensalmente"
     };
+
+    void OpenTrialModal(int planId)
+    {
+        _trialPlanId = planId;
+        _cardNumber = _cardHolder = _cardExpiry = _cardCvv = _cardError = "";
+        _showTrialModal = true;
+    }
+
+    void CloseTrialModal() => _showTrialModal = false;
+
+    async Task ConfirmTrialWithCard()
+    {
+        _cardError = "";
+        var digits = _cardNumber.Replace(" ", "").Replace("-", "");
+        if (digits.Length < 13 || digits.Length > 19 || !digits.All(char.IsDigit))
+        { _cardError = "Número de cartão inválido."; return; }
+        if (string.IsNullOrWhiteSpace(_cardHolder))
+        { _cardError = "Informe o nome no cartão."; return; }
+        if (!System.Text.RegularExpressions.Regex.IsMatch(_cardExpiry, @"^\d{2}/\d{2}$"))
+        { _cardError = "Validade inválida. Use MM/AA."; return; }
+        if (_cardCvv.Length < 3 || !_cardCvv.All(char.IsDigit))
+        { _cardError = "CVV inválido."; return; }
+
+        _processingTrial = true;
+        try
+        {
+            var auth = await AuthState;
+            var userId = auth.User.GetUserId();
+
+            await PaymentRepo.SaveAsync(new PaymentMethod
+            {
+                UserId = userId,
+                CardLastFour = digits[^4..],
+                CardHolder = _cardHolder,
+                ExpiryMonth = _cardExpiry[..2],
+                ExpiryYear = _cardExpiry[3..],
+                Brand = digits.StartsWith("4") ? "Visa" : digits.StartsWith("5") ? "Mastercard" : "Cartão"
+            });
+
+            var period = Enum.Parse<BillingPeriod>(_period);
+            var result = await SubSvc.StartTrialAsync(userId, _trialPlanId, period);
+            if (result.IsSuccess)
+            {
+                _sub = result.Value;
+                _currentPlan = _sub!.PlanName;
+                _showTrialModal = false;
+                _toast?.Show("Trial ativado! Você tem 7 dias para explorar tudo.");
+            }
+            else
+            {
+                _cardError = result.Error!;
+            }
+        }
+        finally
+        {
+            _processingTrial = false;
+        }
+    }
 
     async Task Downgrade()
     {
