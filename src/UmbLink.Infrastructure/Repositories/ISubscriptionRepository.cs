@@ -19,5 +19,6 @@ public interface ISubscriptionRepository
     Task ExpireActiveTrialsAsync(Guid userId);
     Task<List<Subscription>> GetExpiredTrialsAsync();
     Task<decimal> GetActiveSubscriptionRevenueAsync();
+    Task<Dictionary<string, int>> GetPlanDistributionAsync();
     Task SaveChangesAsync();
 }

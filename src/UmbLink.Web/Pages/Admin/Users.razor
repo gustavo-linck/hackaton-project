@@ -39,14 +39,17 @@
                         </td>
                         <td class="small text-theme-muted">@u.CreatedAt.ToString("dd/MM/yy")</td>
                         <td>
-                            @if (u.IsActive)
-                            {
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Suspend(u.Id)">Suspender</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-success" @onclick="() => Reactivate(u.Id)">Reativar</button>
-                            }
+                            <div class="d-flex gap-1 flex-wrap">
+                                @if (u.IsActive)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Suspend(u.Id)">Suspender</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Reactivate(u.Id)">Reativar</button>
+                                }
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenChangePlan(u)">Plano</button>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -54,6 +57,28 @@
         </table>
     </div>
 </LoadingSpinner>
+
+@if (_showChangePlan && _changePlanUser is not null)
+{
+    <div class="modal-overlay" style="position:fixed;inset:0;background:var(--modal-bg);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;padding:1.5rem">
+            <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Alterar Plano</h6>
+            <p class="text-theme-muted mb-3" style="font-size:.85rem">Usuário: <strong>@_changePlanUser.Name</strong></p>
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Novo plano</label>
+                <select class="form-control-theme w-100" @bind="_newPlanId">
+                    <option value="1">Free</option>
+                    <option value="2">Pro</option>
+                    <option value="3">Business</option>
+                </select>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn-ghost" @onclick="CloseChangePlan">Cancelar</button>
+                <button class="btn-accent" @onclick="ConfirmChangePlan">Confirmar</button>
+            </div>
+        </div>
+    </div>
+}
 
 <ToastContainer @ref="_toast" />
 
@@ -88,5 +113,28 @@
         await AdminSvc.ReactivateUserAsync(_adminId, id);
         await Load();
         _toast?.Show("Usuário reativado.", "success");
+    }
+
+    AdminUserDto? _changePlanUser;
+    bool _showChangePlan;
+    int _newPlanId = 1;
+
+    void OpenChangePlan(AdminUserDto u)
+    {
+        _changePlanUser = u;
+        _newPlanId = u.PlanName switch { "Pro" => 2, "Business" => 3, _ => 1 };
+        _showChangePlan = true;
+    }
+
+    void CloseChangePlan() { _showChangePlan = false; _changePlanUser = null; }
+
+    async Task ConfirmChangePlan()
+    {
+        if (_changePlanUser is null) return;
+        await AdminSvc.ChangePlanAsync(_adminId, _changePlanUser.Id, _newPlanId);
+        _showChangePlan = false;
+        _changePlanUser = null;
+        await Load();
+        _toast?.Show("Plano alterado com sucesso.", "success");
     }
 }

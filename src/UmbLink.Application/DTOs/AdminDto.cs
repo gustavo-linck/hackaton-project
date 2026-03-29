@@ -15,5 +15,10 @@ public record AdminStatsDto(
     int TotalUsers,
     int TotalPages,
     int TotalClicks,
-    decimal SimulatedRevenue
+    decimal SimulatedRevenue,
+    int ActiveLast7Days,
+    int ActiveLast30Days,
+    int PublishedPages,
+    int DraftPages,
+    Dictionary<string, int> PlanDistribution
 );

@@ -10,32 +10,99 @@
 <LoadingSpinner Loading="_loading">
     @if (_stats is not null)
     {
-        <div class="row g-3 mb-4">
+        @* Row 1: main KPIs *@
+        <div class="row g-3 mb-3">
             <div class="col-sm-6 col-lg-3">
                 <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="fs-2 fw-bold text-primary">@_stats.TotalUsers</div>
-                    <div class="text-theme-muted small">Usuários</div>
+                    <div class="fs-2 fw-bold" style="color:var(--accent)">@_stats.TotalUsers</div>
+                    <div class="text-theme-muted small"><i class="bi bi-people me-1"></i>Usuários totais</div>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                     <div class="fs-2 fw-bold text-success">@_stats.TotalPages</div>
-                    <div class="text-theme-muted small">Páginas</div>
+                    <div class="text-theme-muted small"><i class="bi bi-file-earmark me-1"></i>Páginas totais</div>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                     <div class="fs-2 fw-bold text-info">@_stats.TotalClicks</div>
-                    <div class="text-theme-muted small">Cliques totais</div>
+                    <div class="text-theme-muted small"><i class="bi bi-cursor me-1"></i>Cliques totais</div>
                 </div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
                     <div class="fs-2 fw-bold text-warning">R$@_stats.SimulatedRevenue.ToString("F2")</div>
-                    <div class="text-theme-muted small">Receita simulada/mês</div>
+                    <div class="text-theme-muted small"><i class="bi bi-cash-coin me-1"></i>Receita simulada/mês</div>
                 </div>
             </div>
         </div>
+
+        @* Row 2: engagement & pages breakdown *@
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast7Days</div>
+                            <div class="text-theme-muted small">Novos usuários (7d)</div>
+                        </div>
+                        <i class="bi bi-person-plus fs-3" style="color:var(--accent);opacity:.4"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast30Days</div>
+                            <div class="text-theme-muted small">Novos usuários (30d)</div>
+                        </div>
+                        <i class="bi bi-calendar-range fs-3" style="color:var(--accent);opacity:.4"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fs-4 fw-bold text-success">@_stats.PublishedPages</div>
+                            <div class="text-theme-muted small">Páginas publicadas</div>
+                        </div>
+                        <i class="bi bi-eye fs-3 text-success" style="opacity:.4"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fs-4 fw-bold text-warning">@_stats.DraftPages</div>
+                            <div class="text-theme-muted small">Páginas em rascunho</div>
+                        </div>
+                        <i class="bi bi-pencil fs-3 text-warning" style="opacity:.4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Plan distribution *@
+        @if (_stats.PlanDistribution.Count > 0)
+        {
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem">
+                <h6 class="fw-bold mb-3" style="color:var(--text-primary)"><i class="bi bi-pie-chart me-2" style="color:var(--accent)"></i>Distribuição de Planos</h6>
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (var kv in _stats.PlanDistribution.OrderBy(k => k.Key))
+                    {
+                        <div style="display:flex;align-items:center;gap:.5rem">
+                            <PlanBadge PlanName="@kv.Key" />
+                            <span style="font-weight:700;color:var(--text-primary)">@kv.Value</span>
+                            <span class="text-theme-muted" style="font-size:.8rem">(@((_stats.TotalUsers > 0 ? kv.Value * 100.0 / _stats.TotalUsers : 0).ToString("F0"))%)</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     }
 </LoadingSpinner>
 

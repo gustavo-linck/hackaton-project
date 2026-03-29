@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
+using static UmbLink.Infrastructure.Data.Entities.PageStatus;
 
 namespace UmbLink.Infrastructure.Repositories;
 
@@ -49,4 +50,10 @@ public class AnalyticsRepository(AppDbContext db) : IAnalyticsRepository
 
     public async Task<int> GetTotalPagesAsync() =>
         await db.Pages.CountAsync();
+
+    public async Task<int> GetPublishedPagesCountAsync() =>
+        await db.Pages.CountAsync(p => p.Status == PageStatus.Published);
+
+    public async Task<int> GetDraftPagesCountAsync() =>
+        await db.Pages.CountAsync(p => p.Status == PageStatus.Draft);
 }

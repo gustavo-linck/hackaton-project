@@ -68,6 +68,16 @@ public class SubscriptionRepository(AppDbContext db) : ISubscriptionRepository
             .Where(s => s.Status == SubscriptionStatus.Active && s.PlanPrice != null)
             .SumAsync(s => (decimal?)s.PlanPrice!.PricePerMonth) ?? 0m;
 
+    public async Task<Dictionary<string, int>> GetPlanDistributionAsync()
+    {
+        var dist = await db.Subscriptions
+            .Include(s => s.Plan)
+            .GroupBy(s => s.Plan.Name)
+            .Select(g => new { Plan = g.Key, Count = g.Count() })
+            .ToListAsync();
+        return dist.ToDictionary(x => x.Plan, x => x.Count);
+    }
+
     public async Task SaveChangesAsync() =>
         await db.SaveChangesAsync();
 }

@@ -36,7 +36,16 @@ public class AdminService(ISubscriptionRepository subRepo, IAnalyticsRepository 
         var pages = await analyticsRepo.GetTotalPagesAsync();
         var clicks = await analyticsRepo.GetTotalClicksAsync();
         var revenue = await subRepo.GetActiveSubscriptionRevenueAsync();
-        return new AdminStatsDto(users, pages, clicks, revenue);
+
+        var now = DateTime.UtcNow;
+        var active7d = await userManager.Users.CountAsync(u => u.IsActive && u.CreatedAt >= now.AddDays(-7));
+        var active30d = await userManager.Users.CountAsync(u => u.IsActive && u.CreatedAt >= now.AddDays(-30));
+        var published = await analyticsRepo.GetPublishedPagesCountAsync();
+        var draft = await analyticsRepo.GetDraftPagesCountAsync();
+
+        var planDist = await subRepo.GetPlanDistributionAsync();
+
+        return new AdminStatsDto(users, pages, clicks, revenue, active7d, active30d, published, draft, planDist);
     }
 
     public async Task<Result<bool>> SuspendUserAsync(Guid adminId, Guid targetUserId)

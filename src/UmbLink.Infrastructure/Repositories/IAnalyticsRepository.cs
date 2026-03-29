@@ -10,4 +10,6 @@ public interface IAnalyticsRepository
     Task<List<(Guid LinkId, string Title, int Clicks)>> GetClicksByPageLinksAsync(Guid pageId, DateTime from);
     Task<int> GetTotalClicksAsync();
     Task<int> GetTotalPagesAsync();
+    Task<int> GetPublishedPagesCountAsync();
+    Task<int> GetDraftPagesCountAsync();
 }
