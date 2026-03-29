@@ -1,5 +1,6 @@
 @page "/dashboard"
 @attribute [Authorize]
+@implements IAsyncDisposable
 @inject IPageService PageSvc
 @inject ISubscriptionService SubSvc
 @inject IMetricsService MetricsSvc
@@ -272,6 +273,7 @@
     ToastContainer? _toast;
 
     ElementReference _dashboardBgRef;
+    int _gradientRafId;
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
@@ -301,7 +303,12 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            await JS.InvokeVoidAsync("umblink.initHeroGradient", _dashboardBgRef);
+            _gradientRafId = await JS.InvokeAsync<int>("umblink.initHeroGradient", _dashboardBgRef);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JS.InvokeVoidAsync("umblink.disposeHeroGradient", _gradientRafId);
     }
 
     void ShowCreateModal() { _showCreate = true; _createStep = 1; _selectedTemplateId = null; _templateFilter = "todos"; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }
