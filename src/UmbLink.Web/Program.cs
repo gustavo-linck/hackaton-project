@@ -439,7 +439,7 @@ app.MapPost("/api/ai/generate-profile", [Microsoft.AspNetCore.Authorization.Auth
     var userId = user.GetUserId();
     var profile = await groq.GenerateProfileAsync(req.UserDescription, req.ProfileType ?? "geral");
     if (profile is null)
-        return Results.StatusCode(503);
+        return Results.Json(new { error = "Não foi possível gerar o perfil. Verifique se a chave Groq está configurada." }, statusCode: 503);
 
     // Sanitize lengths
     var title = (profile.Title ?? "").Length > 60
