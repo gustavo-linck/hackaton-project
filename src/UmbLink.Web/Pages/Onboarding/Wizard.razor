@@ -17,13 +17,13 @@
     <!-- Progress bar -->
     <div class="px-4 pt-3" style="max-width:700px;margin:0 auto;width:100%">
         <div class="d-flex align-items-center gap-2 mb-1">
-            @for (int i = 1; i <= 4; i++)
+            @for (int i = 1; i <= TotalVisualSteps; i++)
             {
                 var step = i;
-                <div style="flex:1;height:4px;border-radius:4px;background:@(step <= _step ? "var(--accent)" : "var(--border)");transition:background .4s ease"></div>
+                <div style="flex:1;height:4px;border-radius:4px;background:@(step <= VisualStep ? "var(--accent)" : "var(--border)");transition:background .4s ease"></div>
             }
         </div>
-        <p class="text-theme-secondary" style="font-size:.75rem;margin:0">Passo @_step de 4</p>
+        <p class="text-theme-secondary" style="font-size:.75rem;margin:0">Passo @VisualStep de @TotalVisualSteps</p>
     </div>
 
     <!-- Content -->
@@ -223,8 +223,65 @@
                 </div>
             }
 
-            @* ───── Step 4: Success ───── *@
+            @* ───── Step 4: Add initial links ───── *@
             @if (_step == 4)
+            {
+                <div class="animate-fade-in-up">
+                    <div class="text-center mb-4">
+                        <h3 style="font-weight:700;color:var(--text-primary)">Adicione seus primeiros links</h3>
+                        <p class="text-theme-secondary">Você pode adicionar até 3 links agora. É opcional — pode pular.</p>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_linkError))
+                    {
+                        <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                            <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_linkError
+                        </div>
+                    }
+
+                    @for (int i = 0; i < _initialLinks.Count; i++)
+                    {
+                        var idx = i;
+                        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.75rem">
+                            <div style="display:flex;gap:.75rem;align-items:center">
+                                <div style="width:32px;height:32px;border-radius:50%;background:rgba(85,124,242,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <span style="font-weight:700;font-size:.85rem;color:var(--accent)">@(idx + 1)</span>
+                                </div>
+                                <div style="flex:1;display:flex;gap:.5rem;flex-direction:column">
+                                    <input class="form-control-theme w-100"
+                                           placeholder="Título (ex: Instagram)"
+                                           value="@_initialLinks[idx].Title"
+                                           @oninput="e => UpdateLinkTitle(idx, e.Value?.ToString() ?? string.Empty)"
+                                           maxlength="80" />
+                                    <input class="form-control-theme w-100"
+                                           placeholder="URL (ex: https://instagram.com/seuperfil)"
+                                           value="@_initialLinks[idx].Url"
+                                           @oninput="e => UpdateLinkUrl(idx, e.Value?.ToString() ?? string.Empty)"
+                                           maxlength="2048" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn-ghost" @onclick="() => _step = 3">
+                            <i class="bi bi-arrow-left me-1"></i> Voltar
+                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn-ghost" @onclick="SkipLinks">
+                                Pular por agora
+                            </button>
+                            <button class="btn-accent" @onclick="SaveLinksAsync" disabled="@_creatingLinks">
+                                @if (_creatingLinks) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Salvar e continuar <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* ───── Step 5: Success ───── *@
+            @if (_step == 5)
             {
                 <div class="animate-fade-in-up text-center">
                     <div style="width:80px;height:80px;border-radius:50%;background:rgba(34,197,94,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1.5rem">
@@ -275,7 +332,18 @@
     string _aiSuccessMsg = "";
     int _aiCallCount = 0; // max 3 per session
 
-    string StepMaxWidth => _step switch { 2 => "780px", 3 => "900px", _ => "640px" };
+    string StepMaxWidth => _step switch { 2 => "780px", 3 or 4 => "900px", _ => "640px" };
+    int VisualStep => _step switch { 4 => 3, 5 => 4, _ => _step };
+    int TotalVisualSteps => 4;
+
+    // Links step state
+    record InitialLink(string Title, string Url);
+    List<InitialLink> _initialLinks = [new("", ""), new("", ""), new("", "")];
+    string _linkError = "";
+    bool _creatingLinks;
+
+    void UpdateLinkTitle(int idx, string val) => _initialLinks[idx] = _initialLinks[idx] with { Title = val };
+    void UpdateLinkUrl(int idx, string val) => _initialLinks[idx] = _initialLinks[idx] with { Url = val };
 
     static readonly (string id, string label, string icon, string desc)[] _profileTypes =
     [
@@ -365,6 +433,54 @@
     async Task CopyUrl() => await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
     void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");
     void GoToDashboard() => Nav.NavigateTo("/dashboard");
+
+    void SkipLinks() => _step = 5;
+
+    async Task SaveLinksAsync()
+    {
+        _linkError = "";
+        var validLinks = _initialLinks
+            .Where(l => !string.IsNullOrWhiteSpace(l.Title) && !string.IsNullOrWhiteSpace(l.Url))
+            .ToList();
+
+        foreach (var link in validLinks)
+        {
+            if (!Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != "https" && uri.Scheme != "http" && uri.Scheme != "mailto"))
+            {
+                _linkError = $"URL inválida: {link.Url}";
+                return;
+            }
+        }
+
+        if (validLinks.Count == 0)
+        {
+            _step = 5;
+            return;
+        }
+
+        _creatingLinks = true;
+        try
+        {
+            foreach (var link in validLinks)
+            {
+                await LinkSvc.AddAsync(_userId, _createdPageId, new()
+                {
+                    Title = link.Title,
+                    Url = link.Url
+                });
+            }
+            _step = 5;
+        }
+        catch
+        {
+            _linkError = "Erro ao salvar os links. Você pode adicioná-los no editor.";
+        }
+        finally
+        {
+            _creatingLinks = false;
+        }
+    }
 
     PageDto GetPreviewDto()
     {
