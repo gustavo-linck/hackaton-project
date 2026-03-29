@@ -172,9 +172,7 @@ things.md"
   I'll skip items 5 & 6 (already done) and proceed with the remaining items once
    you confirm.
 
-✻ Brewed for 2m 28s
-
-❯ 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                      
+✻ Brewed for 2m 28s                   
 
 ● Got it on the Groq key. I'll proceed with the full plan (skipping items 5 & 6
   which are already correct). I'll save the key to config, not to git.
