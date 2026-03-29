@@ -273,7 +273,6 @@
     ToastContainer? _toast;
 
     ElementReference _dashboardBgRef;
-    int _gradientRafId;
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
@@ -303,12 +302,13 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            _gradientRafId = await JS.InvokeAsync<int>("umblink.initHeroGradient", _dashboardBgRef);
+            await JS.InvokeVoidAsync("umblink.initHeroGradient", _dashboardBgRef);
     }
 
     public async ValueTask DisposeAsync()
     {
-        await JS.InvokeVoidAsync("umblink.disposeHeroGradient", _gradientRafId);
+        try { await JS.InvokeVoidAsync("umblink.disposeHeroGradient", _dashboardBgRef); }
+        catch { /* JS may already be disconnected during disposal */ }
     }
 
     void ShowCreateModal() { _showCreate = true; _createStep = 1; _selectedTemplateId = null; _templateFilter = "todos"; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }

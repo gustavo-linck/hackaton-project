@@ -72,11 +72,14 @@ window.umblink = {
         if ('ontouchstart' in window) {
             cancelAnimationFrame(rafId);
             el.classList.add('hero-gradient-auto');
+        } else {
+            el._gradientRafId = rafId;
         }
-
-        return rafId;
     },
-    disposeHeroGradient: (rafId) => {
-        if (rafId) cancelAnimationFrame(rafId);
+    disposeHeroGradient: (el) => {
+        if (el && el._gradientRafId) {
+            cancelAnimationFrame(el._gradientRafId);
+            el._gradientRafId = null;
+        }
     }
 };
