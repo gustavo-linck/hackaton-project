@@ -126,162 +126,158 @@
                 </div>
             }
 
-            @* ───── Step 3: Page details ───── *@
+            @* ───── Step 3: Perfil + Links + Preview ───── *@
             @if (_step == 3)
             {
                 <div class="animate-fade-in-up">
-                    <div class="row g-4 justify-content-center">
+                    <div class="row g-4">
+                        @* Left column: form *@
                         <div class="col-12 col-lg-7">
-                            <h3 style="font-weight:700;color:var(--text-primary);margin-bottom:.25rem">Detalhes da sua página</h3>
-                            <p class="text-theme-secondary mb-4">Dê um nome e endereço para sua página.</p>
 
                             @if (!string.IsNullOrEmpty(_error))
                             {
-                                <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                                <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
                                     <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_error
                                 </div>
                             }
 
-                            <div style="margin-bottom:1rem">
-                                <label class="form-label-theme" style="font-weight:600">Seu nome ou marca</label>
-                                <input class="form-control-theme w-100" placeholder="Meu Nome" value="@_pageTitle" @oninput="OnTitleInput" maxlength="60" />
-                                <div style="font-size:.7rem;text-align:right;color:@(_pageTitle.Length >= 54 ? "var(--danger)" : "var(--text-muted)")">@_pageTitle.Length / 60</div>
-                            </div>
-
-                            <div style="margin-bottom:1rem">
-                                <label class="form-label-theme" style="font-weight:600">Endereço da página</label>
-                                <div class="d-flex">
-                                    <span class="form-control-theme d-flex align-items-center text-theme-muted"
-                                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
-                                    <input class="form-control-theme w-100" style="border-radius:0 10px 10px 0"
-                                           placeholder="meu-slug" value="@_pageSlug" @oninput="OnSlugInput" maxlength="30" />
+                            @* Card: Perfil *@
+                            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem">
+                                <div style="font-weight:700;font-size:.85rem;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+                                    <i class="bi bi-person-circle"></i> Perfil
                                 </div>
-                                <div style="font-size:.7rem;text-align:right;color:@(_pageSlug.Length >= 27 ? "var(--danger)" : "var(--text-muted)")">@_pageSlug.Length / 30</div>
-                            </div>
 
-                            <div style="margin-bottom:1rem">
-                                <label class="form-label-theme" style="font-weight:600">Bio (opcional)</label>
-                                <textarea class="form-control-theme w-100" rows="2" value="@_pageBio" @oninput="e => _pageBio = e.Value?.ToString() ?? string.Empty" placeholder="Uma breve descrição sobre você..." maxlength="200"></textarea>
-                                <div style="font-size:.7rem;text-align:right;color:@(_pageBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_pageBio.Length / 200</div>
-                            </div>
-
-                            <!-- AI section -->
-                            <div style="border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;background:rgba(99,102,241,0.04)">
-                                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
-                                    <i class="bi bi-stars" style="color:var(--accent)"></i>
-                                    <span style="font-weight:600;font-size:.85rem;color:var(--text-primary)">Quer uma ajuda? Gere com IA</span>
+                                <div style="margin-bottom:.875rem">
+                                    <label class="form-label-theme" style="font-weight:600">Seu nome ou marca</label>
+                                    <input class="form-control-theme w-100" placeholder="Meu Nome"
+                                           value="@_pageTitle" @oninput="OnTitleInput" maxlength="60" />
+                                    <div style="font-size:.7rem;text-align:right;color:@(_pageTitle.Length >= 54 ? "var(--danger)" : "var(--text-muted)")">@_pageTitle.Length / 60</div>
                                 </div>
-                                <textarea class="form-control-theme w-100" rows="2"
-                                          placeholder="Descreva quem você é em uma frase..."
-                                          @bind="_aiDescription" style="margin-bottom:.5rem" />
-                                @if (!string.IsNullOrEmpty(_aiError))
-                                {
-                                    <div style="font-size:.75rem;color:var(--danger);margin-bottom:.5rem">@_aiError</div>
-                                }
-                                @if (!string.IsNullOrEmpty(_aiSuccessMsg))
-                                {
-                                    <div style="font-size:.75rem;color:var(--success);margin-bottom:.5rem">@_aiSuccessMsg</div>
-                                }
-                                <button class="btn-accent" style="font-size:.8rem;padding:.35rem .875rem"
-                                        @onclick="GenerateWithAI" disabled="@(_aiLoading || _aiCallCount >= 3)">
-                                    @if (_aiLoading)
+
+                                <div style="margin-bottom:.875rem">
+                                    <label class="form-label-theme" style="font-weight:600">Endereço da página</label>
+                                    <div class="d-flex">
+                                        <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                                              style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
+                                        <input class="form-control-theme w-100" style="border-radius:0 10px 10px 0"
+                                               placeholder="meu-slug" value="@_pageSlug" @oninput="OnSlugInput" maxlength="30" />
+                                    </div>
+                                    <div style="font-size:.7rem;text-align:right;color:@(_pageSlug.Length >= 27 ? "var(--danger)" : "var(--text-muted)")">@_pageSlug.Length / 30</div>
+                                </div>
+
+                                <div style="margin-bottom:.875rem">
+                                    <label class="form-label-theme" style="font-weight:600">Bio (opcional)</label>
+                                    <textarea class="form-control-theme w-100" rows="2" maxlength="200"
+                                              value="@_pageBio" @oninput="e => _pageBio = e.Value?.ToString() ?? string.Empty"
+                                              placeholder="Uma breve descrição sobre você..."></textarea>
+                                    <div style="font-size:.7rem;text-align:right;color:@(_pageBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_pageBio.Length / 200</div>
+                                </div>
+
+                                @* AI helper *@
+                                <div style="border:1px solid var(--border);border-radius:10px;padding:.875rem;background:rgba(99,102,241,0.04)">
+                                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem">
+                                        <i class="bi bi-stars" style="color:var(--accent)"></i>
+                                        <span style="font-weight:600;font-size:.82rem;color:var(--text-primary)">Gerar com IA</span>
+                                    </div>
+                                    <textarea class="form-control-theme w-100" rows="2"
+                                              placeholder="Descreva quem você é em uma frase..."
+                                              @bind="_aiDescription" style="margin-bottom:.5rem" />
+                                    @if (!string.IsNullOrEmpty(_aiError))
                                     {
-                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                        <div style="font-size:.75rem;color:var(--danger);margin-bottom:.375rem">@_aiError</div>
                                     }
-                                    else
+                                    @if (!string.IsNullOrEmpty(_aiSuccessMsg))
                                     {
-                                        <i class="bi bi-stars me-1"></i>
+                                        <div style="font-size:.75rem;color:var(--success);margin-bottom:.375rem">@_aiSuccessMsg</div>
                                     }
-                                    @(_aiCallCount >= 3 ? "Limite atingido" : "Gerar com IA")
+                                    <button class="btn-accent" style="font-size:.8rem;padding:.3rem .75rem"
+                                            @onclick="GenerateWithAI" disabled="@(_aiLoading || _aiCallCount >= 3)">
+                                        @if (_aiLoading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        else { <i class="bi bi-stars me-1"></i> }
+                                        @(_aiCallCount >= 3 ? "Limite atingido" : "Gerar com IA")
+                                    </button>
+                                    @if (_aiCallCount > 0)
+                                    {
+                                        <span style="font-size:.7rem;color:var(--text-muted);margin-left:.5rem">@_aiCallCount / 3</span>
+                                    }
+                                </div>
+                            </div>
+
+                            @* Card: Links *@
+                            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem">
+                                <div style="font-weight:700;font-size:.85rem;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+                                    <i class="bi bi-link-45deg"></i> Links
+                                    <span style="font-weight:400;font-size:.75rem;color:var(--text-muted)">(opcional)</span>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(_linkError))
+                                {
+                                    <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                                        <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_linkError
+                                    </div>
+                                }
+
+                                @for (int i = 0; i < _initialLinks.Count; i++)
+                                {
+                                    var idx = i;
+                                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;padding:.75rem;margin-bottom:.625rem">
+                                        <div style="display:flex;gap:.625rem;align-items:center">
+                                            <div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                                <span style="font-weight:700;font-size:.75rem;color:var(--accent)">@(idx + 1)</span>
+                                            </div>
+                                            <div style="flex:1;display:flex;gap:.375rem;flex-direction:column">
+                                                <input class="form-control-theme w-100"
+                                                       placeholder="Título (ex: Instagram)"
+                                                       value="@_initialLinks[idx].Title"
+                                                       @oninput="e => UpdateLinkTitle(idx, e.Value?.ToString() ?? string.Empty)"
+                                                       maxlength="80" />
+                                                <input class="form-control-theme w-100"
+                                                       placeholder="URL (ex: https://instagram.com/seuperfil)"
+                                                       value="@_initialLinks[idx].Url"
+                                                       @oninput="e => UpdateLinkUrl(idx, e.Value?.ToString() ?? string.Empty)"
+                                                       maxlength="2048" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @* Mobile preview toggle *@
+                            <button class="btn-ghost d-lg-none w-100 mb-3" @onclick="() => _showMobilePreview = !_showMobilePreview">
+                                <i class="bi bi-eye me-1"></i>@(_showMobilePreview ? "Ocultar" : "Ver") preview
+                            </button>
+
+                            @* Mobile collapsible preview *@
+                            @if (_showMobilePreview)
+                            {
+                                <div class="d-lg-none d-flex flex-column align-items-center mb-4">
+                                    <PagePreview Page="GetPreviewDto()" Links="PreviewLinks" />
+                                    <small class="text-theme-muted mt-2">Preview ao vivo</small>
+                                </div>
+                            }
+
+                            <div class="d-flex justify-content-between mt-2">
+                                <button class="btn-ghost" @onclick="() => _step = 2">
+                                    <i class="bi bi-arrow-left me-1"></i> Voltar
                                 </button>
-                                @if (_aiCallCount > 0)
-                                {
-                                    <span style="font-size:.7rem;color:var(--text-muted);margin-left:.5rem">
-                                        @_aiCallCount / 3 usos
-                                    </span>
-                                }
-                            </div>
-
-                            <div class="d-flex justify-content-between mt-4">
-                                <button class="btn-ghost" @onclick="() => _step = 2"><i class="bi bi-arrow-left me-1"></i> Voltar</button>
                                 <button class="btn-accent" @onclick="CreatePageAsync" disabled="@_creating">
-                                    @if (_creating)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-1"></span>
-                                    }
+                                    @if (_creating) { <span class="spinner-border spinner-border-sm me-1"></span> }
                                     Criar minha página <i class="bi bi-arrow-right ms-1"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Live preview (desktop) -->
-                        <div class="col-lg-5 d-none d-lg-flex flex-column align-items-center justify-content-start pt-3">
-                            <PagePreview Page="GetPreviewDto()" Links="[]" />
+                        @* Right column: desktop preview *@
+                        <div class="col-lg-5 d-none d-lg-flex flex-column align-items-center justify-content-start pt-2">
+                            <PagePreview Page="GetPreviewDto()" Links="PreviewLinks" />
                             <small class="text-theme-muted mt-2">Preview ao vivo</small>
                         </div>
                     </div>
                 </div>
             }
 
-            @* ───── Step 4: Add initial links ───── *@
+            @* ───── Step 4: Success ───── *@
             @if (_step == 4)
-            {
-                <div class="animate-fade-in-up">
-                    <div class="text-center mb-4">
-                        <h3 style="font-weight:700;color:var(--text-primary)">Adicione seus primeiros links</h3>
-                        <p class="text-theme-secondary">Você pode adicionar até 3 links agora. É opcional — pode pular.</p>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(_linkError))
-                    {
-                        <div class="alert-theme mb-3" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
-                            <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_linkError
-                        </div>
-                    }
-
-                    @for (int i = 0; i < _initialLinks.Count; i++)
-                    {
-                        var idx = i;
-                        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.75rem">
-                            <div style="display:flex;gap:.75rem;align-items:center">
-                                <div style="width:32px;height:32px;border-radius:50%;background:rgba(85,124,242,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                    <span style="font-weight:700;font-size:.85rem;color:var(--accent)">@(idx + 1)</span>
-                                </div>
-                                <div style="flex:1;display:flex;gap:.5rem;flex-direction:column">
-                                    <input class="form-control-theme w-100"
-                                           placeholder="Título (ex: Instagram)"
-                                           value="@_initialLinks[idx].Title"
-                                           @oninput="e => UpdateLinkTitle(idx, e.Value?.ToString() ?? string.Empty)"
-                                           maxlength="80" />
-                                    <input class="form-control-theme w-100"
-                                           placeholder="URL (ex: https://instagram.com/seuperfil)"
-                                           value="@_initialLinks[idx].Url"
-                                           @oninput="e => UpdateLinkUrl(idx, e.Value?.ToString() ?? string.Empty)"
-                                           maxlength="2048" />
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    <div class="d-flex justify-content-between mt-4">
-                        <button class="btn-ghost" @onclick="() => _step = 3">
-                            <i class="bi bi-arrow-left me-1"></i> Voltar
-                        </button>
-                        <div class="d-flex gap-2">
-                            <button class="btn-ghost" @onclick="SkipLinks">
-                                Pular por agora
-                            </button>
-                            <button class="btn-accent" @onclick="SaveLinksAsync" disabled="@_creatingLinks">
-                                @if (_creatingLinks) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                Salvar e continuar <i class="bi bi-arrow-right ms-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            @* ───── Step 5: Success ───── *@
-            @if (_step == 5)
             {
                 <div class="animate-fade-in-up text-center">
                     <div style="width:80px;height:80px;border-radius:50%;background:rgba(34,197,94,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1.5rem">
@@ -332,18 +328,23 @@
     string _aiSuccessMsg = "";
     int _aiCallCount = 0; // max 3 per session
 
-    string StepMaxWidth => _step switch { 2 => "780px", 3 or 4 => "900px", _ => "640px" };
-    int VisualStep => _step switch { 4 => 3, 5 => 4, _ => _step };
-    int TotalVisualSteps => 4;
+    string StepMaxWidth => _step switch { 2 => "780px", 3 => "960px", _ => "640px" };
+    int VisualStep => _step switch { 4 => 3, _ => _step };
+    int TotalVisualSteps => 3;
 
     // Links step state
     record InitialLink(string Title, string Url);
     List<InitialLink> _initialLinks = [new("", ""), new("", ""), new("", "")];
     string _linkError = "";
-    bool _creatingLinks;
+    bool _showMobilePreview;
 
     void UpdateLinkTitle(int idx, string val) => _initialLinks[idx] = _initialLinks[idx] with { Title = val };
     void UpdateLinkUrl(int idx, string val) => _initialLinks[idx] = _initialLinks[idx] with { Url = val };
+
+    List<LinkDto> PreviewLinks => _initialLinks
+        .Where(l => !string.IsNullOrWhiteSpace(l.Title))
+        .Select((l, i) => new LinkDto(Guid.Empty, Guid.Empty, l.Title, l.Url, null, true, i + 1))
+        .ToList();
 
     static readonly (string id, string label, string icon, string desc)[] _profileTypes =
     [
@@ -426,61 +427,28 @@
 
         _createdPageId = page.Id;
         _createdSlug = _pageSlug;
-        _creating = false;
-        _step = 4;
-    }
 
-    async Task CopyUrl() => await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
-    void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");
-    void GoToDashboard() => Nav.NavigateTo("/dashboard");
-
-    void SkipLinks() => _step = 5;
-
-    async Task SaveLinksAsync()
-    {
-        _linkError = "";
+        // Save optional links
         var validLinks = _initialLinks
             .Where(l => !string.IsNullOrWhiteSpace(l.Title) && !string.IsNullOrWhiteSpace(l.Url))
             .ToList();
 
         foreach (var link in validLinks)
         {
-            if (!Uri.TryCreate(link.Url, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != "https" && uri.Scheme != "http" && uri.Scheme != "mailto"))
+            await LinkSvc.AddAsync(_userId, _createdPageId, new()
             {
-                _linkError = $"URL inválida: {link.Url}";
-                return;
-            }
+                Title = link.Title,
+                Url = link.Url
+            });
         }
 
-        if (validLinks.Count == 0)
-        {
-            _step = 5;
-            return;
-        }
-
-        _creatingLinks = true;
-        try
-        {
-            foreach (var link in validLinks)
-            {
-                await LinkSvc.AddAsync(_userId, _createdPageId, new()
-                {
-                    Title = link.Title,
-                    Url = link.Url
-                });
-            }
-            _step = 5;
-        }
-        catch
-        {
-            _linkError = "Erro ao salvar os links. Você pode adicioná-los no editor.";
-        }
-        finally
-        {
-            _creatingLinks = false;
-        }
+        _creating = false;
+        _step = 4; // step 4 = success
     }
+
+    async Task CopyUrl() => await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
+    void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");
+    void GoToDashboard() => Nav.NavigateTo("/dashboard");
 
     PageDto GetPreviewDto()
     {
