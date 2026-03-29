@@ -76,6 +76,7 @@ builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IPlanLimitRepository, PlanLimitRepository>();
 builder.Services.AddScoped<IUserActivityLogRepository, UserActivityLogRepository>();
 builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+builder.Services.AddScoped<IAdminUserRepository, AdminUserRepository>();
 
 // Application services
 builder.Services.AddScoped<IPlanLimitService, PlanLimitService>();
@@ -183,7 +184,7 @@ app.MapPost("/auth/do-register", async (
     HttpContext ctx,
     UserManager<AppUser> um,
     SignInManager<AppUser> sm,
-    AppDbContext db) =>
+    ISubscriptionRepository subRepo) =>
 {
     var form     = ctx.Request.Form;
     var name     = form["name"].ToString().Trim();
@@ -202,14 +203,13 @@ app.MapPost("/auth/do-register", async (
     }
 
     await um.AddToRoleAsync(user, "User");
-    var freePlan = await db.Plans.FirstAsync(p => p.Name == "Free");
-    db.Subscriptions.Add(new UmbLink.Infrastructure.Data.Entities.Subscription
+    var freePlan = await subRepo.GetFreePlanAsync();
+    await subRepo.CreateAsync(new UmbLink.Infrastructure.Data.Entities.Subscription
     {
         UserId = user.Id,
         PlanId = freePlan.Id,
         Status = UmbLink.Infrastructure.Data.Entities.SubscriptionStatus.Free
     });
-    await db.SaveChangesAsync();
     await sm.SignInAsync(user, isPersistent: false);
     return Results.Redirect("/onboarding");
 }).DisableAntiforgery();
@@ -229,7 +229,7 @@ app.MapGet("/auth/google-callback", async (
     HttpContext ctx,
     UserManager<AppUser> um,
     SignInManager<AppUser> sm,
-    AppDbContext db) =>
+    ISubscriptionRepository subRepo) =>
 {
     var info = await sm.GetExternalLoginInfoAsync();
     if (info is null) return Results.Redirect("/auth/login?error=google");
@@ -246,14 +246,13 @@ app.MapGet("/auth/google-callback", async (
     if (!createResult.Succeeded) return Results.Redirect("/auth/login?error=google");
 
     await um.AddLoginAsync(user, info);
-    var freePlan = await db.Plans.FirstAsync(p => p.Name == "Free");
-    db.Subscriptions.Add(new UmbLink.Infrastructure.Data.Entities.Subscription
+    var freePlan = await subRepo.GetFreePlanAsync();
+    await subRepo.CreateAsync(new UmbLink.Infrastructure.Data.Entities.Subscription
     {
         UserId = user.Id,
         PlanId = freePlan.Id,
         Status = UmbLink.Infrastructure.Data.Entities.SubscriptionStatus.Free
     });
-    await db.SaveChangesAsync();
     await sm.SignInAsync(user, false);
     return Results.Redirect("/onboarding");
 });

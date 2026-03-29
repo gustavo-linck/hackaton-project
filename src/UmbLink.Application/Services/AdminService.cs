@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using UmbLink.Application.DTOs;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Models;
@@ -9,41 +8,31 @@ using UmbLink.Infrastructure.Repositories;
 
 namespace UmbLink.Application.Services;
 
-public class AdminService(ISubscriptionRepository subRepo, IAnalyticsRepository analyticsRepo, IAuditService audit, UserManager<AppUser> userManager) : IAdminService
+public class AdminService(ISubscriptionRepository subRepo, IAnalyticsRepository analyticsRepo, IAuditService audit, UserManager<AppUser> userManager, IAdminUserRepository adminUserRepo) : IAdminService
 {
     public async Task<List<AdminUserDto>> GetUsersAsync(string? search = null)
     {
-        var query = userManager.Users
-            .Include(u => u.Subscription).ThenInclude(s => s != null ? s.Plan : null)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(u => u.Name.Contains(search) || u.Email!.Contains(search));
-
-        return await query
-            .OrderByDescending(u => u.CreatedAt)
-            .Select(u => new AdminUserDto(
-                u.Id, u.Name, u.Email ?? "",
-                u.Subscription != null ? u.Subscription.Plan.Name : "Free",
-                u.Subscription != null ? u.Subscription.Status : SubscriptionStatus.Free,
-                u.IsActive, u.CreatedAt))
-            .ToListAsync();
+        var users = await adminUserRepo.GetUsersWithPlanAsync(search);
+        return users.Select(u => new AdminUserDto(
+            u.Id, u.Name, u.Email ?? "",
+            u.Subscription?.Plan.Name ?? "Free",
+            u.Subscription?.Status ?? SubscriptionStatus.Free,
+            u.IsActive, u.CreatedAt)).ToList();
     }
 
     public async Task<AdminStatsDto> GetGlobalStatsAsync()
     {
-        var users = await userManager.Users.CountAsync();
+        var users = await adminUserRepo.CountAsync();
         var pages = await analyticsRepo.GetTotalPagesAsync();
         var clicks = await analyticsRepo.GetTotalClicksAsync();
         var revenue = await subRepo.GetActiveSubscriptionRevenueAsync();
 
         var now = DateTime.UtcNow;
-        var active7d = await userManager.Users.CountAsync(u => u.IsActive && u.CreatedAt >= now.AddDays(-7));
-        var active30d = await userManager.Users.CountAsync(u => u.IsActive && u.CreatedAt >= now.AddDays(-30));
+        var active7d  = await adminUserRepo.CountNewSinceAsync(now.AddDays(-7));
+        var active30d = await adminUserRepo.CountNewSinceAsync(now.AddDays(-30));
         var published = await analyticsRepo.GetPublishedPagesCountAsync();
-        var draft = await analyticsRepo.GetDraftPagesCountAsync();
-
-        var planDist = await subRepo.GetPlanDistributionAsync();
+        var draft     = await analyticsRepo.GetDraftPagesCountAsync();
+        var planDist  = await subRepo.GetPlanDistributionAsync();
 
         return new AdminStatsDto(users, pages, clicks, revenue, active7d, active30d, published, draft, planDist);
     }
