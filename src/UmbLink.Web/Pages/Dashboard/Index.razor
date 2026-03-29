@@ -2,13 +2,54 @@
 @attribute [Authorize]
 @inject IPageService PageSvc
 @inject ISubscriptionService SubSvc
+@inject IMetricsService MetricsSvc
+@inject IUserActivityLogService ActivitySvc
 @inject NavigationManager Nav
+@using UmbLink.Application.Interfaces
 
 <PageTitle>Dashboard — UmbLink</PageTitle>
 
 <TrialBanner TrialEndsAt="_sub?.TrialEndsAt" />
 
 <div class="container py-4" style="max-width:960px">
+
+    @* ─── Metrics cards ─── *@
+    @if (_pages.Count > 0)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
+                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Views (30d)</div>
+                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_totalViews30d</div>
+                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-eye me-1"></i>visualizações</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
+                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Cliques (30d)</div>
+                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_totalClicks30d</div>
+                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-cursor me-1"></i>cliques em links</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
+                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Páginas</div>
+                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_pages.Count</div>
+                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-file-earmark me-1"></i>criadas</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
+                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Top página</div>
+                    <div style="font-size:1rem;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        @(_topPageTitle ?? "—")
+                    </div>
+                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-trophy me-1"></i>mais visualizada</div>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 style="font-weight:700;color:var(--text-primary);margin:0">Minhas Páginas</h4>
@@ -92,46 +133,207 @@
     </LoadingSpinner>
 </div>
 
-<!-- Create modal -->
+@* ─── Recent Activity + Next Steps ─── *@
+@if (!_loading)
+{
+    <div class="row g-4 mt-1">
+        @* Activity log *@
+        <div class="col-md-6">
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+                <h6 style="font-weight:700;color:var(--text-primary);margin-bottom:1rem">
+                    <i class="bi bi-activity me-2" style="color:var(--accent)"></i>Atividade Recente
+                </h6>
+                @if (_activityLogs.Count == 0)
+                {
+                    <p class="text-theme-muted" style="font-size:.85rem">Nenhuma atividade registrada ainda.</p>
+                }
+                else
+                {
+                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem">
+                        @foreach (var log in _activityLogs)
+                        {
+                            <li style="display:flex;gap:.75rem;align-items:flex-start">
+                                <div style="width:28px;height:28px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <i class="bi @GetActivityIcon(log.Action)" style="font-size:.75rem;color:var(--accent)"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:.82rem;color:var(--text-primary);font-weight:500">@GetActivityLabel(log.Action)</div>
+                                    @if (!string.IsNullOrEmpty(log.Details))
+                                    {
+                                        <div style="font-size:.75rem;color:var(--text-muted)">@log.Details</div>
+                                    }
+                                    <div style="font-size:.7rem;color:var(--text-muted)">@log.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        @* Next steps tips *@
+        <div class="col-md-6">
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+                <h6 style="font-weight:700;color:var(--text-primary);margin-bottom:1rem">
+                    <i class="bi bi-lightbulb me-2" style="color:var(--warning)"></i>Próximos Passos
+                </h6>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem">
+                    @if (_pages.Count == 0)
+                    {
+                        <li class="next-step-item">
+                            <i class="bi bi-plus-circle-fill" style="color:var(--accent)"></i>
+                            <div>
+                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Crie sua primeira página</div>
+                                <div style="font-size:.75rem;color:var(--text-muted)">Junte seus links em um só lugar</div>
+                            </div>
+                        </li>
+                    }
+                    @if (_pages.All(p => p.Status != PageStatus.Published))
+                    {
+                        <li class="next-step-item">
+                            <i class="bi bi-eye-fill" style="color:var(--success)"></i>
+                            <div>
+                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Publique sua página</div>
+                                <div style="font-size:.75rem;color:var(--text-muted)">Deixe seu link-in-bio visível para todos</div>
+                            </div>
+                        </li>
+                    }
+                    <li class="next-step-item">
+                        <i class="bi bi-share-fill" style="color:var(--accent)"></i>
+                        <div>
+                            <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Compartilhe seu link</div>
+                            <div style="font-size:.75rem;color:var(--text-muted)">Adicione no Instagram, TikTok e outras redes</div>
+                        </div>
+                    </li>
+                    @if (_sub?.PlanName == "Free")
+                    {
+                        <li class="next-step-item">
+                            <i class="bi bi-rocket-takeoff-fill" style="color:var(--warning)"></i>
+                            <div>
+                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">
+                                    <a href="/plans" style="color:inherit;text-decoration:underline">Faça upgrade para Pro</a>
+                                </div>
+                                <div style="font-size:.75rem;color:var(--text-muted)">Mais páginas, links e métricas completas</div>
+                            </div>
+                        </li>
+                    }
+                    <li class="next-step-item">
+                        <i class="bi bi-bar-chart-fill" style="color:var(--info, #0ea5e9)"></i>
+                        <div>
+                            <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Acompanhe suas métricas</div>
+                            <div style="font-size:.75rem;color:var(--text-muted)">Veja visualizações e cliques por página</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Create modal — multi-step with template selection -->
 @if (_showCreate)
 {
     <div class="modal-theme-backdrop">
-        <div class="modal-theme">
+        <div class="modal-theme" style="max-width:@(_createStep == 1 ? "720px" : "480px");width:95%">
             <div class="modal-theme-header">
-                <h5>Nova Página</h5>
+                <h5>@(_createStep == 1 ? "Escolha um template" : "Detalhes da página")</h5>
                 <button class="btn-ghost" @onclick="() => _showCreate = false" style="padding:.25rem .5rem">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
             <div class="modal-theme-body">
-                @if (!string.IsNullOrEmpty(_createError))
+                @if (_createStep == 1)
                 {
-                    <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
-                        <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
-                        @_createError
+                    <!-- Category filter -->
+                    <div class="d-flex gap-1 mb-3 flex-wrap">
+                        @foreach (var cat in Templates.Categories)
+                        {
+                            <button type="button"
+                                    class="@(_templateFilter == cat ? "btn-accent" : "btn-ghost")"
+                                    style="font-size:.75rem;padding:.3rem .75rem;text-transform:capitalize"
+                                    @onclick="() => _templateFilter = cat">
+                                @cat
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Template cards -->
+                    <div class="row g-2">
+                        <!-- Blank option -->
+                        <div class="col-sm-6 col-md-4">
+                            <div style="border:2px solid @(_selectedTemplateId == null ? "var(--accent)" : "var(--border)");
+                                        border-radius:12px;padding:1rem;cursor:pointer;text-align:center;
+                                        background:@(_selectedTemplateId == null ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
+                                        transition:all .2s ease;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
+                                 @onclick="() => _selectedTemplateId = null">
+                                <i class="bi bi-plus-circle" style="font-size:1.5rem;color:var(--accent)"></i>
+                                <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">Em branco</span>
+                                <span style="font-size:.7rem;color:var(--text-secondary)">Começar do zero</span>
+                            </div>
+                        </div>
+                        @foreach (var tpl in FilteredTemplates)
+                        {
+                            <div class="col-sm-6 col-md-4">
+                                <div style="border:2px solid @(_selectedTemplateId == tpl.Id ? "var(--accent)" : "var(--border)");
+                                            border-radius:12px;padding:1rem;cursor:pointer;text-align:center;
+                                            background:@(_selectedTemplateId == tpl.Id ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
+                                            transition:all .2s ease;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
+                                     @onclick="() => _selectedTemplateId = tpl.Id">
+                                    <i class="bi @tpl.Icon" style="font-size:1.5rem;color:var(--accent)"></i>
+                                    <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">@tpl.Name</span>
+                                    <span style="font-size:.7rem;color:var(--text-secondary)">@tpl.Description</span>
+                                    @if (_selectedTemplateId == tpl.Id)
+                                    {
+                                        <i class="bi bi-check-circle-fill" style="color:var(--accent);font-size:.9rem"></i>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
-                <div style="margin-bottom:1rem">
-                    <label class="form-label-theme">Título</label>
-                    <input value="@_createTitle" @oninput="OnCreateTitleInput" class="form-control-theme w-100" placeholder="Minha Página" />
-                </div>
-                <div style="margin-bottom:1rem">
-                    <label class="form-label-theme">Endereço (slug)</label>
-                    <div class="d-flex">
-                        <span class="form-control-theme d-flex align-items-center text-theme-muted"
-                              style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
-                        <input value="@_createSlug" @oninput="OnCreateSlugInput" class="form-control-theme w-100"
-                               style="border-radius:0 10px 10px 0" placeholder="meu-slug" />
+                else
+                {
+                    @if (!string.IsNullOrEmpty(_createError))
+                    {
+                        <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                            <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i>
+                            @_createError
+                        </div>
+                    }
+                    <div style="margin-bottom:1rem">
+                        <label class="form-label-theme">Título</label>
+                        <input value="@_createTitle" @oninput="OnCreateTitleInput" class="form-control-theme w-100" placeholder="Minha Página" />
                     </div>
-                </div>
-                <div>
-                    <label class="form-label-theme">Bio (opcional)</label>
-                    <textarea @bind="_createBio" class="form-control-theme w-100" rows="2"></textarea>
-                </div>
+                    <div style="margin-bottom:1rem">
+                        <label class="form-label-theme">Endereço (slug)</label>
+                        <div class="d-flex">
+                            <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                                  style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
+                            <input value="@_createSlug" @oninput="OnCreateSlugInput" class="form-control-theme w-100"
+                                   style="border-radius:0 10px 10px 0" placeholder="meu-slug" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label-theme">Bio (opcional)</label>
+                        <textarea @bind="_createBio" class="form-control-theme w-100" rows="2"></textarea>
+                    </div>
+                }
             </div>
             <div class="modal-theme-footer">
-                <button class="btn-ghost" @onclick="() => _showCreate = false">Cancelar</button>
-                <button class="btn-accent" @onclick="CreatePage">Criar</button>
+                @if (_createStep == 1)
+                {
+                    <button class="btn-ghost" @onclick="() => _showCreate = false">Cancelar</button>
+                    <button class="btn-accent" @onclick="() => _createStep = 2">
+                        Continuar <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-ghost" @onclick="() => _createStep = 1">
+                        <i class="bi bi-arrow-left me-1"></i> Voltar
+                    </button>
+                    <button class="btn-accent" @onclick="CreatePage">Criar</button>
+                }
             </div>
         </div>
     </div>
@@ -147,10 +349,21 @@
     bool _loading = true;
     List<PageDto> _pages = [];
     SubscriptionDto? _sub;
+    int _totalViews30d;
+    int _totalClicks30d;
+    string? _topPageTitle;
+    List<UserActivityLogDto> _activityLogs = [];
     bool _showCreate;
+    int _createStep = 1;
+    string? _selectedTemplateId;
+    string _templateFilter = "todos";
     string _createTitle = "", _createSlug = "", _createBio = "";
     string _createError = "";
     bool _createSlugEdited;
+
+    IEnumerable<PageTemplate> FilteredTemplates => _templateFilter == "todos"
+        ? Templates.All
+        : Templates.All.Where(t => t.Category == _templateFilter);
     bool _showUpgrade;
     string _upgradeMessage = "";
     bool _showConfirm;
@@ -166,10 +379,24 @@
         var userId = auth.User.GetUserId();
         _sub = await SubSvc.GetAsync(userId);
         _pages = await PageSvc.GetUserPagesAsync(userId);
+
+        if (_pages.Count > 0)
+        {
+            int topViews = -1;
+            foreach (var pg in _pages)
+            {
+                var m = await MetricsSvc.GetPageMetricsAsync(userId, pg.Id, 30);
+                _totalViews30d += m.TotalViews;
+                _totalClicks30d += m.TotalClicks;
+                if (m.TotalViews > topViews) { topViews = m.TotalViews; _topPageTitle = pg.Title; }
+            }
+        }
+
+        _activityLogs = await ActivitySvc.GetLogsAsync(userId, 8);
         _loading = false;
     }
 
-    void ShowCreateModal() { _showCreate = true; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }
+    void ShowCreateModal() { _showCreate = true; _createStep = 1; _selectedTemplateId = null; _templateFilter = "todos"; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }
 
     void OnCreateTitleInput(ChangeEventArgs e)
     {
@@ -203,7 +430,7 @@
         _createError = "";
         var auth = await AuthState;
         var userId = auth.User.GetUserId();
-        var result = await PageSvc.CreateAsync(userId, new() { Title = _createTitle, Slug = _createSlug, Bio = _createBio });
+        var result = await PageSvc.CreateAsync(userId, new() { Title = _createTitle, Slug = _createSlug, Bio = _createBio, TemplateId = _selectedTemplateId });
         if (result.IsFailure)
         {
             if (result.LimitError is not null)
@@ -254,4 +481,28 @@
         var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", GetPublicPageUrl(slug));
         if (copied) _toast?.Show("Link copiado!");
     }
+
+    static string GetActivityIcon(string action) => action switch {
+        "page.create"           => "bi-file-earmark-plus",
+        "page.delete"           => "bi-file-earmark-x",
+        "page.publish"          => "bi-eye",
+        "page.unpublish"        => "bi-eye-slash",
+        "subscription.trial"    => "bi-gift",
+        "subscription.activate" => "bi-check-circle",
+        "subscription.cancel"   => "bi-x-circle",
+        "admin.plan_change"     => "bi-arrow-repeat",
+        _                       => "bi-clock-history"
+    };
+
+    static string GetActivityLabel(string action) => action switch {
+        "page.create"           => "Página criada",
+        "page.delete"           => "Página excluída",
+        "page.publish"          => "Página publicada",
+        "page.unpublish"        => "Página despublicada",
+        "subscription.trial"    => "Trial iniciado",
+        "subscription.activate" => "Plano ativado",
+        "subscription.cancel"   => "Plano cancelado",
+        "admin.plan_change"     => "Plano alterado pelo admin",
+        _                       => action
+    };
 }

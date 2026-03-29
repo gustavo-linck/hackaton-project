@@ -458,20 +458,46 @@ body {
 
 /* ===== Hero (always dark, independent of theme) ===== */
 .hero-section {
-    background: linear-gradient(135deg, #080d1a, #0f1a3d, #162050, #0c1230);
-    background-size: 400% 400%;
-    animation: gradientShift 8s ease infinite;
+    --gx: 50%;
+    --gy: 50%;
+    background: #080d1a;
     color: #ffffff;
     position: relative;
     overflow: hidden;
 }
 
-.hero-section::before {
+.hero-gradient-interactive::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 30% 20%, rgba(85, 124, 242, 0.2), transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.12), transparent 60%);
+    background:
+        radial-gradient(ellipse 600px 600px at var(--gx) var(--gy), rgba(85, 124, 242, 0.35), transparent 70%),
+        radial-gradient(ellipse 400px 400px at calc(100% - var(--gx)) calc(100% - var(--gy)), rgba(168, 85, 247, 0.2), transparent 70%);
+    transition: none;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Auto-animation fallback for touch devices */
+.hero-gradient-auto::before {
+    background:
+        radial-gradient(ellipse 600px 600px at 30% 20%, rgba(85, 124, 242, 0.3), transparent 70%),
+        radial-gradient(ellipse 400px 400px at 70% 80%, rgba(168, 85, 247, 0.15), transparent 70%);
+    animation: heroGradientAutoMove 10s ease-in-out infinite alternate;
+}
+
+@keyframes heroGradientAutoMove {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(5%, -3%) scale(1.05); }
+    100% { transform: translate(-3%, 5%) scale(1); }
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(85, 124, 242, 0.1), transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.06), transparent 60%);
     pointer-events: none;
 }
 
@@ -751,6 +777,16 @@ body {
     flex-grow: 0;
 }
 
+.next-step-item {
+    display: flex;
+    gap: .75rem;
+    align-items: flex-start;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.next-step-item:last-child { border-bottom: none; }
+.next-step-item > i { font-size: 1rem; margin-top: .1rem; flex-shrink: 0; }
+
 /* ===== Editor ===== */
 .editor-toolbar {
     position: sticky;
@@ -768,6 +804,7 @@ body {
 
 .editor-panel {
     background: var(--bg-primary);
+    height: 100%;
     overflow-y: auto;
     padding: 1.25rem;
     -webkit-overflow-scrolling: touch;
@@ -788,8 +825,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow-y: auto;
+    height: 100%;
+    overflow: hidden;
     padding: 2rem;
+    position: sticky;
+    top: 0;
 }
 
 .editor-card {
@@ -949,6 +989,12 @@ body {
 .editor-fullheight {
     height: 100vh;
     background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-fullheight > .row {
+    min-height: 0;
 }
 
 @media (max-width: 991.98px) {
@@ -956,6 +1002,142 @@ body {
         height: auto;
         min-height: 100vh;
     }
+}
+
+/* ===== Plans page ===== */
+.plans-toggle-wrapper {
+    display: block;
+    width: min(100%, 520px);
+    margin: 0 auto;
+}
+.plans-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    position: relative;
+    width: 100%;
+    background: var(--bg-secondary);
+    border-radius: 50px;
+    padding: 4px;
+    border: 1px solid var(--border);
+}
+.plans-toggle-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 3);
+    height: calc(100% - 8px);
+    background: var(--accent);
+    border-radius: 50px;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+}
+.plans-toggle-btn {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .45rem .6rem;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: color 0.3s ease;
+    white-space: nowrap;
+}
+.plans-toggle-btn.active {
+    color: #ffffff;
+}
+.plans-badge {
+    display: inline-block;
+    font-size: .6rem;
+    font-weight: 700;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+    padding: .1rem .35rem;
+    border-radius: 4px;
+    margin-left: 0;
+    flex-shrink: 0;
+}
+.plan-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+.plan-card-active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+}
+.plan-card-featured {
+    border-color: var(--accent);
+    position: relative;
+}
+.plan-card-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .4rem;
+}
+.plan-card-body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    flex: 1;
+}
+.plan-card-footer {
+    padding: 1rem 1.5rem 1.5rem;
+}
+.plan-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: .25rem;
+    transition: opacity 0.3s ease;
+}
+.plan-price-suffix {
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.plan-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0;
+}
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font-size: .85rem;
+}
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem 0;
+    color: var(--text-primary);
 }
 
 /* ===== Responsive ===== */
@@ -1012,5 +1194,18 @@ body {
         overflow-y: auto;
         margin: 0.5rem;
         border-radius: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    /* Plans toggle — reduce padding/font so "Trimestral -15%" fits in 1/3 on tiny screens */
+    .plans-toggle-btn {
+        font-size: .72rem;
+        padding: .4rem .4rem;
+        gap: .2rem;
+    }
+    .plans-badge {
+        font-size: .55rem;
+        padding: .08rem .25rem;
     }
 }
