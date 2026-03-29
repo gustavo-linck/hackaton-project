@@ -331,8 +331,8 @@ app.MapPost("/api/upload/avatar", [Microsoft.AspNetCore.Authorization.Authorize]
     using var ms = new MemoryStream();
     await file.OpenReadStream().CopyToAsync(ms);
     ms.Position = 0;
-    var buffer = ms.GetBuffer();
-    var bytesRead = (int)Math.Min(ms.Length, 12);
+    var buffer = ms.ToArray();
+    var bytesRead = (int)Math.Min(buffer.Length, 12);
     bool isJpeg = bytesRead >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF;
     bool isPng  = bytesRead >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47;
     bool isWebP = bytesRead >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46
@@ -393,8 +393,8 @@ app.MapPost("/api/upload/background", [Microsoft.AspNetCore.Authorization.Author
     using var ms = new MemoryStream();
     await file.OpenReadStream().CopyToAsync(ms);
     ms.Position = 0;
-    var buffer = ms.GetBuffer();
-    var bytesRead = (int)Math.Min(ms.Length, 12);
+    var buffer = ms.ToArray();
+    var bytesRead = (int)Math.Min(buffer.Length, 12);
     bool isJpeg = bytesRead >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF;
     bool isPng  = bytesRead >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47;
     bool isWebP = bytesRead >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46
