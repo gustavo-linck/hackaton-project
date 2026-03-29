@@ -23,8 +23,12 @@ else if (_page is null)
 else
 {
     <div class="min-vh-100 d-flex align-items-center justify-content-center py-4 px-3"
-         style="@_bgStyle">
-        <div class="w-100" style="max-width:480px">
+         style="position:relative;@_bgStyle;@_bgImageStyle">
+        @if (!string.IsNullOrEmpty(_bgImageUrl))
+        {
+            <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:0"></div>
+        }
+        <div class="w-100" style="max-width:480px;position:relative;z-index:1">
 
             <!-- Avatar -->
             <div class="text-center mb-3">
@@ -82,6 +86,8 @@ else
     bool _removeBranding; // TODO: verificar plano do dono da página
 
     string _bgStyle = "background:#ffffff";
+    string _bgImageStyle = "";
+    string _bgImageUrl = "";
     string _btnStyle = "background:#111;color:#fff;border-radius:8px;border:none";
     string _textColor = "#111111";
     string _titleFont = "inherit";
@@ -111,6 +117,7 @@ else
         {
             var cfg = JsonDocument.Parse(json).RootElement;
             string Get(string key, string fb) => cfg.TryGetProperty(key, out var v) ? v.GetString() ?? fb : fb;
+            bool GetBool(string key) => cfg.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.True;
 
             var themeId    = Get("themeId", "minimal-light");
             var bgColor    = Get("bgColor", "#ffffff");
@@ -121,14 +128,37 @@ else
             _titleFont     = Get("titleFont", "inherit");
             var avatarShape= Get("avatarShape", "circle");
 
+            var useGradient = GetBool("useGradient");
+            var gradColor1  = Get("gradColor1", "#667eea");
+            var gradColor2  = Get("gradColor2", "#764ba2");
+            var gradDir     = Get("gradDirection", "135deg");
+            var gradType    = Get("gradType", "linear");
+            _bgImageUrl     = Get("backgroundImageUrl", "");
+
             _avatarRadius = avatarShape == "square" ? "10px" : "50%";
 
-            _bgStyle = themeId switch {
-                "gradient-sunset" => "background:linear-gradient(135deg,#ffecd2,#fcb69f)",
-                "gradient-ocean"  => "background:linear-gradient(135deg,#667eea,#764ba2)",
-                "glass-morphism"  => $"background:{bgColor}",
-                _                 => $"background:{bgColor}"
-            };
+            if (!string.IsNullOrEmpty(_bgImageUrl))
+            {
+                _bgStyle = "";
+                _bgImageStyle = $"background-image:url('{_bgImageUrl}');background-size:cover;background-position:center";
+            }
+            else if (useGradient)
+            {
+                _bgImageStyle = "";
+                _bgStyle = gradType == "radial"
+                    ? $"background:radial-gradient(circle,{gradColor1},{gradColor2})"
+                    : $"background:linear-gradient({gradDir},{gradColor1},{gradColor2})";
+            }
+            else
+            {
+                _bgImageStyle = "";
+                _bgStyle = themeId switch {
+                    "gradient-sunset" => "background:linear-gradient(135deg,#ffecd2,#fcb69f)",
+                    "gradient-ocean"  => "background:linear-gradient(135deg,#667eea,#764ba2)",
+                    "glass-morphism"  => $"background:{bgColor}",
+                    _                 => $"background:{bgColor}"
+                };
+            }
 
             var radius = btnStyle switch { "pill" => "50px", "square" => "4px", _ => "10px" };
             _btnStyle = btnStyle == "outline"

@@ -80,8 +80,35 @@ else
                                 <div style="font-size:.7rem;text-align:right;color:@(_editBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_editBio.Length / 200</div>
                             </div>
                             <div>
-                                <label class="form-label-theme">Avatar (URL da imagem)</label>
-                                <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
+                                <label class="form-label-theme">Avatar</label>
+                                <div class="d-flex gap-1 mb-2">
+                                    <button type="button" class="@(_avatarMode == "url" ? "btn-accent" : "btn-ghost")" style="font-size:.75rem;padding:.3rem .75rem"
+                                            @onclick='() => _avatarMode = "url"'>URL externa</button>
+                                    <button type="button" class="@(_avatarMode == "upload" ? "btn-accent" : "btn-ghost")" style="font-size:.75rem;padding:.3rem .75rem"
+                                            @onclick='() => _avatarMode = "upload"'>Fazer upload</button>
+                                </div>
+                                @if (_avatarMode == "url")
+                                {
+                                    <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
+                                }
+                                else
+                                {
+                                    <InputFile OnChange="HandleAvatarUpload" accept="image/jpeg,image/png,image/webp" class="form-control-theme w-100" />
+                                    @if (_avatarUploading)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.75rem;color:var(--text-muted)">
+                                            <span class="spinner-border spinner-border-sm"></span> Enviando...
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_avatarUploadError))
+                                    {
+                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">@_avatarUploadError</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_editAvatarUrl) && _avatarMode == "upload")
+                                    {
+                                        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.25rem">Atual: @_editAvatarUrl</div>
+                                    }
+                                }
                             </div>
                         </div>
                     </div>
@@ -205,18 +232,27 @@ else
                                     </button>
                                 </div>
 
-                                <!-- Gradient editor -->
-                                <label class="form-label-theme" style="font-weight:600">Fundo gradiente</label>
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <button type="button"
-                                            class="@(_useGradient ? "btn-accent" : "btn-ghost")"
-                                            style="font-size:.75rem;padding:.3rem .75rem"
-                                            @onclick="() => { _useGradient = !_useGradient; ApplyTheme(); }">
-                                        <i class="bi @(_useGradient ? "bi-toggle-on" : "bi-toggle-off") me-1"></i>
-                                        @(_useGradient ? "Ativado" : "Desativado")
-                                    </button>
+                                <!-- Background mode -->
+                                <label class="form-label-theme" style="font-weight:600">Fundo</label>
+                                <div class="d-flex gap-1 mb-3 flex-wrap">
+                                    @foreach (var (key, label) in new[] { ("solid","Cor sólida"), ("gradient","Gradiente"), ("image","Foto de fundo") })
+                                    {
+                                        <button type="button"
+                                                class="@(_bgMode == key ? "btn-accent" : "btn-ghost")"
+                                                style="font-size:.75rem;padding:.3rem .75rem"
+                                                @onclick="() => SetBgMode(key)">@label</button>
+                                    }
                                 </div>
-                                @if (_useGradient)
+
+                                @if (_bgMode == "solid")
+                                {
+                                    <label class="form-label-theme">Cor do fundo</label>
+                                    <input type="color" class="form-control form-control-color w-100" value="@_bgColor"
+                                           style="border-radius:10px;border:1px solid var(--border)"
+                                           @oninput="e => { _bgColor = e.Value?.ToString() ?? _bgColor; ApplyTheme(); }" />
+                                }
+
+                                @if (_bgMode == "gradient")
                                 {
                                     <!-- Presets -->
                                     <div class="d-flex gap-1 flex-wrap mb-2">
@@ -267,6 +303,55 @@ else
                                     <div style="height:40px;border-radius:10px;
                                                 background:@(_gradType == "radial" ? $"radial-gradient(circle, {_gradColor1}, {_gradColor2})" : $"linear-gradient({_gradDirection}, {_gradColor1}, {_gradColor2})");
                                                 border:1px solid var(--border)"></div>
+                                }
+
+                                @if (_bgMode == "image")
+                                {
+                                    <!-- Curated gallery -->
+                                    <label class="form-label-theme" style="font-size:.7rem">Galeria</label>
+                                    @foreach (var cat in _bgGallery)
+                                    {
+                                        <div style="font-size:.65rem;color:var(--text-muted);margin-bottom:.25rem;font-weight:600">@cat.category</div>
+                                        <div class="row g-1 mb-2">
+                                            @foreach (var photo in cat.photos)
+                                            {
+                                                var fullUrl = photo + "?w=1200&q=80";
+                                                var thumbUrl = photo + "?w=200&q=60";
+                                                <div class="col-4">
+                                                    <div style="cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:4/3;
+                                                                border:2px solid @(_bgImageUrl == fullUrl ? "var(--accent)" : "transparent");transition:border .2s"
+                                                         @onclick="() => { _bgImageUrl = fullUrl; ApplyTheme(); }">
+                                                        <img src="@thumbUrl" alt="background" style="width:100%;height:100%;object-fit:cover" loading="lazy" />
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- Custom upload -->
+                                    <div class="d-flex gap-2 align-items-center mt-2">
+                                        <label class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;cursor:pointer;margin:0">
+                                            <i class="bi bi-upload me-1"></i>Upload próprio
+                                            <InputFile OnChange="HandleBgUpload" accept="image/jpeg,image/png,image/webp" style="display:none" />
+                                        </label>
+                                        @if (!string.IsNullOrEmpty(_bgImageUrl))
+                                        {
+                                            <button type="button" class="btn-ghost" style="font-size:.75rem;padding:.3rem .75rem;color:var(--danger)"
+                                                    @onclick="ClearBgImage">
+                                                <i class="bi bi-x-lg me-1"></i>Remover fundo
+                                            </button>
+                                        }
+                                    </div>
+                                    @if (_bgUploading)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.75rem;color:var(--text-muted)">
+                                            <span class="spinner-border spinner-border-sm"></span> Enviando...
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(_bgUploadError))
+                                    {
+                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">@_bgUploadError</div>
+                                    }
                                 }
                             </div>
                         }
@@ -367,6 +452,8 @@ else
     [Parameter] public Guid PageId { get; set; }
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
+    [Inject] IHttpClientFactory HttpFactory { get; set; } = default!;
+    [Inject] IHttpContextAccessor HttpCtxAccessor { get; set; } = default!;
 
     PageDto? _page;
     List<LinkDto> _links = [];
@@ -386,6 +473,11 @@ else
     DotNetObjectReference<Editor>? _dotnetRef;
     Guid _userId;
 
+    // Avatar upload state
+    string _avatarMode = "url";
+    bool _avatarUploading;
+    string _avatarUploadError = "";
+
     // Theme editor state
     string _selectedThemeId = "minimal-light";
     string _btnColor = "#111111";
@@ -395,11 +487,43 @@ else
     string _avatarShape = "circle";
     bool _showThemePanel = true;
 
+    // Background mode state
+    string _bgMode = "solid";
+    string _bgColor = "#ffffff";
+    string _bgImageUrl = "";
+    bool _bgUploading;
+    string _bgUploadError = "";
+
     // Gradient editor state
     bool _useGradient;
     string _gradColor1 = "#667eea", _gradColor2 = "#764ba2";
     string _gradDirection = "135deg";
     string _gradType = "linear";
+
+    // Background gallery
+    static readonly (string category, string[] photos)[] _bgGallery =
+    [
+        ("Natureza", [
+            "https://images.unsplash.com/photo-1501854140801-50d01698950b",
+            "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
+            "https://images.unsplash.com/photo-1469474968028-56623f02e42e"
+        ]),
+        ("Abstrato", [
+            "https://images.unsplash.com/photo-1541701494587-cb58502866ab",
+            "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee",
+            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe"
+        ]),
+        ("Cidade", [
+            "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df",
+            "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b",
+            "https://images.unsplash.com/photo-1444723121867-7a241cacace9"
+        ]),
+        ("Minimalista", [
+            "https://images.unsplash.com/photo-1486427944299-d1955d23e34d",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64",
+            "https://images.unsplash.com/photo-1519608487953-e999c86e7455"
+        ])
+    ];
 
     static readonly (string id, string label, string color1, string color2, string dir)[] GradientPresets =
     [
@@ -444,6 +568,10 @@ else
                 _gradColor2      = GetStr("gradColor2", "#764ba2");
                 _gradDirection   = GetStr("gradDirection", "135deg");
                 _gradType        = GetStr("gradType", "linear");
+                _bgImageUrl      = GetStr("backgroundImageUrl", "");
+                _bgMode          = !string.IsNullOrEmpty(_bgImageUrl) ? "image" : (_useGradient ? "gradient" : "solid");
+                var defaultBg    = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId)?.DefaultBg ?? "#ffffff";
+                _bgColor         = GetStr("bgColor", defaultBg);
             } catch { }
         }
         _loading = false;
@@ -494,7 +622,7 @@ else
         var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
         return System.Text.Json.JsonSerializer.Serialize(new {
             themeId         = _selectedThemeId,
-            bgColor         = theme.DefaultBg,
+            bgColor         = _bgMode == "solid" ? _bgColor : theme.DefaultBg,
             buttonStyle     = _btnStyleKey,
             buttonColor     = _btnColor,
             buttonTextColor = _btnTextColor,
@@ -503,11 +631,12 @@ else
             linkFont        = "inter",
             spacing         = "normal",
             avatarShape     = _avatarShape,
-            useGradient     = _useGradient,
+            useGradient     = _bgMode == "gradient",
             gradColor1      = _gradColor1,
             gradColor2      = _gradColor2,
             gradDirection   = _gradDirection,
-            gradType        = _gradType
+            gradType        = _gradType,
+            backgroundImageUrl = _bgMode == "image" ? _bgImageUrl : (string?)null
         });
     }
 
@@ -535,6 +664,7 @@ else
         _btnColor        = theme.DefaultButtonColor;
         _btnTextColor    = theme.DefaultButtonTextColor;
         _textColor       = theme.DefaultTextColor;
+        _bgColor         = theme.DefaultBg;
         ApplyTheme();
     }
 
@@ -592,7 +722,121 @@ else
         if (_page is not null) _page = _page with { AvatarUrl = string.IsNullOrEmpty(_editAvatarUrl) ? null : _editAvatarUrl };
     }
 
+    void SetBgMode(string mode)
+    {
+        _bgMode = mode;
+        _useGradient = mode == "gradient";
+        ApplyTheme();
+    }
+
+    void ClearBgImage()
+    {
+        _bgImageUrl = "";
+        ApplyTheme();
+    }
+
     string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
+
+    string GetBaseUrl()
+    {
+        var req = HttpCtxAccessor.HttpContext?.Request;
+        if (req is null) return Nav.BaseUri.TrimEnd('/');
+        return $"{req.Scheme}://{req.Host}";
+    }
+
+    async Task HandleAvatarUpload(InputFileChangeEventArgs e)
+    {
+        _avatarUploading = true;
+        _avatarUploadError = "";
+        StateHasChanged();
+
+        try
+        {
+            var file = e.File;
+            if (file.Size > 2 * 1024 * 1024) { _avatarUploadError = "Arquivo muito grande (max 2 MB)"; return; }
+
+            using var content = new MultipartFormDataContent();
+            using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            content.Add(new StreamContent(stream), "file", file.Name);
+
+            var http = HttpFactory.CreateClient();
+            http.BaseAddress = new Uri(GetBaseUrl());
+            var cookies = HttpCtxAccessor.HttpContext?.Request.Headers.Cookie.ToString();
+            if (!string.IsNullOrEmpty(cookies)) http.DefaultRequestHeaders.Add("Cookie", cookies);
+
+            var response = await http.PostAsync("/api/upload/avatar", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadFromJsonAsync<UploadResult>();
+                if (json?.Url is not null)
+                {
+                    _editAvatarUrl = json.Url;
+                    if (_page is not null) _page = _page with { AvatarUrl = _editAvatarUrl };
+                }
+            }
+            else
+            {
+                _avatarUploadError = "Erro ao enviar arquivo";
+            }
+        }
+        catch (Exception ex)
+        {
+            _avatarUploadError = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            _avatarUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task HandleBgUpload(InputFileChangeEventArgs e)
+    {
+        _bgUploading = true;
+        _bgUploadError = "";
+        StateHasChanged();
+
+        try
+        {
+            var file = e.File;
+            if (file.Size > 2 * 1024 * 1024) { _bgUploadError = "Arquivo muito grande (max 2 MB)"; return; }
+
+            using var content = new MultipartFormDataContent();
+            using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            content.Add(new StreamContent(stream), "file", file.Name);
+
+            var http = HttpFactory.CreateClient();
+            http.BaseAddress = new Uri(GetBaseUrl());
+            var cookies = HttpCtxAccessor.HttpContext?.Request.Headers.Cookie.ToString();
+            if (!string.IsNullOrEmpty(cookies)) http.DefaultRequestHeaders.Add("Cookie", cookies);
+
+            var response = await http.PostAsync($"/api/upload/background?pageId={PageId}", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadFromJsonAsync<UploadResult>();
+                if (json?.Url is not null)
+                {
+                    _bgImageUrl = json.Url;
+                    ApplyTheme();
+                }
+            }
+            else
+            {
+                _bgUploadError = "Erro ao enviar arquivo";
+            }
+        }
+        catch (Exception ex)
+        {
+            _bgUploadError = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            _bgUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    record UploadResult(string? Url);
 
     public async ValueTask DisposeAsync()
     {

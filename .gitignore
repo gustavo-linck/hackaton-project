@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# User uploads
+src/UmbLink.Web/wwwroot/uploads/

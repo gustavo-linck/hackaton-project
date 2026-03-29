@@ -1,5 +1,6 @@
 using FluentValidation;
 using UmbLink.Web;
+using UmbLink.Web.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,6 +15,8 @@ using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Identity;
 using UmbLink.Infrastructure.Repositories;
 using UmbLink.Infrastructure.Seed;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,6 +110,7 @@ builder.Services.AddRateLimiter(o =>
     }));
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -301,6 +305,120 @@ app.MapGet("/r/{linkId:guid}", async (Guid linkId, IMetricsService metrics,
 
     return Results.Redirect($"/redirect-warning?url={Uri.EscapeDataString(link.Url)}");
 }).RequireRateLimiting("tracking");
+
+// Avatar upload endpoint
+app.MapPost("/api/upload/avatar", [Microsoft.AspNetCore.Authorization.Authorize] async (HttpContext ctx, IWebHostEnvironment env) =>
+{
+    var userId = ctx.User.GetUserId();
+    if (userId == Guid.Empty) return Results.Unauthorized();
+
+    if (!ctx.Request.HasFormContentType) return Results.BadRequest(new { error = "Multipart form expected" });
+    var form = await ctx.Request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+    if (file is null || file.Length == 0) return Results.BadRequest(new { error = "No file provided" });
+    if (file.Length > 2 * 1024 * 1024) return Results.BadRequest(new { error = "File too large (max 2 MB)" });
+
+    var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
+    if (!allowed.Contains(file.ContentType.ToLowerInvariant()))
+        return Results.BadRequest(new { error = "Invalid file type. Allowed: jpeg, png, webp" });
+
+    // Copy to MemoryStream and validate magic bytes
+    using var ms = new MemoryStream();
+    await file.OpenReadStream().CopyToAsync(ms);
+    ms.Position = 0;
+    var buffer = ms.GetBuffer();
+    var bytesRead = (int)Math.Min(ms.Length, 12);
+    bool isJpeg = bytesRead >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF;
+    bool isPng  = bytesRead >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47;
+    bool isWebP = bytesRead >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46
+               && buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50;
+    if (!isJpeg && !isPng && !isWebP)
+        return Results.BadRequest(new { error = "Formato de imagem não reconhecido." });
+    ms.Position = 0;
+
+    var dir = Path.Combine(env.WebRootPath, "uploads", "avatars");
+    Directory.CreateDirectory(dir);
+
+    // Delete previous avatar for this user
+    foreach (var old in Directory.GetFiles(dir, $"{userId}_*.webp"))
+        File.Delete(old);
+
+    var fileName = $"{userId}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}.webp";
+    var outputPath = Path.Combine(dir, fileName);
+
+    using var image = await SixLabors.ImageSharp.Image.LoadAsync(ms);
+    var ratio = 400.0 / Math.Min(image.Width, image.Height);
+    var newW = (int)(image.Width * ratio);
+    var newH = (int)(image.Height * ratio);
+    image.Mutate(x => x
+        .Resize(newW, newH)
+        .Crop(new SixLabors.ImageSharp.Rectangle((newW - 400) / 2, (newH - 400) / 2, 400, 400)));
+    await image.SaveAsWebpAsync(outputPath, new SixLabors.ImageSharp.Formats.Webp.WebpEncoder { Quality = 80 });
+
+    return Results.Ok(new { url = $"/uploads/avatars/{fileName}" });
+}).DisableAntiforgery().RequireRateLimiting("tracking");
+
+// Background image upload endpoint
+app.MapPost("/api/upload/background", [Microsoft.AspNetCore.Authorization.Authorize] async (HttpContext ctx, IWebHostEnvironment env) =>
+{
+    var userId = ctx.User.GetUserId();
+    if (userId == Guid.Empty) return Results.Unauthorized();
+
+    var pageIdStr = ctx.Request.Query["pageId"].ToString();
+    if (!Guid.TryParse(pageIdStr, out var pageId))
+        return Results.BadRequest(new { error = "Invalid pageId" });
+
+    // Ownership check: ensure the page belongs to the authenticated user
+    var pageService = ctx.RequestServices.GetRequiredService<IPageService>();
+    var userPages = await pageService.GetUserPagesAsync(userId);
+    if (!userPages.Any(p => p.Id == pageId))
+        return Results.Forbid();
+
+    if (!ctx.Request.HasFormContentType) return Results.BadRequest(new { error = "Multipart form expected" });
+    var form = await ctx.Request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+    if (file is null || file.Length == 0) return Results.BadRequest(new { error = "No file provided" });
+    if (file.Length > 2 * 1024 * 1024) return Results.BadRequest(new { error = "File too large (max 2 MB)" });
+
+    var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
+    if (!allowed.Contains(file.ContentType.ToLowerInvariant()))
+        return Results.BadRequest(new { error = "Invalid file type. Allowed: jpeg, png, webp" });
+
+    // Copy to MemoryStream and validate magic bytes
+    using var ms = new MemoryStream();
+    await file.OpenReadStream().CopyToAsync(ms);
+    ms.Position = 0;
+    var buffer = ms.GetBuffer();
+    var bytesRead = (int)Math.Min(ms.Length, 12);
+    bool isJpeg = bytesRead >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF;
+    bool isPng  = bytesRead >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47;
+    bool isWebP = bytesRead >= 12 && buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46
+               && buffer[8] == 0x57 && buffer[9] == 0x45 && buffer[10] == 0x42 && buffer[11] == 0x50;
+    if (!isJpeg && !isPng && !isWebP)
+        return Results.BadRequest(new { error = "Formato de imagem não reconhecido." });
+    ms.Position = 0;
+
+    var dir = Path.Combine(env.WebRootPath, "uploads", "backgrounds");
+    Directory.CreateDirectory(dir);
+
+    // Delete previous background for this page
+    foreach (var old in Directory.GetFiles(dir, $"{pageId}_*.webp"))
+        File.Delete(old);
+
+    var fileName = $"{pageId}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}.webp";
+    var outputPath = Path.Combine(dir, fileName);
+
+    using var image = await SixLabors.ImageSharp.Image.LoadAsync(ms);
+    var ratio = Math.Max(1200.0 / image.Width, 800.0 / image.Height);
+    var newW = (int)(image.Width * ratio);
+    var newH = (int)(image.Height * ratio);
+    image.Mutate(x => x
+        .Resize(newW, newH)
+        .Crop(new SixLabors.ImageSharp.Rectangle((newW - 1200) / 2, (newH - 800) / 2, 1200, 800)));
+    await image.SaveAsWebpAsync(outputPath, new SixLabors.ImageSharp.Formats.Webp.WebpEncoder { Quality = 80 });
+
+    return Results.Ok(new { url = $"/uploads/backgrounds/{fileName}" });
+}).DisableAntiforgery().RequireRateLimiting("tracking");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
