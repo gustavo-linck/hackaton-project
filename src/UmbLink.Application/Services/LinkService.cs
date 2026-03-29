@@ -1,24 +1,23 @@
-using Microsoft.EntityFrameworkCore;
 using UmbLink.Application.DTOs;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Models;
 using UmbLink.Application.Requests;
-using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
+using UmbLink.Infrastructure.Repositories;
 
 namespace UmbLink.Application.Services;
 
-public class LinkService(AppDbContext db, IPlanLimitService limits) : ILinkService
+public class LinkService(ILinkRepository linkRepo, IPageRepository pageRepo, IPlanLimitService limits, ICacheService cache) : ILinkService
 {
     public async Task<Result<LinkDto>> AddAsync(Guid userId, Guid pageId, CreateLinkRequest req)
     {
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == pageId && p.UserId == userId);
+        var page = await pageRepo.GetByIdAndUserAsync(pageId, userId);
         if (page is null) return Result<LinkDto>.Fail("Página não encontrada.");
 
         var canAdd = await limits.CanAddLinkAsync(userId, pageId);
         if (canAdd.IsFailure) return Result<LinkDto>.LimitExceeded(canAdd.LimitError!);
 
-        var order = await db.Links.Where(l => l.PageId == pageId).MaxAsync(l => (int?)l.Order) ?? 0;
+        var order = await linkRepo.GetMaxOrderAsync(pageId);
         var link = new Link
         {
             PageId = pageId,
@@ -28,59 +27,60 @@ public class LinkService(AppDbContext db, IPlanLimitService limits) : ILinkServi
             IsActive = true,
             Order = order + 1
         };
-        db.Links.Add(link);
-        await db.SaveChangesAsync();
+        await linkRepo.CreateAsync(link);
+        await cache.RemoveAsync(CacheKeys.PageLinks(pageId));
         return Result<LinkDto>.Ok(ToDto(link));
     }
 
     public async Task<Result<LinkDto>> UpdateAsync(Guid userId, Guid linkId, UpdateLinkRequest req)
     {
-        var link = await db.Links.Include(l => l.Page)
-            .FirstOrDefaultAsync(l => l.Id == linkId && l.Page.UserId == userId);
+        var link = await linkRepo.GetByIdAndUserAsync(linkId, userId);
         if (link is null) return Result<LinkDto>.Fail("Link não encontrado.");
 
         link.Title = req.Title;
         link.Url = req.Url;
         link.IconName = req.IconName;
         link.IsActive = req.IsActive;
-        await db.SaveChangesAsync();
+        await linkRepo.UpdateAsync(link);
+        await cache.RemoveAsync(CacheKeys.PageLinks(link.PageId));
         return Result<LinkDto>.Ok(ToDto(link));
     }
 
     public async Task<Result<bool>> DeleteAsync(Guid userId, Guid linkId)
     {
-        var link = await db.Links.Include(l => l.Page)
-            .FirstOrDefaultAsync(l => l.Id == linkId && l.Page.UserId == userId);
+        var link = await linkRepo.GetByIdAndUserAsync(linkId, userId);
         if (link is null) return Result<bool>.Fail("Link não encontrado.");
 
-        db.Links.Remove(link);
-        await db.SaveChangesAsync();
+        var pageId = link.PageId;
+        await linkRepo.DeleteAsync(link);
+        await cache.RemoveAsync(CacheKeys.PageLinks(pageId));
         return Result<bool>.Ok(true);
     }
 
     public async Task<Result<bool>> ReorderAsync(Guid userId, Guid pageId, List<Guid> orderedIds)
     {
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == pageId && p.UserId == userId);
+        var page = await pageRepo.GetByIdAndUserAsync(pageId, userId);
         if (page is null) return Result<bool>.Fail("Página não encontrada.");
 
-        var links = await db.Links.Where(l => l.PageId == pageId).ToListAsync();
+        var links = await linkRepo.GetByPageIdAsync(pageId);
         for (int i = 0; i < orderedIds.Count; i++)
         {
             var link = links.FirstOrDefault(l => l.Id == orderedIds[i]);
             if (link != null) link.Order = i + 1;
         }
-        await db.SaveChangesAsync();
+        await linkRepo.SaveChangesAsync();
+        await cache.RemoveAsync(CacheKeys.PageLinks(pageId));
         return Result<bool>.Ok(true);
     }
 
     public async Task<Result<bool>> ToggleActiveAsync(Guid userId, Guid linkId)
     {
-        var link = await db.Links.Include(l => l.Page)
-            .FirstOrDefaultAsync(l => l.Id == linkId && l.Page.UserId == userId);
+        var link = await linkRepo.GetByIdAndUserAsync(linkId, userId);
         if (link is null) return Result<bool>.Fail("Link não encontrado.");
 
         link.IsActive = !link.IsActive;
-        await db.SaveChangesAsync();
+        await linkRepo.UpdateAsync(link);
+        await cache.RemoveAsync(CacheKeys.PageLinks(link.PageId));
         return Result<bool>.Ok(true);
     }
 

@@ -3,13 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using UmbLink.Application.DTOs;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Models;
-using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
 using UmbLink.Infrastructure.Identity;
+using UmbLink.Infrastructure.Repositories;
 
 namespace UmbLink.Application.Services;
 
-public class AdminService(AppDbContext db, IAuditService audit, UserManager<AppUser> userManager) : IAdminService
+public class AdminService(ISubscriptionRepository subRepo, IAnalyticsRepository analyticsRepo, IAuditService audit, UserManager<AppUser> userManager) : IAdminService
 {
     public async Task<List<AdminUserDto>> GetUsersAsync(string? search = null)
     {
@@ -33,11 +33,9 @@ public class AdminService(AppDbContext db, IAuditService audit, UserManager<AppU
     public async Task<AdminStatsDto> GetGlobalStatsAsync()
     {
         var users = await userManager.Users.CountAsync();
-        var pages = await db.Pages.CountAsync();
-        var clicks = await db.ClickEvents.CountAsync();
-        var revenue = await db.Subscriptions
-            .Where(s => s.Status == SubscriptionStatus.Active && s.PlanPrice != null)
-            .SumAsync(s => (decimal?)s.PlanPrice!.PricePerMonth) ?? 0m;
+        var pages = await analyticsRepo.GetTotalPagesAsync();
+        var clicks = await analyticsRepo.GetTotalClicksAsync();
+        var revenue = await subRepo.GetActiveSubscriptionRevenueAsync();
         return new AdminStatsDto(users, pages, clicks, revenue);
     }
 
@@ -63,17 +61,21 @@ public class AdminService(AppDbContext db, IAuditService audit, UserManager<AppU
 
     public async Task<Result<bool>> ChangePlanAsync(Guid adminId, Guid targetUserId, int planId)
     {
-        var plan = await db.Plans.FindAsync(planId);
+        var plan = await subRepo.GetPlanByIdAsync(planId);
         if (plan is null) return Result<bool>.Fail("Plano não encontrado.");
 
-        var sub = await db.Subscriptions.FirstOrDefaultAsync(s => s.UserId == targetUserId);
-        if (sub is null) { sub = new Subscription { UserId = targetUserId }; db.Subscriptions.Add(sub); }
+        var sub = await subRepo.GetByUserIdAsync(targetUserId);
+        if (sub is null)
+        {
+            sub = new Subscription { UserId = targetUserId };
+            await subRepo.CreateAsync(sub);
+        }
 
         sub.PlanId = planId;
         sub.Status = plan.Name == "Free" ? SubscriptionStatus.Free : SubscriptionStatus.Active;
         sub.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync();
+        await subRepo.SaveChangesAsync();
         await audit.LogAsync(adminId, "admin.plan_changed", new { targetUserId, planId });
         return Result<bool>.Ok(true);
     }

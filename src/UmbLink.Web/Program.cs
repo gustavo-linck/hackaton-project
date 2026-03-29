@@ -12,6 +12,7 @@ using UmbLink.Application.BackgroundServices;
 using UmbLink.Web.Cache;
 using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Identity;
+using UmbLink.Infrastructure.Repositories;
 using UmbLink.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +62,14 @@ builder.Services.AddAuthorization(o =>
 // Background queue + metrics
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 builder.Services.AddHostedService<MetricsBackgroundService>();
+
+// Repositories
+builder.Services.AddScoped<IPageRepository, PageRepository>();
+builder.Services.AddScoped<ILinkRepository, LinkRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<IPlanLimitRepository, PlanLimitRepository>();
 
 // Application services
 builder.Services.AddScoped<IPlanLimitService, PlanLimitService>();

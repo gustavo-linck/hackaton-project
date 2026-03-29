@@ -5,6 +5,7 @@ using UmbLink.Application.Services;
 using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
 using UmbLink.Infrastructure.Identity;
+using UmbLink.Infrastructure.Repositories;
 
 namespace UmbLink.UnitTests;
 
@@ -62,6 +63,9 @@ public class PlanLimitServiceTests
         return (user, plan, sub);
     }
 
+    private static PlanLimitService CreateService(AppDbContext db) =>
+        new(new PlanLimitRepository(db));
+
     // --- CanAddPageAsync ---
 
     [Fact]
@@ -70,7 +74,7 @@ public class PlanLimitServiceTests
         var db = CreateDb();
         var (user, _, _) = SeedUser(db, maxPages: 1, maxLinksPerPage: 3);
         // No pages yet
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddPageAsync(user.Id);
 
@@ -86,7 +90,7 @@ public class PlanLimitServiceTests
         db.Pages.Add(new Page { UserId = user.Id, Slug = "test", Title = "Test",
             Status = PageStatus.Published });
         db.SaveChanges();
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddPageAsync(user.Id);
 
@@ -105,7 +109,7 @@ public class PlanLimitServiceTests
             db.Pages.Add(new Page { UserId = user.Id, Slug = $"slug-{i}", Title = $"T{i}",
                 Status = PageStatus.Published });
         db.SaveChanges();
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddPageAsync(user.Id);
 
@@ -123,7 +127,7 @@ public class PlanLimitServiceTests
         db.Pages.Add(new Page { UserId = user.Id, Slug = "suspended", Title = "S",
             Status = PageStatus.Suspended });
         db.SaveChanges();
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddPageAsync(user.Id);
 
@@ -144,7 +148,7 @@ public class PlanLimitServiceTests
         db.Links.Add(new Link { PageId = page.Id, Title = "L1", Url = "https://a.com", Order = 1 });
         db.Links.Add(new Link { PageId = page.Id, Title = "L2", Url = "https://b.com", Order = 2 });
         db.SaveChanges(); // 2 links, limit is 3
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddLinkAsync(user.Id, page.Id);
 
@@ -164,7 +168,7 @@ public class PlanLimitServiceTests
             db.Links.Add(new Link { PageId = page.Id, Title = $"L{i}",
                 Url = "https://a.com", Order = i });
         db.SaveChanges();
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanAddLinkAsync(user.Id, page.Id);
 
@@ -179,7 +183,7 @@ public class PlanLimitServiceTests
     {
         var db = CreateDb();
         var (user, _, _) = SeedUser(db, maxPages: 1, maxLinksPerPage: 3, allowCustomDomain: false);
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanUseFeatureAsync(user.Id, Feature.CustomDomain);
 
@@ -192,7 +196,7 @@ public class PlanLimitServiceTests
     {
         var db = CreateDb();
         var (user, _, _) = SeedUser(db, maxPages: 3, maxLinksPerPage: 5, allowCustomDomain: true);
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanUseFeatureAsync(user.Id, Feature.CustomDomain);
 
@@ -205,7 +209,7 @@ public class PlanLimitServiceTests
         var db = CreateDb();
         var (user, _, _) = SeedUser(db, maxPages: 3, maxLinksPerPage: 5,
             allowRemoveBranding: false);
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CanUseFeatureAsync(user.Id, Feature.RemoveBranding);
 
@@ -221,7 +225,7 @@ public class PlanLimitServiceTests
         var db = CreateDb();
         var (user, _, _) = SeedUser(db, maxPages: 3, maxLinksPerPage: 5,
             allowCustomDomain: true, themeCount: -1);
-        var svc = new PlanLimitService(db);
+        var svc = CreateService(db);
 
         var limits = await svc.GetLimitsAsync(user.Id);
 

@@ -1,25 +1,23 @@
-using Microsoft.EntityFrameworkCore;
 using UmbLink.Application.DTOs;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Models;
-using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
+using UmbLink.Infrastructure.Repositories;
 
 namespace UmbLink.Application.Services;
 
-public class PlanLimitService(AppDbContext db) : IPlanLimitService
+public class PlanLimitService(IPlanLimitRepository planLimitRepo) : IPlanLimitService
 {
     public async Task<Result<bool>> CanAddPageAsync(Guid userId)
     {
         var limits = await GetLimitsAsync(userId);
         if (limits.MaxPages == -1) return Result<bool>.Ok(true);
 
-        var count = await db.Pages.CountAsync(p =>
-            p.UserId == userId && p.Status != PageStatus.Suspended);
+        var count = await planLimitRepo.CountPagesByUserAsync(userId, PageStatus.Suspended);
 
         if (count >= limits.MaxPages)
         {
-            var planName = await GetPlanNameAsync(userId);
+            var planName = await planLimitRepo.GetPlanNameByUserAsync(userId);
             return Result<bool>.LimitExceeded(new LimitExceededError
             {
                 FeatureName = "Páginas",
@@ -36,11 +34,11 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
         var limits = await GetLimitsAsync(userId);
         if (limits.MaxLinksPerPage == -1) return Result<bool>.Ok(true);
 
-        var count = await db.Links.CountAsync(l => l.PageId == pageId);
+        var count = await planLimitRepo.CountLinksByPageAsync(pageId);
 
         if (count >= limits.MaxLinksPerPage)
         {
-            var planName = await GetPlanNameAsync(userId);
+            var planName = await planLimitRepo.GetPlanNameByUserAsync(userId);
             return Result<bool>.LimitExceeded(new LimitExceededError
             {
                 FeatureName = "Links",
@@ -55,7 +53,7 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
     public async Task<Result<bool>> CanUseFeatureAsync(Guid userId, Feature feature)
     {
         var limits = await GetLimitsAsync(userId);
-        var planName = await GetPlanNameAsync(userId);
+        var planName = await planLimitRepo.GetPlanNameByUserAsync(userId);
 
         var (allowed, requiredPlan, featureName) = feature switch
         {
@@ -82,22 +80,15 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
 
     public async Task<PlanLimitDto> GetLimitsAsync(Guid userId)
     {
-        var planId = await db.Subscriptions
-            .Where(s => s.UserId == userId)
-            .Select(s => (int?)s.PlanId)
-            .FirstOrDefaultAsync();
+        var planId = await planLimitRepo.GetPlanIdByUserAsync(userId);
 
         if (planId is null)
         {
-            // Usuário sem subscription — retorna limites do Free (MaxPages=1, MaxLinksPerPage=3)
-            var freePlanId = await db.Plans
-                .Where(p => p.Name == "Free")
-                .Select(p => (int?)p.Id)
-                .FirstOrDefaultAsync();
+            var freePlanId = await planLimitRepo.GetFreePlanIdAsync();
             planId = freePlanId ?? 0;
         }
 
-        var limit = await db.PlanLimits.FirstOrDefaultAsync(pl => pl.PlanId == planId)
+        var limit = await planLimitRepo.GetByPlanIdAsync(planId.Value)
             ?? new PlanLimit { MaxPages = 1, MaxLinksPerPage = 3, AnalyticsDays = 7,
                 AllowReferrer = false, AllowCustomDomain = false, AllowRemoveBranding = false,
                 ThemeCount = 2, FontCount = 2 };
@@ -113,10 +104,4 @@ public class PlanLimitService(AppDbContext db) : IPlanLimitService
             limit.FontCount
         );
     }
-
-    private async Task<string> GetPlanNameAsync(Guid userId) =>
-        await db.Subscriptions
-            .Where(s => s.UserId == userId)
-            .Select(s => s.Plan.Name)
-            .FirstOrDefaultAsync() ?? "Free";
 }
