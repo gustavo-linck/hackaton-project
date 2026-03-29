@@ -3,7 +3,6 @@
 @inject IPageService PageSvc
 @inject ISubscriptionService SubSvc
 @inject IMetricsService MetricsSvc
-@inject IUserActivityLogService ActivitySvc
 @inject NavigationManager Nav
 @using UmbLink.Application.Interfaces
 
@@ -11,224 +10,127 @@
 
 <TrialBanner TrialEndsAt="_sub?.TrialEndsAt" />
 
-<div class="container py-4" style="max-width:960px">
+<div class="dashboard-animated-bg" @ref="_dashboardBgRef">
+    <div class="dashboard-content container py-4" style="max-width:960px">
 
-    @* ─── Metrics cards ─── *@
-    @if (_pages.Count > 0)
-    {
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
-                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Views (30d)</div>
-                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_totalViews30d</div>
-                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-eye me-1"></i>visualizações</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
-                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Cliques (30d)</div>
-                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_totalClicks30d</div>
-                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-cursor me-1"></i>cliques em links</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
-                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Páginas</div>
-                    <div style="font-size:1.75rem;font-weight:700;color:var(--text-primary)">@_pages.Count</div>
-                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-file-earmark me-1"></i>criadas</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem">
-                    <div style="font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem">Top página</div>
-                    <div style="font-size:1rem;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                        @(_topPageTitle ?? "—")
+        @* ─── Metrics cards ─── *@
+        @if (_pages.Count > 0)
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="dashboard-glass-card">
+                        <div class="metric-label">Views (30d)</div>
+                        <div class="metric-value">@_totalViews30d</div>
+                        <div class="metric-sub"><i class="bi bi-eye me-1"></i>visualizações</div>
                     </div>
-                    <div style="font-size:.75rem;color:var(--text-muted)"><i class="bi bi-trophy me-1"></i>mais visualizada</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="dashboard-glass-card">
+                        <div class="metric-label">Cliques (30d)</div>
+                        <div class="metric-value">@_totalClicks30d</div>
+                        <div class="metric-sub"><i class="bi bi-cursor me-1"></i>cliques</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="dashboard-glass-card">
+                        <div class="metric-label">Páginas</div>
+                        <div class="metric-value">@_pages.Count</div>
+                        <div class="metric-sub"><i class="bi bi-file-earmark me-1"></i>criadas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="dashboard-glass-card">
+                        <div class="metric-label">Mais views</div>
+                        <div class="metric-value" style="font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@(_topPageTitle ?? "—")</div>
+                        <div class="metric-sub"><i class="bi bi-star me-1"></i>destaque</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    }
+        }
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 style="font-weight:700;color:var(--text-primary);margin:0">Minhas Páginas</h4>
-            @if (_sub is not null)
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 style="font-weight:700;color:var(--text-primary);margin:0">Minhas Páginas</h4>
+                @if (_sub is not null)
+                {
+                    <span class="text-theme-secondary" style="font-size:.8rem">Plano <PlanBadge PlanName="@_sub.PlanName" /></span>
+                }
+            </div>
+            <button class="btn-accent" @onclick="ShowCreateModal">
+                <i class="bi bi-plus-lg"></i>Nova página
+            </button>
+        </div>
+
+        @if (_sub?.PlanName == "Free" && _pages.Count >= 1)
+        {
+            <div class="alert-theme mb-3">
+                <i class="bi bi-stars text-accent flex-shrink-0"></i>
+                <span class="flex-grow-1">Você está no plano gratuito — <strong>@_pages.Count/1</strong> página usada.
+                    <a href="/plans" style="color:var(--accent);font-weight:600">Fazer upgrade</a> para até 3 páginas e links ilimitados.</span>
+            </div>
+        }
+
+        <LoadingSpinner Loading="_loading">
+            @if (_pages.Count == 0)
             {
-                <span class="text-theme-secondary" style="font-size:.8rem">Plano <PlanBadge PlanName="@_sub.PlanName" /></span>
-            }
-        </div>
-        <button class="btn-accent" @onclick="ShowCreateModal">
-            <i class="bi bi-plus-lg"></i>Nova página
-        </button>
-    </div>
-
-    @if (_sub?.PlanName == "Free" && _pages.Count >= 1)
-    {
-        <div class="alert-theme mb-3">
-            <i class="bi bi-stars text-accent flex-shrink-0"></i>
-            <span class="flex-grow-1">Você está no plano gratuito — <strong>@_pages.Count/1</strong> página usada.
-                <a href="/plans" style="color:var(--accent);font-weight:600">Fazer upgrade</a> para até 3 páginas e links ilimitados.</span>
-        </div>
-    }
-
-    <LoadingSpinner Loading="_loading">
-        @if (_pages.Count == 0)
-        {
-            <div class="text-center py-5">
-                <div class="animate-fade-in-up">
-                    <i class="bi bi-stars" style="font-size:3rem;color:var(--accent);display:block;margin-bottom:1rem"></i>
-                    <h5 style="font-weight:700;color:var(--text-primary)">Crie sua primeira página!</h5>
-                    <p class="text-theme-secondary" style="max-width:360px;margin:0 auto 1.5rem">
-                        Junte todos os seus links em um só lugar e compartilhe com o mundo.
-                    </p>
-                    <button class="btn-accent btn-accent-lg" @onclick="ShowCreateModal">
-                        <i class="bi bi-rocket-takeoff"></i>Criar minha página
-                    </button>
-                    <p class="text-theme-muted" style="font-size:.8rem;margin-top:0.75rem">Grátis, sem cartão. Pronto em minutos.</p>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="row g-3">
-                @foreach (var pg in _pages)
-                {
-                    <div class="col-md-6 col-lg-4">
-                        <div class="page-card">
-                            <div class="page-card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 style="font-weight:600;color:var(--text-primary);margin:0">@pg.Title</h6>
-                                    <span class="badge-theme @(pg.Status == PageStatus.Published ? "badge-success" : "badge-muted") ms-2">
-                                        @(pg.Status == PageStatus.Published ? "Publicada" : "Rascunho")
-                                    </span>
-                                </div>
-                                <p class="text-theme-muted" style="font-size:.8rem;margin-bottom:.25rem">@GetPublicPageUrl(pg.Slug)</p>
-                                <p class="text-theme-secondary" style="font-size:.8rem;margin:0">@pg.LinkCount link(s)</p>
-                            </div>
-                            <div class="page-card-footer">
-                                <a href="/editor/@pg.Id" class="btn-accent" style="flex-grow:1;justify-content:center">
-                                    <i class="bi bi-pencil"></i>Editar
-                                </a>
-                                <a href="/dashboard/metrics/@pg.Id" class="btn-ghost" title="Métricas">
-                                    <i class="bi bi-bar-chart"></i>
-                                </a>
-                                <button class="btn-ghost" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
-                                    <i class="bi bi-link-45deg"></i>
-                                </button>
-                                <button class="btn-ghost" @onclick="() => TogglePublish(pg)"
-                                        title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")"
-                                        style="color:@(pg.Status == PageStatus.Published ? "var(--warning)" : "var(--success)")">
-                                    <i class="bi @(pg.Status == PageStatus.Published ? "bi-eye-slash" : "bi-eye")"></i>
-                                </button>
-                                <button class="btn-ghost" style="color:var(--danger)" @onclick="() => ConfirmDelete(pg)" title="Excluir">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
+                <div class="text-center py-5">
+                    <div class="animate-fade-in-up">
+                        <i class="bi bi-stars" style="font-size:3rem;color:var(--accent);display:block;margin-bottom:1rem"></i>
+                        <h5 style="font-weight:700;color:var(--text-primary)">Crie sua primeira página!</h5>
+                        <p class="text-theme-secondary" style="max-width:360px;margin:0 auto 1.5rem">
+                            Junte todos os seus links em um só lugar e compartilhe com o mundo.
+                        </p>
+                        <button class="btn-accent btn-accent-lg" @onclick="ShowCreateModal">
+                            <i class="bi bi-rocket-takeoff"></i>Criar minha página
+                        </button>
+                        <p class="text-theme-muted" style="font-size:.8rem;margin-top:0.75rem">Grátis, sem cartão. Pronto em minutos.</p>
                     </div>
-                }
-            </div>
-        }
-    </LoadingSpinner>
-</div>
-
-@* ─── Recent Activity + Next Steps ─── *@
-@if (!_loading)
-{
-    <div class="row g-4 mt-1">
-        @* Activity log *@
-        <div class="col-md-6">
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
-                <h6 style="font-weight:700;color:var(--text-primary);margin-bottom:1rem">
-                    <i class="bi bi-activity me-2" style="color:var(--accent)"></i>Atividade Recente
-                </h6>
-                @if (_activityLogs.Count == 0)
-                {
-                    <p class="text-theme-muted" style="font-size:.85rem">Nenhuma atividade registrada ainda.</p>
-                }
-                else
-                {
-                    <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem">
-                        @foreach (var log in _activityLogs)
-                        {
-                            <li style="display:flex;gap:.75rem;align-items:flex-start">
-                                <div style="width:28px;height:28px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                                    <i class="bi @GetActivityIcon(log.Action)" style="font-size:.75rem;color:var(--accent)"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size:.82rem;color:var(--text-primary);font-weight:500">@GetActivityLabel(log.Action)</div>
-                                    @if (!string.IsNullOrEmpty(log.Details))
-                                    {
-                                        <div style="font-size:.75rem;color:var(--text-muted)">@log.Details</div>
-                                    }
-                                    <div style="font-size:.7rem;color:var(--text-muted)">@log.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</div>
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-            </div>
-        </div>
-
-        @* Next steps tips *@
-        <div class="col-md-6">
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
-                <h6 style="font-weight:700;color:var(--text-primary);margin-bottom:1rem">
-                    <i class="bi bi-lightbulb me-2" style="color:var(--warning)"></i>Próximos Passos
-                </h6>
-                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem">
-                    @if (_pages.Count == 0)
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var pg in _pages)
                     {
-                        <li class="next-step-item">
-                            <i class="bi bi-plus-circle-fill" style="color:var(--accent)"></i>
-                            <div>
-                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Crie sua primeira página</div>
-                                <div style="font-size:.75rem;color:var(--text-muted)">Junte seus links em um só lugar</div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="page-card">
+                                <div class="page-card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 style="font-weight:600;color:var(--text-primary);margin:0">@pg.Title</h6>
+                                        <span class="badge-theme @(pg.Status == PageStatus.Published ? "badge-success" : "badge-muted") ms-2">
+                                            @(pg.Status == PageStatus.Published ? "Publicada" : "Rascunho")
+                                        </span>
+                                    </div>
+                                    <p class="text-theme-muted" style="font-size:.8rem;margin-bottom:.25rem">@GetPublicPageUrl(pg.Slug)</p>
+                                    <p class="text-theme-secondary" style="font-size:.8rem;margin:0">@pg.LinkCount link(s)</p>
+                                </div>
+                                <div class="page-card-footer">
+                                    <a href="/editor/@pg.Id" class="btn-accent" style="flex-grow:1;justify-content:center">
+                                        <i class="bi bi-pencil"></i>Editar
+                                    </a>
+                                    <a href="/dashboard/metrics/@pg.Id" class="btn-ghost" title="Métricas">
+                                        <i class="bi bi-bar-chart"></i>
+                                    </a>
+                                    <button class="btn-ghost" @onclick="() => CopyLink(pg.Slug)" title="Copiar link">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </button>
+                                    <button class="btn-ghost" @onclick="() => TogglePublish(pg)"
+                                            title="@(pg.Status == PageStatus.Published ? "Despublicar" : "Publicar")"
+                                            style="color:@(pg.Status == PageStatus.Published ? "var(--warning)" : "var(--success)")">
+                                        <i class="bi @(pg.Status == PageStatus.Published ? "bi-eye-slash" : "bi-eye")"></i>
+                                    </button>
+                                    <button class="btn-ghost" style="color:var(--danger)" @onclick="() => ConfirmDelete(pg)" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </li>
-                    }
-                    @if (_pages.All(p => p.Status != PageStatus.Published))
-                    {
-                        <li class="next-step-item">
-                            <i class="bi bi-eye-fill" style="color:var(--success)"></i>
-                            <div>
-                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Publique sua página</div>
-                                <div style="font-size:.75rem;color:var(--text-muted)">Deixe seu link-in-bio visível para todos</div>
-                            </div>
-                        </li>
-                    }
-                    <li class="next-step-item">
-                        <i class="bi bi-share-fill" style="color:var(--accent)"></i>
-                        <div>
-                            <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Compartilhe seu link</div>
-                            <div style="font-size:.75rem;color:var(--text-muted)">Adicione no Instagram, TikTok e outras redes</div>
                         </div>
-                    </li>
-                    @if (_sub?.PlanName == "Free")
-                    {
-                        <li class="next-step-item">
-                            <i class="bi bi-rocket-takeoff-fill" style="color:var(--warning)"></i>
-                            <div>
-                                <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">
-                                    <a href="/plans" style="color:inherit;text-decoration:underline">Faça upgrade para Pro</a>
-                                </div>
-                                <div style="font-size:.75rem;color:var(--text-muted)">Mais páginas, links e métricas completas</div>
-                            </div>
-                        </li>
                     }
-                    <li class="next-step-item">
-                        <i class="bi bi-bar-chart-fill" style="color:var(--info, #0ea5e9)"></i>
-                        <div>
-                            <div style="font-size:.82rem;font-weight:600;color:var(--text-primary)">Acompanhe suas métricas</div>
-                            <div style="font-size:.75rem;color:var(--text-muted)">Veja visualizações e cliques por página</div>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
+                </div>
+            }
+        </LoadingSpinner>
     </div>
-}
+</div>
 
 <!-- Create modal — multi-step with template selection -->
 @if (_showCreate)
@@ -352,7 +254,6 @@
     int _totalViews30d;
     int _totalClicks30d;
     string? _topPageTitle;
-    List<UserActivityLogDto> _activityLogs = [];
     bool _showCreate;
     int _createStep = 1;
     string? _selectedTemplateId;
@@ -369,6 +270,8 @@
     bool _showConfirm;
     PageDto? _toDelete;
     ToastContainer? _toast;
+
+    ElementReference _dashboardBgRef;
 
     [CascadingParameter] Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject] IJSRuntime JS { get; set; } = default!;
@@ -392,8 +295,13 @@
             }
         }
 
-        _activityLogs = await ActivitySvc.GetLogsAsync(userId, 8);
         _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("umblink.initHeroGradient", _dashboardBgRef);
     }
 
     void ShowCreateModal() { _showCreate = true; _createStep = 1; _selectedTemplateId = null; _templateFilter = "todos"; _createSlugEdited = false; _createTitle = _createSlug = _createBio = ""; _createError = ""; }
@@ -481,28 +389,4 @@
         var copied = await JS.InvokeAsync<bool>("umblink.copyToClipboard", GetPublicPageUrl(slug));
         if (copied) _toast?.Show("Link copiado!");
     }
-
-    static string GetActivityIcon(string action) => action switch {
-        "page.create"           => "bi-file-earmark-plus",
-        "page.delete"           => "bi-file-earmark-x",
-        "page.publish"          => "bi-eye",
-        "page.unpublish"        => "bi-eye-slash",
-        "subscription.trial"    => "bi-gift",
-        "subscription.activate" => "bi-check-circle",
-        "subscription.cancel"   => "bi-x-circle",
-        "admin.plan_change"     => "bi-arrow-repeat",
-        _                       => "bi-clock-history"
-    };
-
-    static string GetActivityLabel(string action) => action switch {
-        "page.create"           => "Página criada",
-        "page.delete"           => "Página excluída",
-        "page.publish"          => "Página publicada",
-        "page.unpublish"        => "Página despublicada",
-        "subscription.trial"    => "Trial iniciado",
-        "subscription.activate" => "Plano ativado",
-        "subscription.cancel"   => "Plano cancelado",
-        "admin.plan_change"     => "Plano alterado pelo admin",
-        _                       => action
-    };
 }

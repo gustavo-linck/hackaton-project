@@ -1241,3 +1241,88 @@ body {
     color: var(--accent);
     font-weight: 600;
 }
+
+/* ===== Dashboard Animated Background ===== */
+.dashboard-animated-bg {
+    --gx: 50%;
+    --gy: 50%;
+    position: relative;
+    min-height: 100%;
+    background: #080d1a;
+    overflow: hidden;
+}
+
+[data-theme="light"] .dashboard-animated-bg {
+    background: #f0f2ff;
+}
+
+.dashboard-animated-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 700px 700px at var(--gx) var(--gy), rgba(85, 124, 242, 0.28), transparent 70%),
+        radial-gradient(ellipse 500px 500px at calc(100% - var(--gx)) calc(100% - var(--gy)), rgba(168, 85, 247, 0.18), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="light"] .dashboard-animated-bg::before {
+    background:
+        radial-gradient(ellipse 700px 700px at var(--gx) var(--gy), rgba(85, 124, 242, 0.10), transparent 70%),
+        radial-gradient(ellipse 500px 500px at calc(100% - var(--gx)) calc(100% - var(--gy)), rgba(168, 85, 247, 0.07), transparent 70%);
+}
+
+.dashboard-animated-bg > .dashboard-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Glass morphism card for dashboard */
+.dashboard-glass-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    padding: 1rem;
+    color: #fff;
+}
+
+[data-theme="light"] .dashboard-glass-card {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    color: var(--text-primary);
+}
+
+.dashboard-glass-card .metric-label {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: .25rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="light"] .dashboard-glass-card .metric-label {
+    color: var(--text-secondary);
+}
+
+.dashboard-glass-card .metric-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+[data-theme="light"] .dashboard-glass-card .metric-value {
+    color: var(--text-primary);
+}
+
+.dashboard-glass-card .metric-sub {
+    font-size: .75rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme="light"] .dashboard-glass-card .metric-sub {
+    color: var(--text-muted);
+}
