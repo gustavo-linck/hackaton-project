@@ -22,10 +22,11 @@ public class CreateLinkRequestValidator : AbstractValidator<CreateLinkRequest>
     {
         RuleFor(x => x.Title)
             .NotEmpty()
-            .MaximumLength(50)
-            .WithMessage("O título deve ter no máximo 50 caracteres.");
+            .MaximumLength(80)
+            .WithMessage("O título deve ter no máximo 80 caracteres.");
         RuleFor(x => x.Url)
             .NotEmpty()
+            .MaximumLength(2048)
             .Must(url => Uri.TryCreate(url, UriKind.Absolute, out var u)
                 && (u.Scheme == "https" || u.Scheme == "http"))
             .WithMessage("URL inválida. Use o formato https://...");
@@ -38,9 +39,12 @@ public class UpdateLinkRequestValidator : AbstractValidator<UpdateLinkRequest>
     {
         RuleFor(x => x.Title)
             .NotEmpty()
-            .MaximumLength(50);
+            .MaximumLength(80)
+            .WithMessage("O título deve ter no máximo 80 caracteres.");
         RuleFor(x => x.Url)
             .NotEmpty()
+            .MaximumLength(2048)
+            .WithMessage("A URL deve ter no máximo 2048 caracteres.")
             .Must(url => Uri.TryCreate(url, UriKind.Absolute, out var u)
                 && (u.Scheme == "https" || u.Scheme == "http"))
             .WithMessage("URL inválida. Use o formato https://...");

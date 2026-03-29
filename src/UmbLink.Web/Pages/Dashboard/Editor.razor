@@ -62,23 +62,26 @@ else
                         <div class="editor-card-body">
                             <div style="margin-bottom:.75rem">
                                 <label class="form-label-theme">Título</label>
-                                <input value="@_editTitle" @oninput="OnTitleInput" class="form-control-theme w-100" />
+                                <input value="@_editTitle" @oninput="OnTitleInput" class="form-control-theme w-100" maxlength="60" />
+                                <div style="font-size:.7rem;text-align:right;color:@(_editTitle.Length >= 54 ? "var(--danger)" : "var(--text-muted)")">@_editTitle.Length / 60</div>
                             </div>
                             <div style="margin-bottom:.75rem">
                                 <label class="form-label-theme">Endereço</label>
                                 <div class="d-flex">
                                     <span class="form-control-theme d-flex align-items-center text-theme-muted"
                                           style="border-radius:10px 0 0 10px;border-right:none;font-size:.75rem;padding:.4rem .5rem;white-space:nowrap">@PublicPagePrefix</span>
-                                    <input @bind="_editSlug" class="form-control-theme w-100" style="border-radius:0 10px 10px 0" />
+                                    <input value="@_editSlug" @oninput="e => _editSlug = e.Value?.ToString() ?? string.Empty" class="form-control-theme w-100" style="border-radius:0 10px 10px 0" maxlength="30" />
                                 </div>
+                                <div style="font-size:.7rem;text-align:right;color:@(_editSlug.Length >= 27 ? "var(--danger)" : "var(--text-muted)")">@_editSlug.Length / 30</div>
                             </div>
                             <div style="margin-bottom:.75rem">
                                 <label class="form-label-theme">Bio</label>
-                                <textarea value="@_editBio" @oninput="OnBioInput" class="form-control-theme w-100" rows="2"></textarea>
+                                <textarea value="@_editBio" @oninput="OnBioInput" class="form-control-theme w-100" rows="2" maxlength="200"></textarea>
+                                <div style="font-size:.7rem;text-align:right;color:@(_editBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_editBio.Length / 200</div>
                             </div>
                             <div>
                                 <label class="form-label-theme">Avatar (URL da imagem)</label>
-                                <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." />
+                                <input value="@_editAvatarUrl" @oninput="OnAvatarInput" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
                             </div>
                         </div>
                     </div>
@@ -187,7 +190,7 @@ else
                                 </div>
 
                                 <label class="form-label-theme" style="font-weight:600">Formato do avatar</label>
-                                <div class="d-flex gap-1">
+                                <div class="d-flex gap-1 mb-3">
                                     <button type="button"
                                             class="@(_avatarShape == "circle" ? "btn-accent" : "btn-ghost")"
                                             style="font-size:.75rem;padding:.3rem .75rem"
@@ -201,6 +204,70 @@ else
                                         <i class="bi bi-square me-1"></i>Quadrado
                                     </button>
                                 </div>
+
+                                <!-- Gradient editor -->
+                                <label class="form-label-theme" style="font-weight:600">Fundo gradiente</label>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <button type="button"
+                                            class="@(_useGradient ? "btn-accent" : "btn-ghost")"
+                                            style="font-size:.75rem;padding:.3rem .75rem"
+                                            @onclick="() => { _useGradient = !_useGradient; ApplyTheme(); }">
+                                        <i class="bi @(_useGradient ? "bi-toggle-on" : "bi-toggle-off") me-1"></i>
+                                        @(_useGradient ? "Ativado" : "Desativado")
+                                    </button>
+                                </div>
+                                @if (_useGradient)
+                                {
+                                    <!-- Presets -->
+                                    <div class="d-flex gap-1 flex-wrap mb-2">
+                                        @foreach (var preset in GradientPresets)
+                                        {
+                                            <div style="width:32px;height:32px;border-radius:8px;cursor:pointer;
+                                                        background:linear-gradient(135deg,@preset.color1,@preset.color2);
+                                                        border:2px solid @(_gradColor1 == preset.color1 && _gradColor2 == preset.color2 ? "var(--accent)" : "transparent");
+                                                        transition:border .2s ease"
+                                                 title="@preset.label"
+                                                 @onclick="() => { _gradColor1 = preset.color1; _gradColor2 = preset.color2; _gradDirection = preset.dir; ApplyTheme(); }">
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Custom colors -->
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label-theme" style="font-size:.7rem">Cor 1</label>
+                                            <input type="color" class="form-control form-control-color w-100" value="@_gradColor1"
+                                                   style="border-radius:10px;border:1px solid var(--border)"
+                                                   @oninput="e => { _gradColor1 = e.Value?.ToString() ?? _gradColor1; ApplyTheme(); }" />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label-theme" style="font-size:.7rem">Cor 2</label>
+                                            <input type="color" class="form-control form-control-color w-100" value="@_gradColor2"
+                                                   style="border-radius:10px;border:1px solid var(--border)"
+                                                   @oninput="e => { _gradColor2 = e.Value?.ToString() ?? _gradColor2; ApplyTheme(); }" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Direction -->
+                                    <label class="form-label-theme" style="font-size:.7rem">Direção</label>
+                                    <div class="d-flex gap-1 flex-wrap mb-2">
+                                        @foreach (var (dir, label) in new[] { ("to right","→"), ("to bottom","↓"), ("135deg","↘"), ("to right bottom","⬊"), ("circle","◉") })
+                                        {
+                                            var isRadial = dir == "circle";
+                                            <button type="button"
+                                                    class="@((_gradType == "radial" && isRadial) || (_gradType == "linear" && _gradDirection == dir && !isRadial) ? "btn-accent" : "btn-ghost")"
+                                                    style="font-size:.75rem;padding:.25rem .5rem;min-width:32px"
+                                                    @onclick='() => { if (isRadial) { _gradType = "radial"; } else { _gradType = "linear"; _gradDirection = dir; } ApplyTheme(); }'>
+                                                @label
+                                            </button>
+                                        }
+                                    </div>
+
+                                    <!-- Gradient preview -->
+                                    <div style="height:40px;border-radius:10px;
+                                                background:@(_gradType == "radial" ? $"radial-gradient(circle, {_gradColor1}, {_gradColor2})" : $"linear-gradient({_gradDirection}, {_gradColor1}, {_gradColor2})");
+                                                border:1px solid var(--border)"></div>
+                                }
                             </div>
                         }
                     </div>
@@ -266,11 +333,12 @@ else
                 }
                 <div style="margin-bottom:1rem">
                     <label class="form-label-theme">Título</label>
-                    <input @bind="_newLinkTitle" class="form-control-theme w-100" placeholder="Meu Instagram" />
+                    <input value="@_newLinkTitle" @oninput="e => _newLinkTitle = e.Value?.ToString() ?? string.Empty" class="form-control-theme w-100" placeholder="Meu Instagram" maxlength="80" />
+                    <div style="font-size:.7rem;text-align:right;color:@(_newLinkTitle.Length >= 72 ? "var(--danger)" : "var(--text-muted)")">@_newLinkTitle.Length / 80</div>
                 </div>
                 <div>
                     <label class="form-label-theme">URL</label>
-                    <input @bind="_newLinkUrl" type="url" class="form-control-theme w-100" placeholder="https://..." />
+                    <input @bind="_newLinkUrl" type="url" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
                 </div>
             </div>
             <div class="modal-theme-footer">
@@ -314,6 +382,24 @@ else
     string _btnStyleKey = "rounded";
     string _avatarShape = "circle";
     bool _showThemePanel = true;
+
+    // Gradient editor state
+    bool _useGradient;
+    string _gradColor1 = "#667eea", _gradColor2 = "#764ba2";
+    string _gradDirection = "135deg";
+    string _gradType = "linear";
+
+    static readonly (string id, string label, string color1, string color2, string dir)[] GradientPresets =
+    [
+        ("sunset",  "Pôr do sol",  "#ffecd2", "#fcb69f", "135deg"),
+        ("ocean",   "Oceano",      "#667eea", "#764ba2", "135deg"),
+        ("aurora",  "Aurora",      "#a8edea", "#fed6e3", "135deg"),
+        ("forest",  "Floresta",    "#134e5e", "#71b280", "180deg"),
+        ("fire",    "Fogo",        "#f12711", "#f5af19", "135deg"),
+        ("candy",   "Candy",       "#ff6a88", "#ff99ac", "to right"),
+        ("midnight","Meia-noite",  "#232526", "#414345", "180deg"),
+        ("neon",    "Neon",        "#00f260", "#0575e6", "135deg"),
+    ];
     bool _sortableInitialized;
 
     protected override async Task OnInitializedAsync()
@@ -334,12 +420,18 @@ else
             try {
                 var cfg = System.Text.Json.JsonDocument.Parse(_page.ThemeConfig).RootElement;
                 string GetStr(string k, string fb) => cfg.TryGetProperty(k, out var v) ? v.GetString() ?? fb : fb;
+                bool GetBool(string k) => cfg.TryGetProperty(k, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.True;
                 _selectedThemeId = GetStr("themeId", "minimal-light");
                 _btnColor        = GetStr("buttonColor", "#111111");
                 _btnTextColor    = GetStr("buttonTextColor", "#ffffff");
                 _textColor       = GetStr("textColor", "#111111");
                 _btnStyleKey     = GetStr("buttonStyle", "rounded");
                 _avatarShape     = GetStr("avatarShape", "circle");
+                _useGradient     = GetBool("useGradient");
+                _gradColor1      = GetStr("gradColor1", "#667eea");
+                _gradColor2      = GetStr("gradColor2", "#764ba2");
+                _gradDirection   = GetStr("gradDirection", "135deg");
+                _gradType        = GetStr("gradType", "linear");
             } catch { }
         }
         _loading = false;
@@ -398,7 +490,12 @@ else
             titleFont       = "inter",
             linkFont        = "inter",
             spacing         = "normal",
-            avatarShape     = _avatarShape
+            avatarShape     = _avatarShape,
+            useGradient     = _useGradient,
+            gradColor1      = _gradColor1,
+            gradColor2      = _gradColor2,
+            gradDirection   = _gradDirection,
+            gradType        = _gradType
         });
     }
 

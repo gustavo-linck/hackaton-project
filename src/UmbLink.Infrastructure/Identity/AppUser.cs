@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using UmbLink.Infrastructure.Data.Entities;
 
@@ -5,6 +6,7 @@ namespace UmbLink.Infrastructure.Identity;
 
 public class AppUser : IdentityUser<Guid>
 {
+    [MaxLength(50)]
     public string Name { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
     public UserRole Role { get; set; } = UserRole.User;

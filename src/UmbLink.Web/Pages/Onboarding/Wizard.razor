@@ -7,170 +7,211 @@
 
 <PageTitle>Bem-vindo — UmbLink</PageTitle>
 
-<div class="min-vh-100 d-flex flex-column" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e)">
+<div class="min-vh-100 d-flex flex-column" style="background:var(--bg-primary)">
     <!-- Navbar -->
-    <nav class="navbar px-4 py-3">
-        <span class="navbar-brand text-white fw-bold fs-5">UmbLink</span>
+    <nav class="d-flex align-items-center px-4 py-3" style="border-bottom:1px solid var(--border)">
+        <span style="font-weight:800;font-size:1.25rem;color:var(--accent)">UmbLink</span>
     </nav>
+
+    <!-- Progress bar -->
+    <div class="px-4 pt-3" style="max-width:700px;margin:0 auto;width:100%">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            @for (int i = 1; i <= 4; i++)
+            {
+                var step = i;
+                <div style="flex:1;height:4px;border-radius:4px;background:@(step <= _step ? "var(--accent)" : "var(--border)");transition:background .4s ease"></div>
+            }
+        </div>
+        <p class="text-theme-secondary" style="font-size:.75rem;margin:0">Passo @_step de 4</p>
+    </div>
 
     <!-- Content -->
     <div class="flex-grow-1 d-flex align-items-start justify-content-center px-3 py-4">
+        <div class="onboarding-step-container" style="width:100%;max-width:@StepMaxWidth">
 
-        @if (_step == 1)
-        {
-            <div class="row w-100 justify-content-center g-4" style="max-width:960px">
-                <!-- Form column -->
-                <div class="col-12 col-lg-6">
-                    <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
-                        <div class="card-body p-4">
-                            <h4 class="fw-bold mb-1">Vamos criar sua página!</h4>
-                            <p class="text-theme-muted small mb-4">Como você quer se chamar?</p>
+            @* ───── Step 1: Profile type ───── *@
+            @if (_step == 1)
+            {
+                <div class="animate-fade-in-up">
+                    <div class="text-center mb-4">
+                        <h3 style="font-weight:700;color:var(--text-primary)">Qual é o seu perfil?</h3>
+                        <p class="text-theme-secondary">Isso nos ajuda a sugerir o melhor template para você.</p>
+                    </div>
+
+                    <div class="row g-3 justify-content-center">
+                        @foreach (var (id, label, icon, desc) in _profileTypes)
+                        {
+                            <div class="col-6 col-md-4">
+                                <div style="border:2px solid @(_selectedProfile == id ? "var(--accent)" : "var(--border)");
+                                            border-radius:14px;padding:1.25rem 1rem;cursor:pointer;text-align:center;
+                                            background:@(_selectedProfile == id ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
+                                            transition:all .25s ease"
+                                     @onclick="() => _selectedProfile = id">
+                                    <i class="bi @icon" style="font-size:1.75rem;color:var(--accent);display:block;margin-bottom:.5rem"></i>
+                                    <span style="font-weight:600;color:var(--text-primary);font-size:.9rem;display:block">@label</span>
+                                    <span style="font-size:.7rem;color:var(--text-secondary)">@desc</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button class="btn-accent" @onclick="GoToStep2" disabled="@(string.IsNullOrEmpty(_selectedProfile))">
+                            Continuar <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @* ───── Step 2: Choose template ───── *@
+            @if (_step == 2)
+            {
+                <div class="animate-fade-in-up">
+                    <div class="text-center mb-4">
+                        <h3 style="font-weight:700;color:var(--text-primary)">Escolha um template</h3>
+                        <p class="text-theme-secondary">Você pode personalizar tudo depois no editor.</p>
+                    </div>
+
+                    <!-- Category filter -->
+                    <div class="d-flex gap-1 mb-3 flex-wrap justify-content-center">
+                        @foreach (var cat in Templates.Categories)
+                        {
+                            <button type="button"
+                                    class="@(_templateFilter == cat ? "btn-accent" : "btn-ghost")"
+                                    style="font-size:.75rem;padding:.3rem .75rem;text-transform:capitalize"
+                                    @onclick="() => _templateFilter = cat">
+                                @cat
+                            </button>
+                        }
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Blank -->
+                        <div class="col-sm-6 col-md-4">
+                            <div style="border:2px solid @(_selectedTemplateId == null ? "var(--accent)" : "var(--border)");
+                                        border-radius:14px;padding:1.25rem;cursor:pointer;text-align:center;
+                                        background:@(_selectedTemplateId == null ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
+                                        transition:all .25s ease;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
+                                 @onclick="() => _selectedTemplateId = null">
+                                <i class="bi bi-plus-circle" style="font-size:1.5rem;color:var(--accent)"></i>
+                                <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">Em branco</span>
+                                <span style="font-size:.7rem;color:var(--text-secondary)">Começar do zero</span>
+                            </div>
+                        </div>
+                        @foreach (var tpl in FilteredTemplates)
+                        {
+                            <div class="col-sm-6 col-md-4">
+                                <div style="border:2px solid @(_selectedTemplateId == tpl.Id ? "var(--accent)" : "var(--border)");
+                                            border-radius:14px;padding:1.25rem;cursor:pointer;text-align:center;
+                                            background:@(_selectedTemplateId == tpl.Id ? "rgba(99,102,241,0.06)" : "var(--bg-card)");
+                                            transition:all .25s ease;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem"
+                                     @onclick="() => _selectedTemplateId = tpl.Id">
+                                    <i class="bi @tpl.Icon" style="font-size:1.5rem;color:var(--accent)"></i>
+                                    <span style="font-weight:600;color:var(--text-primary);font-size:.85rem">@tpl.Name</span>
+                                    <span style="font-size:.7rem;color:var(--text-secondary)">@tpl.Description</span>
+                                    @if (_selectedTemplateId == tpl.Id)
+                                    {
+                                        <i class="bi bi-check-circle-fill" style="color:var(--accent);font-size:.9rem"></i>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn-ghost" @onclick="() => _step = 1"><i class="bi bi-arrow-left me-1"></i> Voltar</button>
+                        <button class="btn-accent" @onclick="() => _step = 3">Continuar <i class="bi bi-arrow-right ms-1"></i></button>
+                    </div>
+                </div>
+            }
+
+            @* ───── Step 3: Page details ───── *@
+            @if (_step == 3)
+            {
+                <div class="animate-fade-in-up">
+                    <div class="row g-4 justify-content-center">
+                        <div class="col-12 col-lg-7">
+                            <h3 style="font-weight:700;color:var(--text-primary);margin-bottom:.25rem">Detalhes da sua página</h3>
+                            <p class="text-theme-secondary mb-4">Dê um nome e endereço para sua página.</p>
 
                             @if (!string.IsNullOrEmpty(_error))
                             {
-                                <div class="alert alert-danger py-2">@_error</div>
+                                <div class="alert-theme" style="margin-bottom:1rem;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)">
+                                    <i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> @_error
+                                </div>
                             }
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Seu nome ou marca</label>
-                                <input class="form-control-theme form-control-lg"
-                                       placeholder="Seu nome ou marca"
-                                       value="@_pageTitle"
-                                       @oninput="OnTitleInput" />
+                            <div style="margin-bottom:1rem">
+                                <label class="form-label-theme" style="font-weight:600">Seu nome ou marca</label>
+                                <input class="form-control-theme w-100" placeholder="Meu Nome" value="@_pageTitle" @oninput="OnTitleInput" maxlength="60" />
+                                <div style="font-size:.7rem;text-align:right;color:@(_pageTitle.Length >= 54 ? "var(--danger)" : "var(--text-muted)")">@_pageTitle.Length / 60</div>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">Endereço da sua página</label>
-                                <div class="input-group">
-                                    <span class="input-group-text text-theme-muted small">@PublicPagePrefix</span>
-                                    <input class="form-control-theme"
-                                           placeholder="seu-slug"
-                                           value="@_pageSlug"
-                                           @oninput="OnSlugInput" />
+                            <div style="margin-bottom:1rem">
+                                <label class="form-label-theme" style="font-weight:600">Endereço da página</label>
+                                <div class="d-flex">
+                                    <span class="form-control-theme d-flex align-items-center text-theme-muted"
+                                          style="border-radius:10px 0 0 10px;border-right:none;font-size:.8rem;padding:.5rem .625rem;white-space:nowrap">@PublicPagePrefix</span>
+                                    <input class="form-control-theme w-100" style="border-radius:0 10px 10px 0"
+                                           placeholder="meu-slug" value="@_pageSlug" @oninput="OnSlugInput" maxlength="30" />
                                 </div>
+                                <div style="font-size:.7rem;text-align:right;color:@(_pageSlug.Length >= 27 ? "var(--danger)" : "var(--text-muted)")">@_pageSlug.Length / 30</div>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">Escolha um visual</label>
-                                <div class="row g-2">
-                                    @foreach (var theme in Themes.All)
-                                    {
-                                        <div class="col-6">
-                                            <div class="border rounded p-2 d-flex align-items-center gap-2
-                                                 @(_selectedThemeId == theme.Id ? "border-primary bg-primary bg-opacity-10" : "")
-                                                 @(theme.IsPremium ? "opacity-60" : "")"
-                                                 style="cursor:pointer"
-                                                 @onclick="() => SelectThemeInWizard(theme)">
-                                                <div style="width:22px;height:22px;border-radius:50%;background:@theme.DefaultBg;border:1px solid rgba(0,0,0,.15);flex-shrink:0"></div>
-                                                <span class="small">@theme.Name</span>
-                                                @if (theme.IsPremium)
-                                                {
-                                                    <span class="ms-auto"><i class="bi bi-lock-fill text-warning" style="font-size:.7rem"></i></span>
-                                                }
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                                @if (_proThemeNotice)
-                                {
-                                    <div class="alert alert-warning py-2 small mt-2 mb-0 d-flex align-items-center gap-2">
-                                        <i class="bi bi-stars text-warning"></i>
-                                        Temas premium disponíveis nos planos Pro e Business. Continue com um dos temas gratuitos por enquanto!
-                                    </div>
-                                }
+                            <div style="margin-bottom:1rem">
+                                <label class="form-label-theme" style="font-weight:600">Bio (opcional)</label>
+                                <textarea class="form-control-theme w-100" rows="2" value="@_pageBio" @oninput="e => _pageBio = e.Value?.ToString() ?? string.Empty" placeholder="Uma breve descrição sobre você..." maxlength="200"></textarea>
+                                <div style="font-size:.7rem;text-align:right;color:@(_pageBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_pageBio.Length / 200</div>
                             </div>
 
-                            <button class="btn btn-accent w-100 btn-lg" @onclick="NextStep">
-                                Próximo →
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Live preview column -->
-                <div class="col-lg-4 d-none d-lg-flex flex-column align-items-center justify-content-start pt-2">
-                    <PagePreview Page="GetPreviewDto()" Links="GetPreviewLinks()" />
-                    <small class="text-white-50 mt-2">Preview ao vivo</small>
-                </div>
-            </div>
-        }
-
-        @if (_step == 2)
-        {
-            <div style="width:100%;max-width:500px">
-                <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="card-body p-4 text-center">
-                        <i class="bi bi-link-45deg fs-1 text-primary d-block mb-2"></i>
-                        <h5 class="fw-bold mb-1">Adicione seu primeiro link</h5>
-                        <p class="text-theme-muted small mb-4">Todo mundo começa com um link. Qual é o seu?</p>
-
-                        @if (!string.IsNullOrEmpty(_error))
-                        {
-                            <div class="alert alert-danger py-2 text-start">@_error</div>
-                        }
-
-                        <div class="mb-3 text-start">
-                            <label class="form-label">Título do link</label>
-                            <input class="form-control-theme" placeholder="Meu Instagram" @bind="_linkTitle" />
-                        </div>
-
-                        <div class="mb-4 text-start">
-                            <label class="form-label">URL</label>
-                            <input class="form-control-theme" type="url" placeholder="https://..." @bind="_linkUrl" />
-                        </div>
-
-                        <div class="row g-2 mb-3">
-                            <div class="col-5">
-                                <button class="btn btn-ghost w-100" @onclick="() => _step = 1">
-                                    ← Voltar
-                                </button>
-                            </div>
-                            <div class="col-7">
-                                <button class="btn btn-accent w-100" @onclick="CreatePageAsync" disabled="@_creating">
+                            <div class="d-flex justify-content-between mt-4">
+                                <button class="btn-ghost" @onclick="() => _step = 2"><i class="bi bi-arrow-left me-1"></i> Voltar</button>
+                                <button class="btn-accent" @onclick="CreatePageAsync" disabled="@_creating">
                                     @if (_creating)
                                     {
                                         <span class="spinner-border spinner-border-sm me-1"></span>
                                     }
-                                    Criar minha página 🚀
+                                    Criar minha página <i class="bi bi-arrow-right ms-1"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <button class="btn btn-ghost text-theme-muted small p-0" @onclick="SkipLink">
-                            Pular por agora
+                        <!-- Live preview (desktop) -->
+                        <div class="col-lg-5 d-none d-lg-flex flex-column align-items-center justify-content-start pt-3">
+                            <PagePreview Page="GetPreviewDto()" Links="[]" />
+                            <small class="text-theme-muted mt-2">Preview ao vivo</small>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* ───── Step 4: Success ───── *@
+            @if (_step == 4)
+            {
+                <div class="animate-fade-in-up text-center">
+                    <div style="width:80px;height:80px;border-radius:50%;background:rgba(34,197,94,0.1);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1.5rem">
+                        <i class="bi bi-check-lg" style="font-size:2.5rem;color:var(--success)"></i>
+                    </div>
+                    <h3 style="font-weight:700;color:var(--text-primary)">Sua página está pronta!</h3>
+                    <p class="text-theme-secondary mb-4">Parabéns! Compartilhe com o mundo.</p>
+
+                    <div class="d-flex align-items-center gap-2 justify-content-center mb-4" style="max-width:420px;margin:0 auto">
+                        <input class="form-control-theme flex-grow-1" readonly value="@CreatedPageUrl" />
+                        <button class="btn-ghost" @onclick="CopyUrl"><i class="bi bi-clipboard"></i></button>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2" style="max-width:320px;margin:0 auto">
+                        <button class="btn-accent" style="width:100%;justify-content:center" @onclick="GoToEditor">
+                            <i class="bi bi-pencil me-1"></i> Personalizar minha página
+                        </button>
+                        <button class="btn-ghost" style="width:100%;justify-content:center" @onclick="GoToDashboard">
+                            <i class="bi bi-grid me-1"></i> Ir ao dashboard
                         </button>
                     </div>
                 </div>
-            </div>
-        }
+            }
 
-        @if (_step == 3)
-        {
-            <div style="width:100%;max-width:500px">
-                <div class="card shadow-lg border-0" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="card-body p-4 text-center">
-                        <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-3"></i>
-                        <h4 class="fw-bold mb-1">Sua página está pronta! 🎉</h4>
-                        <p class="text-theme-muted mb-4">Parabéns! Compartilhe com o mundo.</p>
-
-                        <div class="input-group mb-4">
-                            <input class="form-control-theme" readonly value="@CreatedPageUrl" />
-                            <button class="btn btn-ghost" @onclick="CopyUrl">Copiar</button>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-accent" @onclick="GoToEditor">
-                                ✏️ Personalizar minha página
-                            </button>
-                            <button class="btn btn-ghost" @onclick="GoToDashboard">
-                                📋 Ir ao dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-
+        </div>
     </div>
 </div>
 
@@ -179,18 +220,36 @@
     [Inject] IJSRuntime JS { get; set; } = default!;
 
     int _step = 1;
-    string _pageTitle = "", _pageSlug = "", _selectedThemeId = "minimal-light";
-    string _linkTitle = "", _linkUrl = "";
+    string _selectedProfile = "";
+    string? _selectedTemplateId;
+    string _templateFilter = "todos";
+    string _pageTitle = "", _pageSlug = "", _pageBio = "";
     string _error = "";
-    bool _creating, _slugEdited, _proThemeNotice;
+    bool _creating, _slugEdited;
     Guid _createdPageId;
     string _createdSlug = "";
     Guid _userId;
+
+    string StepMaxWidth => _step switch { 2 => "780px", 3 => "900px", _ => "640px" };
+
+    static readonly (string id, string label, string icon, string desc)[] _profileTypes =
+    [
+        ("creator",  "Criador",       "bi-camera-reels",     "Influenciador, youtuber"),
+        ("business", "Negócio",       "bi-briefcase",        "Loja, serviço, empresa"),
+        ("dev",      "Desenvolvedor", "bi-code-slash",       "Portfólio técnico"),
+        ("artist",   "Artista",       "bi-palette",          "Design, fotografia, arte"),
+        ("musician", "Músico",        "bi-music-note-beamed","Banda, produtor, DJ"),
+        ("other",    "Outro",         "bi-person",           "Qualquer perfil"),
+    ];
 
     string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
     string CreatedPageUrl => string.IsNullOrWhiteSpace(_createdSlug)
         ? PublicPagePrefix
         : new Uri(new Uri(Nav.BaseUri), $"p/{_createdSlug}").ToString();
+
+    IEnumerable<PageTemplate> FilteredTemplates => _templateFilter == "todos"
+        ? Templates.All
+        : Templates.All.Where(t => t.Category == _templateFilter);
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,10 +260,29 @@
             Nav.NavigateTo("/dashboard");
     }
 
+    void GoToStep2()
+    {
+        // Auto-select matching template based on profile
+        _selectedTemplateId = _selectedProfile switch
+        {
+            "creator"  => "creator",
+            "business" => "business",
+            "dev"      => "dev-portfolio",
+            "artist"   => "artist",
+            "musician" => "musician",
+            _          => null
+        };
+        _step = 2;
+    }
+
     void OnTitleInput(ChangeEventArgs e)
     {
         _pageTitle = e.Value?.ToString() ?? string.Empty;
-        if (!_slugEdited) _pageSlug = ToSlug(_pageTitle);
+        if (!_slugEdited)
+        {
+            var slug = ToSlug(_pageTitle);
+            _pageSlug = slug.Length > 30 ? slug[..30] : slug;
+        }
     }
 
     void OnSlugInput(ChangeEventArgs e)
@@ -213,80 +291,53 @@
         _slugEdited = true;
     }
 
-    void SelectThemeInWizard(ThemeDefinition theme)
-    {
-        if (theme.IsPremium) { _proThemeNotice = true; return; }
-        _selectedThemeId = theme.Id;
-        _proThemeNotice = false;
-    }
-
-    void NextStep()
-    {
-        if (string.IsNullOrWhiteSpace(_pageTitle) || string.IsNullOrWhiteSpace(_pageSlug))
-        { _error = "Preencha seu nome e o endereço da página."; return; }
-        _error = string.Empty;
-        _step = 2;
-    }
-
-    async Task SkipLink()
-    {
-        _linkTitle = "";
-        _linkUrl = "";
-        await CreatePageAsync();
-    }
-
     async Task CreatePageAsync()
     {
+        if (string.IsNullOrWhiteSpace(_pageTitle) || string.IsNullOrWhiteSpace(_pageSlug))
+        { _error = "Preencha o nome e o endereço da página."; return; }
+
         _creating = true; _error = string.Empty;
-        var result = await PageSvc.CreateAsync(_userId, new() { Title = _pageTitle, Slug = _pageSlug });
+        var result = await PageSvc.CreateAsync(_userId, new()
+        {
+            Title = _pageTitle,
+            Slug = _pageSlug,
+            Bio = string.IsNullOrWhiteSpace(_pageBio) ? null : _pageBio,
+            TemplateId = _selectedTemplateId
+        });
+
         if (result.IsFailure)
         { _error = result.Error!; _creating = false; return; }
 
         var page = result.Value!;
-
-        // Apply selected theme
-        var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
-        var themeConfig = System.Text.Json.JsonSerializer.Serialize(new {
-            themeId = theme.Id, bgColor = theme.DefaultBg,
-            buttonStyle = "rounded", buttonColor = theme.DefaultButtonColor,
-            buttonTextColor = theme.DefaultButtonTextColor, textColor = theme.DefaultTextColor,
-            titleFont = "inter", linkFont = "inter", spacing = "normal", avatarShape = "circle"
-        });
-        await PageSvc.UpdateAsync(_userId, page.Id, new() {
-            Title = _pageTitle, Slug = _pageSlug, ThemeConfig = themeConfig
-        });
-
-        // Add link if provided
-        if (!string.IsNullOrWhiteSpace(_linkTitle) && !string.IsNullOrWhiteSpace(_linkUrl))
-            await LinkSvc.AddAsync(_userId, page.Id, new() { Title = _linkTitle, Url = _linkUrl });
-
-        // Publish
         await PageSvc.PublishAsync(_userId, page.Id);
 
         _createdPageId = page.Id;
         _createdSlug = _pageSlug;
         _creating = false;
-        _step = 3;
+        _step = 4;
     }
 
-    async Task CopyUrl()
-    {
-        await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
-    }
-
+    async Task CopyUrl() => await JS.InvokeAsync<bool>("umblink.copyToClipboard", CreatedPageUrl);
     void GoToEditor() => Nav.NavigateTo($"/editor/{_createdPageId}");
     void GoToDashboard() => Nav.NavigateTo("/dashboard");
 
-    PageDto GetPreviewDto() => new(Guid.Empty, Guid.Empty, "preview",
-        string.IsNullOrEmpty(_pageTitle) ? "Seu nome" : _pageTitle,
-        null, null, PageStatus.Draft, BuildPreviewThemeConfig(), 0);
-
-    List<LinkDto> GetPreviewLinks() => string.IsNullOrWhiteSpace(_linkTitle)
-        ? [] : [new LinkDto(Guid.Empty, Guid.Empty, _linkTitle, "#", null, true, 1)];
+    PageDto GetPreviewDto()
+    {
+        var themeConfig = BuildPreviewThemeConfig();
+        return new(Guid.Empty, Guid.Empty, "preview",
+            string.IsNullOrEmpty(_pageTitle) ? "Seu nome" : _pageTitle,
+            string.IsNullOrWhiteSpace(_pageBio) ? null : _pageBio,
+            null, PageStatus.Draft, themeConfig, 0);
+    }
 
     string BuildPreviewThemeConfig()
     {
-        var theme = Themes.All.FirstOrDefault(t => t.Id == _selectedThemeId) ?? Themes.All[0];
+        var tpl = _selectedTemplateId != null
+            ? Templates.All.FirstOrDefault(t => t.Id == _selectedTemplateId)
+            : null;
+        if (tpl != null) return tpl.ThemeConfig;
+
+        var theme = Themes.All[0];
         return System.Text.Json.JsonSerializer.Serialize(new {
             themeId = theme.Id, bgColor = theme.DefaultBg, buttonStyle = "rounded",
             buttonColor = theme.DefaultButtonColor, buttonTextColor = theme.DefaultButtonTextColor,

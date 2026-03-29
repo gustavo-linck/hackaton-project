@@ -11,6 +11,10 @@ public class PageService(IPageRepository pageRepo, ILinkRepository linkRepo, IPl
 {
     public async Task<Result<PageDto>> CreateAsync(Guid userId, CreatePageRequest req)
     {
+        if (req.Title.Length > 60) return Result<PageDto>.Fail("Título deve ter no máximo 60 caracteres.");
+        if (req.Slug.Length > 30) return Result<PageDto>.Fail("Endereço deve ter no máximo 30 caracteres.");
+        if (req.Bio is not null && req.Bio.Length > 200) return Result<PageDto>.Fail("Bio deve ter no máximo 200 caracteres.");
+
         var canAdd = await limits.CanAddPageAsync(userId);
         if (canAdd.IsFailure) return Result<PageDto>.LimitExceeded(canAdd.LimitError!);
 
@@ -38,6 +42,10 @@ public class PageService(IPageRepository pageRepo, ILinkRepository linkRepo, IPl
 
     public async Task<Result<PageDto>> UpdateAsync(Guid userId, Guid pageId, UpdatePageRequest req)
     {
+        if (req.Title.Length > 60) return Result<PageDto>.Fail("Título deve ter no máximo 60 caracteres.");
+        if (req.Slug.Length > 30) return Result<PageDto>.Fail("Endereço deve ter no máximo 30 caracteres.");
+        if (req.Bio is not null && req.Bio.Length > 200) return Result<PageDto>.Fail("Bio deve ter no máximo 200 caracteres.");
+
         var page = await pageRepo.GetByIdAndUserAsync(pageId, userId);
         if (page is null) return Result<PageDto>.Fail("Página não encontrada.");
 

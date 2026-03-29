@@ -11,6 +11,9 @@ public class LinkService(ILinkRepository linkRepo, IPageRepository pageRepo, IPl
 {
     public async Task<Result<LinkDto>> AddAsync(Guid userId, Guid pageId, CreateLinkRequest req)
     {
+        if (req.Title.Length > 80) return Result<LinkDto>.Fail("Título do link deve ter no máximo 80 caracteres.");
+        if (req.Url.Length > 2048) return Result<LinkDto>.Fail("URL deve ter no máximo 2048 caracteres.");
+
         var page = await pageRepo.GetByIdAndUserAsync(pageId, userId);
         if (page is null) return Result<LinkDto>.Fail("Página não encontrada.");
 
@@ -34,6 +37,9 @@ public class LinkService(ILinkRepository linkRepo, IPageRepository pageRepo, IPl
 
     public async Task<Result<LinkDto>> UpdateAsync(Guid userId, Guid linkId, UpdateLinkRequest req)
     {
+        if (req.Title.Length > 80) return Result<LinkDto>.Fail("Título do link deve ter no máximo 80 caracteres.");
+        if (req.Url.Length > 2048) return Result<LinkDto>.Fail("URL deve ter no máximo 2048 caracteres.");
+
         var link = await linkRepo.GetByIdAndUserAsync(linkId, userId);
         if (link is null) return Result<LinkDto>.Fail("Link não encontrado.");
 
