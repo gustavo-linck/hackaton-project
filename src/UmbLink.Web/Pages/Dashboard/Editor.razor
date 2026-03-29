@@ -93,7 +93,20 @@ else
                                 }
                                 else
                                 {
-                                    <InputFile OnChange="HandleAvatarUpload" accept="image/jpeg,image/png,image/webp" class="form-control-theme w-100" />
+                                    <InputFile OnChange="HandleAvatarUpload" accept="image/jpeg,image/png,image/webp"
+                                               class="form-control-theme w-100" MaxFileSize="2097152" />
+
+                                    @if (!string.IsNullOrEmpty(_avatarLocalPreview) || (!string.IsNullOrEmpty(_editAvatarUrl) && _avatarMode == "upload"))
+                                    {
+                                        <div style="margin-top:.5rem;display:flex;align-items:center;gap:.75rem">
+                                            <img src="@(_avatarLocalPreview != "" ? _avatarLocalPreview : _editAvatarUrl)"
+                                                 alt="preview"
+                                                 style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid var(--border)" />
+                                            <span style="font-size:.72rem;color:var(--text-muted)">
+                                                @(_avatarLocalPreview != "" ? "Preview — enviando..." : "Avatar atual")
+                                            </span>
+                                        </div>
+                                    }
                                     @if (_avatarUploading)
                                     {
                                         <div class="d-flex align-items-center gap-2 mt-1" style="font-size:.75rem;color:var(--text-muted)">
@@ -102,11 +115,9 @@ else
                                     }
                                     @if (!string.IsNullOrEmpty(_avatarUploadError))
                                     {
-                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">@_avatarUploadError</div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(_editAvatarUrl) && _avatarMode == "upload")
-                                    {
-                                        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.25rem">Atual: @_editAvatarUrl</div>
+                                        <div style="font-size:.75rem;color:var(--danger);margin-top:.25rem">
+                                            <i class="bi bi-exclamation-circle me-1"></i>@_avatarUploadError
+                                        </div>
                                     }
                                 }
                             </div>
@@ -477,6 +488,7 @@ else
     string _avatarMode = "url";
     bool _avatarUploading;
     string _avatarUploadError = "";
+    string _avatarLocalPreview = ""; // base64 data URL para preview antes do upload
 
     // Theme editor state
     string _selectedThemeId = "minimal-light";
@@ -748,16 +760,29 @@ else
     {
         _avatarUploading = true;
         _avatarUploadError = "";
+        _avatarLocalPreview = "";
         StateHasChanged();
 
         try
         {
             var file = e.File;
-            if (file.Size > 2 * 1024 * 1024) { _avatarUploadError = "Arquivo muito grande (max 2 MB)"; return; }
+            if (file.Size > 2 * 1024 * 1024)
+            {
+                _avatarUploadError = "Arquivo muito grande (máx. 2 MB)";
+                return;
+            }
 
+            // Gerar preview local imediato (base64)
+            using var previewStream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            var buffer = new byte[file.Size];
+            await previewStream.ReadExactlyAsync(buffer);
+            _avatarLocalPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+            StateHasChanged();
+
+            // Upload para o servidor
             using var content = new MultipartFormDataContent();
-            using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
-            content.Add(new StreamContent(stream), "file", file.Name);
+            using var uploadStream = new MemoryStream(buffer);
+            content.Add(new StreamContent(uploadStream), "file", file.Name);
 
             var http = HttpFactory.CreateClient();
             http.BaseAddress = new Uri(GetBaseUrl());
@@ -772,16 +797,21 @@ else
                 {
                     _editAvatarUrl = json.Url;
                     if (_page is not null) _page = _page with { AvatarUrl = _editAvatarUrl };
+                    _avatarLocalPreview = ""; // limpa preview local — usa a URL definitiva
                 }
             }
             else
             {
-                _avatarUploadError = "Erro ao enviar arquivo";
+                _avatarUploadError = response.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge
+                    ? "Arquivo muito grande (máx. 2 MB)"
+                    : "Erro ao enviar arquivo. Tente novamente.";
+                _avatarLocalPreview = "";
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _avatarUploadError = $"Erro: {ex.Message}";
+            _avatarUploadError = "Não foi possível enviar. Verifique sua conexão e tente novamente.";
+            _avatarLocalPreview = "";
         }
         finally
         {
