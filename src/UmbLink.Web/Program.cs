@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using UmbLink.Application.Interfaces;
 using UmbLink.Application.Requests;
@@ -111,6 +112,7 @@ builder.Services.AddRateLimiter(o =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<GroqService>();
 
 var app = builder.Build();
 
@@ -419,6 +421,43 @@ app.MapPost("/api/upload/background", [Microsoft.AspNetCore.Authorization.Author
 
     return Results.Ok(new { url = $"/uploads/backgrounds/{fileName}" });
 }).DisableAntiforgery().RequireRateLimiting("tracking");
+
+// AI profile generation endpoint
+app.MapPost("/api/ai/generate-profile", [Microsoft.AspNetCore.Authorization.Authorize] async (
+    GenerateProfileRequest req,
+    GroqService groq,
+    IPageService pageSvc,
+    IAuditService audit,
+    ClaimsPrincipal user) =>
+{
+    if (string.IsNullOrWhiteSpace(req.UserDescription) || req.UserDescription.Length > 500)
+        return Results.BadRequest(new { error = "Descrição inválida." });
+
+    var userId = user.GetUserId();
+    var profile = await groq.GenerateProfileAsync(req.UserDescription, req.ProfileType ?? "geral");
+    if (profile is null)
+        return Results.StatusCode(503);
+
+    // Sanitize lengths
+    var title = (profile.Title ?? "").Length > 60
+        ? profile.Title![..60] : (profile.Title ?? "");
+    var bio = (profile.Bio ?? "").Length > 200
+        ? profile.Bio![..200] : (profile.Bio ?? "");
+    var slug = (profile.SlugSuggestion ?? "").Length > 30
+        ? profile.SlugSuggestion![..30] : (profile.SlugSuggestion ?? "");
+
+    // Ensure slug is available — if not, append 3 random digits
+    if (!await pageSvc.IsSlugAvailableAsync(slug))
+    {
+        var suffix = Random.Shared.Next(100, 999).ToString();
+        slug = slug.Length > 27 ? slug[..27] + suffix : slug + suffix;
+    }
+
+    await audit.LogAsync(userId, "AiProfileGenerated",
+        new { req.UserDescription.Length, req.ProfileType });
+
+    return Results.Ok(new GenerateProfileResponse(title, bio, slug));
+}).RequireRateLimiting("tracking");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

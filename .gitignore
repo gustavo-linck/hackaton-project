@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # User uploads
 src/UmbLink.Web/wwwroot/uploads/
+
+# Local secrets — never commit real API keys
+src/UmbLink.Web/appsettings.Development.json

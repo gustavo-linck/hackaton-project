@@ -4,6 +4,7 @@
 @inject IPageService PageSvc
 @inject ILinkService LinkSvc
 @inject NavigationManager Nav
+@inject HttpClient Http
 
 <PageTitle>Bem-vindo — UmbLink</PageTitle>
 
@@ -164,6 +165,43 @@
                                 <div style="font-size:.7rem;text-align:right;color:@(_pageBio.Length >= 180 ? "var(--danger)" : "var(--text-muted)")">@_pageBio.Length / 200</div>
                             </div>
 
+                            <!-- AI section -->
+                            <div style="border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;background:rgba(99,102,241,0.04)">
+                                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+                                    <i class="bi bi-stars" style="color:var(--accent)"></i>
+                                    <span style="font-weight:600;font-size:.85rem;color:var(--text-primary)">Quer uma ajuda? Gere com IA</span>
+                                </div>
+                                <textarea class="form-control-theme w-100" rows="2"
+                                          placeholder="Descreva quem você é em uma frase..."
+                                          @bind="_aiDescription" style="margin-bottom:.5rem" />
+                                @if (!string.IsNullOrEmpty(_aiError))
+                                {
+                                    <div style="font-size:.75rem;color:var(--danger);margin-bottom:.5rem">@_aiError</div>
+                                }
+                                @if (!string.IsNullOrEmpty(_aiSuccessMsg))
+                                {
+                                    <div style="font-size:.75rem;color:var(--success);margin-bottom:.5rem">@_aiSuccessMsg</div>
+                                }
+                                <button class="btn-accent" style="font-size:.8rem;padding:.35rem .875rem"
+                                        @onclick="GenerateWithAI" disabled="@(_aiLoading || _aiCallCount >= 3)">
+                                    @if (_aiLoading)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-stars me-1"></i>
+                                    }
+                                    @(_aiCallCount >= 3 ? "Limite atingido" : "Gerar com IA")
+                                </button>
+                                @if (_aiCallCount > 0)
+                                {
+                                    <span style="font-size:.7rem;color:var(--text-muted);margin-left:.5rem">
+                                        @_aiCallCount / 3 usos
+                                    </span>
+                                }
+                            </div>
+
                             <div class="d-flex justify-content-between mt-4">
                                 <button class="btn-ghost" @onclick="() => _step = 2"><i class="bi bi-arrow-left me-1"></i> Voltar</button>
                                 <button class="btn-accent" @onclick="CreatePageAsync" disabled="@_creating">
@@ -229,6 +267,13 @@
     Guid _createdPageId;
     string _createdSlug = "";
     Guid _userId;
+
+    // AI helper state
+    string _aiDescription = "";
+    bool _aiLoading;
+    string _aiError = "";
+    string _aiSuccessMsg = "";
+    int _aiCallCount = 0; // max 3 per session
 
     string StepMaxWidth => _step switch { 2 => "780px", 3 => "900px", _ => "640px" };
 
@@ -357,5 +402,48 @@
         s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\s-]", "");
         s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", "-");
         return System.Text.RegularExpressions.Regex.Replace(s, @"-+", "-").Trim('-');
+    }
+
+    async Task GenerateWithAI()
+    {
+        if (_aiCallCount >= 3 || string.IsNullOrWhiteSpace(_aiDescription)) return;
+        _aiLoading = true;
+        _aiError = "";
+        _aiSuccessMsg = "";
+        StateHasChanged();
+        try
+        {
+            var req = new GenerateProfileRequest(_aiDescription, _selectedProfile);
+            var resp = await Http.PostAsJsonAsync("/api/ai/generate-profile", req);
+            if (resp.IsSuccessStatusCode)
+            {
+                var profile = await resp.Content.ReadFromJsonAsync<GenerateProfileResponse>();
+                if (profile is not null)
+                {
+                    _pageTitle = profile.Title;
+                    _pageSlug = profile.SlugSuggestion;
+                    _pageBio = profile.Bio;
+                    _aiCallCount++;
+                    _aiSuccessMsg = "Gerado com IA — edite à vontade antes de continuar";
+                }
+            }
+            else if ((int)resp.StatusCode == 503)
+            {
+                _aiError = "Não foi possível gerar, tente preencher manualmente";
+            }
+            else
+            {
+                _aiError = "Erro ao gerar perfil";
+            }
+        }
+        catch
+        {
+            _aiError = "Não foi possível gerar, tente preencher manualmente";
+        }
+        finally
+        {
+            _aiLoading = false;
+            StateHasChanged();
+        }
     }
 }
