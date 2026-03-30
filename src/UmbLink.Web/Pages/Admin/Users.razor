@@ -265,12 +265,16 @@ else
     async Task ConfirmChangePlan()
     {
         if (_changePlanUser is null) return;
-        var result = await AdminSvc.ChangePlanAsync(_adminId, _changePlanUser.Id, _newPlanId);
-        if (result.IsFailure) { _toast?.Show(result.Error ?? "Erro ao alterar plano.", "danger"); return; }
-        _showChangePlan = false;
-        _changePlanUser = null;
-        await Load();
-        _toast?.Show("Plano alterado com sucesso.", "success");
+        try
+        {
+            var result = await AdminSvc.ChangePlanAsync(_adminId, _changePlanUser.Id, _newPlanId);
+            if (result.IsFailure) { _toast?.Show(result.Error ?? "Erro ao alterar plano.", "danger"); return; }
+            _showChangePlan = false;
+            _changePlanUser = null;
+            await Load();
+            _toast?.Show("Plano alterado com sucesso.", "success");
+        }
+        catch { _toast?.Show("Erro ao alterar plano.", "danger"); }
     }
 
     // ── Grant Trial ──────────────────────────────────────────────────────────
