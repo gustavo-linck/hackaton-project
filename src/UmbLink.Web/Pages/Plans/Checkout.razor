@@ -1,12 +1,15 @@
 @page "/plans/checkout"
 @inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
+@using System.Linq
 
 <PageTitle>Checkout — UmbLink</PageTitle>
 
 <div class="container py-5" style="max-width:480px;color:var(--text-primary)">
-    <h4 class="fw-bold mb-1">Finalizar assinatura</h4>
-    <p class="text-theme-muted small mb-4">Plano <strong>@_planName</strong> — @_priceLabel</p>
+    <div style="margin-bottom:1.75rem">
+        <h4 class="fw-bold mb-2">Finalizar assinatura</h4>
+        <p class="text-theme-muted small mb-0">Plano <strong>@_planName</strong> — @_priceLabel</p>
+    </div>
 
     @if (!string.IsNullOrEmpty(_error))
     {
@@ -15,31 +18,97 @@
 
     <div class="card shadow-sm" style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)">
         <div class="card-body">
+
+            @* Card number *@
             <div class="mb-3">
-                <label class="form-label-theme">Número do cartão</label>
-                <input @bind="_cardNumber" class="form-control-theme" placeholder="0000 0000 0000 0000"
-                       maxlength="19" inputmode="numeric" />
+                <label class="form-label-theme d-flex justify-content-between">
+                    <span>Número do cartão</span>
+                    @if (!string.IsNullOrEmpty(_cardBrand))
+                    {
+                        <span style="font-size:.75rem;font-weight:600;color:var(--text-secondary)">@_cardBrand</span>
+                    }
+                </label>
+                <input value="@_cardNumber"
+                       @oninput="OnCardNumberInput"
+                       @onblur="OnCardNumberBlur"
+                       class="form-control-theme"
+                       placeholder="0000 0000 0000 0000"
+                       maxlength="19"
+                       inputmode="numeric"
+                       autocomplete="cc-number" />
+                @if (!string.IsNullOrEmpty(_cardNumberError))
+                {
+                    <small style="color:var(--danger);font-size:.75rem">@_cardNumberError</small>
+                }
             </div>
+
+            @* Cardholder name *@
             <div class="mb-3">
                 <label class="form-label-theme">Nome no cartão</label>
-                <input @bind="_cardName" class="form-control-theme" placeholder="NOME SOBRENOME" />
+                <input value="@_cardName"
+                       @oninput="OnCardNameInput"
+                       @onblur="OnCardNameBlur"
+                       class="form-control-theme"
+                       placeholder="NOME SOBRENOME"
+                       autocomplete="cc-name" />
+                @if (!string.IsNullOrEmpty(_cardNameError))
+                {
+                    <small style="color:var(--danger);font-size:.75rem">@_cardNameError</small>
+                }
             </div>
+
+            @* Expiry + CVV *@
             <div class="row g-2 mb-3">
                 <div class="col-6">
                     <label class="form-label-theme">Validade</label>
-                    <input @bind="_expiry" class="form-control-theme" placeholder="MM/AA" maxlength="5" />
+                    <input value="@_expiry"
+                           @oninput="OnExpiryInput"
+                           @onblur="OnExpiryBlur"
+                           class="form-control-theme"
+                           placeholder="MM/AA"
+                           maxlength="5"
+                           inputmode="numeric"
+                           autocomplete="cc-exp" />
+                    @if (!string.IsNullOrEmpty(_expiryError))
+                    {
+                        <small style="color:var(--danger);font-size:.75rem">@_expiryError</small>
+                    }
                 </div>
                 <div class="col-6">
                     <label class="form-label-theme">CVV</label>
-                    <input @bind="_cvv" class="form-control-theme" placeholder="123" maxlength="4" type="password" />
+                    <input value="@_cvv"
+                           @oninput="OnCvvInput"
+                           @onblur="OnCvvBlur"
+                           class="form-control-theme"
+                           placeholder="123"
+                           maxlength="4"
+                           type="password"
+                           inputmode="numeric"
+                           autocomplete="cc-csc" />
+                    @if (!string.IsNullOrEmpty(_cvvError))
+                    {
+                        <small style="color:var(--danger);font-size:.75rem">@_cvvError</small>
+                    }
                 </div>
             </div>
+
+            @* CPF *@
             <div class="mb-3">
                 <label class="form-label-theme">CPF do titular</label>
-                <input @bind="_cpf" class="form-control-theme" placeholder="000.000.000-00" maxlength="14" />
+                <input value="@_cpf"
+                       @oninput="OnCpfInput"
+                       @onblur="OnCpfBlur"
+                       class="form-control-theme"
+                       placeholder="000.000.000-00"
+                       maxlength="14"
+                       inputmode="numeric" />
+                @if (!string.IsNullOrEmpty(_cpfError))
+                {
+                    <small style="color:var(--danger);font-size:.75rem">@_cpfError</small>
+                }
             </div>
 
-            <button class="btn btn-accent w-100" @onclick="Confirm" disabled="@_loading">
+            <button class="btn btn-accent w-100" @onclick="Confirm" disabled="@(!IsFormValid() || _loading)">
                 @if (_loading)
                 {
                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -67,6 +136,9 @@
     string _planName = "Pro";
     string _priceLabel = "";
     string _cardNumber = "", _cardName = "", _expiry = "", _cvv = "", _cpf = "";
+    string _cardBrand = "";
+    string _cardNumberError = "", _cardNameError = "", _expiryError = "", _cvvError = "", _cpfError = "";
+    bool _cardNumberTouched, _cardNameTouched, _expiryTouched, _cvvTouched, _cpfTouched;
     bool _loading;
     string _error = "";
 
@@ -75,8 +147,8 @@
         _planName = PlanId switch { 3 => "Business", 2 => "Pro", _ => "Free" };
         var period = Period?.ToLower() switch {
             "quarterly" => BillingPeriod.Quarterly,
-            "annual" => BillingPeriod.Annual,
-            _ => BillingPeriod.Monthly
+            "annual"    => BillingPeriod.Annual,
+            _           => BillingPeriod.Monthly
         };
         _priceLabel = (PlanId, period) switch {
             (2, BillingPeriod.Monthly)   => "R$ 19,00/mês",
@@ -85,17 +157,190 @@
             (3, BillingPeriod.Monthly)   => "R$ 75,00/mês",
             (3, BillingPeriod.Quarterly) => "R$ 191,25/trimestre",
             (3, BillingPeriod.Annual)    => "R$ 675,00/ano",
-            _ => "Grátis"
+            _                            => "Grátis"
         };
     }
 
+    // ── Input handlers ────────────────────────────────────────────────────────
+
+    void OnCardNumberInput(ChangeEventArgs e)
+    {
+        var raw = new string((e.Value?.ToString() ?? "").Where(char.IsDigit).ToArray());
+        if (raw.Length > 16) raw = raw[..16];
+        _cardNumber = string.Join(" ", Enumerable.Range(0, (raw.Length + 3) / 4)
+            .Select(i => raw.Substring(i * 4, Math.Min(4, raw.Length - i * 4))));
+        _cardBrand = DetectBrand(raw);
+        if (_cardNumberTouched) ValidateCardNumber();
+    }
+
+    void OnCardNumberBlur()
+    {
+        _cardNumberTouched = true;
+        ValidateCardNumber();
+    }
+
+    void OnCardNameInput(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? "";
+        // Allow letters (including accented), spaces and hyphens only
+        _cardName = new string(raw.Where(c => char.IsLetter(c) || c == ' ' || c == '-').ToArray());
+        if (_cardNameTouched) ValidateCardName();
+    }
+
+    void OnCardNameBlur()
+    {
+        _cardNameTouched = true;
+        ValidateCardName();
+    }
+
+    void OnExpiryInput(ChangeEventArgs e)
+    {
+        var raw = new string((e.Value?.ToString() ?? "").Where(char.IsDigit).ToArray());
+        if (raw.Length > 4) raw = raw[..4];
+        _expiry = raw.Length <= 2 ? raw : raw[..2] + "/" + raw[2..];
+        if (_expiryTouched) ValidateExpiry();
+    }
+
+    void OnExpiryBlur()
+    {
+        _expiryTouched = true;
+        ValidateExpiry();
+    }
+
+    void OnCvvInput(ChangeEventArgs e)
+    {
+        var raw = new string((e.Value?.ToString() ?? "").Where(char.IsDigit).ToArray());
+        if (raw.Length > 4) raw = raw[..4];
+        _cvv = raw;
+        if (_cvvTouched) ValidateCvv();
+    }
+
+    void OnCvvBlur()
+    {
+        _cvvTouched = true;
+        ValidateCvv();
+    }
+
+    void OnCpfInput(ChangeEventArgs e)
+    {
+        var raw = new string((e.Value?.ToString() ?? "").Where(char.IsDigit).ToArray());
+        if (raw.Length > 11) raw = raw[..11];
+        _cpf = raw.Length switch {
+            <= 3  => raw,
+            <= 6  => raw[..3] + "." + raw[3..],
+            <= 9  => raw[..3] + "." + raw[3..6] + "." + raw[6..],
+            _     => raw[..3] + "." + raw[3..6] + "." + raw[6..9] + "-" + raw[9..]
+        };
+        if (_cpfTouched) ValidateCpf();
+    }
+
+    void OnCpfBlur()
+    {
+        _cpfTouched = true;
+        ValidateCpf();
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────────
+
+    void ValidateCardNumber()
+    {
+        _cardNumberError = LuhnCheck(_cardNumber) ? "" : "Número de cartão inválido.";
+    }
+
+    void ValidateCardName()
+    {
+        var parts = _cardName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        _cardNameError = parts.Length < 2 ? "Informe o nome completo como no cartão." : "";
+    }
+
+    void ValidateExpiry()
+    {
+        _expiryError = "";
+        var parts = _expiry.Split('/');
+        if (parts.Length != 2
+            || !int.TryParse(parts[0], out var month)
+            || !int.TryParse(parts[1], out var year))
+        { _expiryError = "Data de validade inválida ou expirada."; return; }
+        if (month < 1 || month > 12)
+        { _expiryError = "Data de validade inválida ou expirada."; return; }
+        var fullYear = 2000 + year;
+        var now = DateTime.Now;
+        if (fullYear < now.Year || (fullYear == now.Year && month < now.Month))
+            _expiryError = "Data de validade inválida ou expirada.";
+    }
+
+    void ValidateCvv()
+    {
+        _cvvError = (_cvv.Length < 3 || !_cvv.All(char.IsDigit)) ? "CVV inválido." : "";
+    }
+
+    void ValidateCpf()
+    {
+        _cpfError = CpfCheck(_cpf) ? "" : "CPF inválido.";
+    }
+
+    bool IsFormValid() =>
+        LuhnCheck(_cardNumber)
+        && _cardName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 2
+        && string.IsNullOrEmpty(_expiryError) && !string.IsNullOrEmpty(_expiry)
+        && _cvv.Length >= 3
+        && CpfCheck(_cpf);
+
+    // ── Algorithms ────────────────────────────────────────────────────────────
+
+    static bool LuhnCheck(string number)
+    {
+        var digits = number.Replace(" ", "");
+        if (digits.Length < 13 || digits.Length > 19) return false;
+        int sum = 0;
+        bool alt = false;
+        for (int i = digits.Length - 1; i >= 0; i--)
+        {
+            if (!char.IsDigit(digits[i])) return false;
+            int n = digits[i] - '0';
+            if (alt) { n *= 2; if (n > 9) n -= 9; }
+            sum += n;
+            alt = !alt;
+        }
+        return sum % 10 == 0;
+    }
+
+    static bool CpfCheck(string cpf)
+    {
+        var digits = new string(cpf.Where(char.IsDigit).ToArray());
+        if (digits.Length != 11) return false;
+        if (digits.Distinct().Count() == 1) return false;
+        int[] d = digits.Select(c => c - '0').ToArray();
+        int s1 = 0; for (int i = 0; i < 9; i++) s1 += d[i] * (10 - i);
+        int r1 = (s1 * 10) % 11; if (r1 == 10 || r1 == 11) r1 = 0;
+        if (r1 != d[9]) return false;
+        int s2 = 0; for (int i = 0; i < 10; i++) s2 += d[i] * (11 - i);
+        int r2 = (s2 * 10) % 11; if (r2 == 10 || r2 == 11) r2 = 0;
+        return r2 == d[10];
+    }
+
+    static string DetectBrand(string raw)
+    {
+        if (raw.StartsWith("4")) return "Visa";
+        if (raw.Length >= 2 && int.TryParse(raw[..2], out var p2) && p2 >= 51 && p2 <= 55) return "Mastercard";
+        if (raw.StartsWith("2")) return "Mastercard";
+        string[] eloPrefixes = ["636368", "438935", "504175", "451416", "636297", "5067", "4576", "4011"];
+        if (eloPrefixes.Any(p => raw.StartsWith(p))) return "Elo";
+        if (raw.StartsWith("34") || raw.StartsWith("37")) return "Amex";
+        return "";
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+
     async Task Confirm()
     {
-        if (string.IsNullOrWhiteSpace(_cardNumber) || string.IsNullOrWhiteSpace(_cardName)
-            || string.IsNullOrWhiteSpace(_expiry) || string.IsNullOrWhiteSpace(_cvv)
-            || string.IsNullOrWhiteSpace(_cpf))
+        // Touch all fields to surface any remaining errors
+        _cardNumberTouched = _cardNameTouched = _expiryTouched = _cvvTouched = _cpfTouched = true;
+        ValidateCardNumber(); ValidateCardName(); ValidateExpiry(); ValidateCvv(); ValidateCpf();
+
+        if (!IsFormValid())
         {
-            _error = "Preencha todos os campos.";
+            _error = "Corrija os erros acima antes de continuar.";
             return;
         }
 
@@ -106,10 +351,15 @@
         var userId = auth.User.GetUserId();
         var period = Period?.ToLower() switch {
             "quarterly" => BillingPeriod.Quarterly,
-            "annual" => BillingPeriod.Annual,
-            _ => BillingPeriod.Monthly
+            "annual"    => BillingPeriod.Annual,
+            _           => BillingPeriod.Monthly
         };
+
         var result = await SubSvc.ActivatePlanAsync(userId, PlanId, period);
+
+        // Clear CVV from memory regardless of outcome
+        _cvv = "";
+
         if (result.IsSuccess)
             Nav.NavigateTo("/plans/my?success=1");
         else
