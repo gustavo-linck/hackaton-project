@@ -1,0 +1,17 @@
+@* Renders one or more skeleton shimmer blocks stacked vertically.
+   Auto-available via _Imports.razor (@using UmbLink.Web.Components). *@
+
+<div style="display:flex;flex-direction:column;gap:.5rem">
+    @for (int i = 0; i < Lines; i++)
+    {
+        <span class="skeleton-block"
+              style="width:@Width;height:@Height;border-radius:@BorderRadius"></span>
+    }
+</div>
+
+@code {
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "1rem";
+    [Parameter] public string BorderRadius { get; set; } = "6px";
+    [Parameter] public int Lines { get; set; } = 1;
+}
