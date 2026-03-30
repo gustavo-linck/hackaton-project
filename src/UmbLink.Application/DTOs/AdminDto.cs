@@ -8,7 +8,9 @@ public record AdminUserDto(
     string PlanName,
     SubscriptionStatus Status,
     bool IsActive,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    DateTime? TrialEndsAt,
+    bool IsOnTrial
 );
 
 public record AdminStatsDto(
@@ -21,4 +23,10 @@ public record AdminStatsDto(
     int PublishedPages,
     int DraftPages,
     Dictionary<string, int> PlanDistribution
+);
+
+public record AdminAuditLogDto(
+    string UserName,
+    string Action,
+    DateTime CreatedAt
 );
