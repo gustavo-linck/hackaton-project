@@ -7,115 +7,213 @@
 
 <h4 class="fw-bold mb-4">Visão Geral</h4>
 
-@if (_error is not null)
+@if (_loading)
 {
-    <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span>Erro ao carregar estatísticas: @_error</span>
-    </div>
-}
-
-<LoadingSpinner Loading="_loading">
-    @if (_stats is not null)
-    {
-        @* Row 1: main KPIs *@
-        <div class="row g-3 mb-3 align-items-stretch">
-            <div class="col-sm-6 col-lg-3">
-                <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="fs-2 fw-bold" style="color:var(--accent)">@_stats.TotalUsers</div>
-                    <div class="text-theme-muted small"><i class="bi bi-people me-1"></i>Usuários totais</div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="fs-2 fw-bold text-success">@_stats.TotalPages</div>
-                    <div class="text-theme-muted small"><i class="bi bi-file-earmark me-1"></i>Páginas totais</div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="fs-2 fw-bold text-info">@_stats.TotalClicks</div>
-                    <div class="text-theme-muted small"><i class="bi bi-cursor me-1"></i>Cliques totais</div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="fs-2 fw-bold text-warning">R$@_stats.SimulatedRevenue.ToString("F2")</div>
-                    <div class="text-theme-muted small"><i class="bi bi-cash-coin me-1"></i>Receita simulada/mês</div>
-                </div>
-            </div>
-        </div>
-
-        @* Row 2: engagement & pages breakdown *@
-        <div class="row g-3 mb-4 align-items-stretch">
-            <div class="col-sm-6 col-lg-3">
-                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast7Days</div>
-                            <div class="text-theme-muted small">Novos usuários (7d)</div>
-                        </div>
-                        <i class="bi bi-person-plus fs-3" style="color:var(--accent);opacity:.4"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast30Days</div>
-                            <div class="text-theme-muted small">Novos usuários (30d)</div>
-                        </div>
-                        <i class="bi bi-calendar-range fs-3" style="color:var(--accent);opacity:.4"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fs-4 fw-bold text-success">@_stats.PublishedPages</div>
-                            <div class="text-theme-muted small">Páginas publicadas</div>
-                        </div>
-                        <i class="bi bi-eye fs-3 text-success" style="opacity:.4"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fs-4 fw-bold text-warning">@_stats.DraftPages</div>
-                            <div class="text-theme-muted small">Páginas em rascunho</div>
-                        </div>
-                        <i class="bi bi-pencil fs-3 text-warning" style="opacity:.4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @* Plan distribution *@
-        @if (_stats.PlanDistribution.Count > 0)
+    <div class="row g-3 mb-3 align-items-stretch">
+        @for (int i = 0; i < 4; i++)
         {
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem">
-                <h6 class="fw-bold mb-3" style="color:var(--text-primary)"><i class="bi bi-pie-chart me-2" style="color:var(--accent)"></i>Distribuição de Planos</h6>
-                <div class="d-flex flex-wrap gap-3">
-                    @foreach (var kv in _stats.PlanDistribution.OrderBy(k => k.Key))
-                    {
-                        <div style="display:flex;align-items:center;gap:.5rem">
-                            <PlanBadge PlanName="@kv.Key" />
-                            <span style="font-weight:700;color:var(--text-primary)">@kv.Value</span>
-                            <span class="text-theme-muted" style="font-size:.8rem">(@((_stats.TotalUsers > 0 ? kv.Value * 100.0 / _stats.TotalUsers : 0).ToString("F0"))%)</span>
-                        </div>
-                    }
+            <div class="col-sm-6 col-lg-3">
+                <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <Skeleton Width="55%" Height="2rem" BorderRadius="8px" />
+                    <div style="margin-top:.5rem"><Skeleton Width="75%" Height=".75rem" /></div>
                 </div>
             </div>
         }
-    }
-</LoadingSpinner>
+    </div>
+    <div class="row g-3 mb-4 align-items-stretch">
+        @for (int i = 0; i < 4; i++)
+        {
+            <div class="col-sm-6 col-lg-3">
+                <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div style="flex:1">
+                            <Skeleton Width="60%" Height="1.5rem" />
+                            <div style="margin-top:.4rem"><Skeleton Width="80%" Height=".75rem" /></div>
+                        </div>
+                        <Skeleton Width="38px" Height="38px" BorderRadius="50%" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <Skeleton Width="160px" Height="1rem" />
+            <Skeleton Width="100px" Height=".75rem" />
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <tbody>
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <tr>
+                            <td><Skeleton Width="100px" Height=".875rem" /></td>
+                            <td><Skeleton Width="120px" Height="1.25rem" BorderRadius="6px" /></td>
+                            <td><Skeleton Width="70px" Height=".875rem" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="fade-in-content">
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>Erro ao carregar estatísticas: @_error</span>
+            </div>
+        }
+
+        @if (_stats is not null)
+        {
+            @* Row 1: main KPIs *@
+            <div class="row g-3 mb-3 align-items-stretch">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="fs-2 fw-bold" style="color:var(--accent)">@_stats.TotalUsers</div>
+                        <div class="text-theme-muted small"><i class="bi bi-people me-1"></i>Usuários totais</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="fs-2 fw-bold text-success">@_stats.TotalPages</div>
+                        <div class="text-theme-muted small"><i class="bi bi-file-earmark me-1"></i>Páginas totais</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="fs-2 fw-bold text-info">@_stats.TotalClicks</div>
+                        <div class="text-theme-muted small"><i class="bi bi-cursor me-1"></i>Cliques totais</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="fs-2 fw-bold text-warning">R$@_stats.SimulatedRevenue.ToString("F2")</div>
+                        <div class="text-theme-muted small"><i class="bi bi-cash-coin me-1"></i>Receita simulada/mês</div>
+                    </div>
+                </div>
+            </div>
+
+            @* Row 2: engagement & pages breakdown *@
+            <div class="row g-3 mb-4 align-items-stretch">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast7Days</div>
+                                <div class="text-theme-muted small">Novos usuários (7d)</div>
+                            </div>
+                            <i class="bi bi-person-plus fs-3" style="color:var(--accent);opacity:.4"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fs-4 fw-bold" style="color:var(--text-primary)">@_stats.ActiveLast30Days</div>
+                                <div class="text-theme-muted small">Novos usuários (30d)</div>
+                            </div>
+                            <i class="bi bi-calendar-range fs-3" style="color:var(--accent);opacity:.4"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fs-4 fw-bold text-success">@_stats.PublishedPages</div>
+                                <div class="text-theme-muted small">Páginas publicadas</div>
+                            </div>
+                            <i class="bi bi-eye fs-3 text-success" style="opacity:.4"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fs-4 fw-bold text-warning">@_stats.DraftPages</div>
+                                <div class="text-theme-muted small">Páginas em rascunho</div>
+                            </div>
+                            <i class="bi bi-pencil fs-3 text-warning" style="opacity:.4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Plan distribution *@
+            @if (_stats.PlanDistribution.Count > 0)
+            {
+                <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem">
+                    <h6 class="fw-bold mb-3" style="color:var(--text-primary)"><i class="bi bi-pie-chart me-2" style="color:var(--accent)"></i>Distribuição de Planos</h6>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var kv in _stats.PlanDistribution.OrderBy(k => k.Key))
+                        {
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <PlanBadge PlanName="@kv.Key" />
+                                <span style="font-weight:700;color:var(--text-primary)">@kv.Value</span>
+                                <span class="text-theme-muted" style="font-size:.8rem">(@((_stats.TotalUsers > 0 ? kv.Value * 100.0 / _stats.TotalUsers : 0).ToString("F0"))%)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* Recent activity logs *@
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0" style="color:var(--text-primary)">
+                        <i class="bi bi-clock-history me-2" style="color:var(--accent)"></i>Atividade Recente
+                    </h6>
+                    <span class="text-theme-muted" style="font-size:.75rem">Últimas 20 ações</span>
+                </div>
+                @if (_auditLogs.Count == 0)
+                {
+                    <p class="text-theme-muted" style="font-size:.85rem">Nenhuma ação registrada ainda.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Usuário</th>
+                                    <th style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Ação</th>
+                                    <th style="font-size:.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Quando</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in _auditLogs)
+                                {
+                                    <tr>
+                                        <td style="font-size:.85rem;color:var(--text-primary)">@log.UserName</td>
+                                        <td>
+                                            <span style="font-size:.8rem;padding:.2rem .5rem;border-radius:6px;background:@ActionBadgeBg(log.Action);color:@ActionBadgeColor(log.Action);font-weight:600">
+                                                @FormatAction(log.Action)
+                                            </span>
+                                        </td>
+                                        <td style="font-size:.8rem;color:var(--text-muted)" title="@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss") UTC">
+                                            @FormatRelativeTime(log.CreatedAt)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
 
 @code {
     AdminStatsDto? _stats;
+    List<AdminAuditLogDto> _auditLogs = [];
     bool _loading = true;
     string? _error;
 
@@ -124,6 +222,7 @@
         try
         {
             _stats = await AdminSvc.GetGlobalStatsAsync();
+            _auditLogs = await AdminSvc.GetRecentAuditLogsAsync(20);
         }
         catch (Exception ex)
         {
@@ -133,5 +232,54 @@
         {
             _loading = false;
         }
+    }
+
+    static string FormatAction(string action) => action switch
+    {
+        "page.create"              => "Página criada",
+        "page.delete"              => "Página excluída",
+        "page.publish"             => "Página publicada",
+        "page.unpublish"           => "Página despublicada",
+        "subscription.trial"       => "Trial iniciado",
+        "subscription.trial_started" => "Trial iniciado",
+        "subscription.activated"   => "Plano ativado",
+        "subscription.cancelled"   => "Plano cancelado",
+        "admin.user_suspended"     => "Usuário suspenso",
+        "admin.user_reactivated"   => "Usuário reativado",
+        "admin.plan_changed"       => "Plano alterado (admin)",
+        "admin.trial_granted"      => "Trial concedido (admin)",
+        _                          => action
+    };
+
+    static string ActionBadgeBg(string action) => action switch
+    {
+        "page.create" or "subscription.trial" or "subscription.trial_started" or "subscription.activated" or "admin.trial_granted"
+            => "rgba(16,185,129,0.1)",
+        "page.delete" or "subscription.cancelled" or "admin.user_suspended"
+            => "rgba(239,68,68,0.1)",
+        "admin.user_reactivated" or "admin.plan_changed"
+            => "rgba(245,158,11,0.1)",
+        _ => "var(--bg-hover)"
+    };
+
+    static string ActionBadgeColor(string action) => action switch
+    {
+        "page.create" or "subscription.trial" or "subscription.trial_started" or "subscription.activated" or "admin.trial_granted"
+            => "#10b981",
+        "page.delete" or "subscription.cancelled" or "admin.user_suspended"
+            => "#ef4444",
+        "admin.user_reactivated" or "admin.plan_changed"
+            => "#f59e0b",
+        _ => "var(--text-secondary)"
+    };
+
+    static string FormatRelativeTime(DateTime utc)
+    {
+        var diff = DateTime.UtcNow - utc;
+        if (diff.TotalMinutes < 1) return "agora mesmo";
+        if (diff.TotalMinutes < 60) return $"há {(int)diff.TotalMinutes}min";
+        if (diff.TotalHours < 24) return $"há {(int)diff.TotalHours}h";
+        if (diff.TotalDays < 7) return $"há {(int)diff.TotalDays}d";
+        return utc.ToString("dd/MM/yyyy");
     }
 }
