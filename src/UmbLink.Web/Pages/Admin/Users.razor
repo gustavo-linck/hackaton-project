@@ -12,8 +12,35 @@
     </div>
 </div>
 
-<LoadingSpinner Loading="_loading">
+@if (_loading)
+{
     <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th><th>E-mail</th><th>Plano</th><th>Status</th><th>Trial</th><th>Cadastro</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < 6; i++)
+                {
+                    <tr>
+                        <td><Skeleton Width="110px" Height=".875rem" /></td>
+                        <td><Skeleton Width="160px" Height=".875rem" /></td>
+                        <td><Skeleton Width="55px" Height="1.25rem" BorderRadius="50px" /></td>
+                        <td><Skeleton Width="65px" Height="1.25rem" BorderRadius="50px" /></td>
+                        <td><Skeleton Width="70px" Height=".875rem" /></td>
+                        <td><Skeleton Width="55px" Height=".875rem" /></td>
+                        <td><Skeleton Width="160px" Height="2rem" BorderRadius="8px" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="fade-in-content table-responsive">
         <table class="table table-sm align-middle">
             <thead>
                 <tr>
@@ -21,6 +48,7 @@
                     <th>E-mail</th>
                     <th>Plano</th>
                     <th>Status</th>
+                    <th>Trial</th>
                     <th>Cadastro</th>
                     <th></th>
                 </tr>
@@ -37,18 +65,53 @@
                                 @(u.IsActive ? "Ativo" : "Suspenso")
                             </span>
                         </td>
+                        <td>
+                            @if (u.IsOnTrial && u.TrialEndsAt.HasValue)
+                            {
+                                var daysLeft = (int)Math.Ceiling((u.TrialEndsAt.Value - DateTime.UtcNow).TotalDays);
+                                <span style="font-size:.75rem;padding:.2rem .5rem;border-radius:50px;background:rgba(85,124,242,0.12);color:var(--accent);font-weight:600">
+                                    @(daysLeft > 0 ? $"Ativo ({daysLeft}d)" : "Expirando")
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:var(--text-muted);font-size:.85rem">—</span>
+                            }
+                        </td>
                         <td class="small text-theme-muted">@u.CreatedAt.ToString("dd/MM/yy")</td>
                         <td>
                             <div class="d-flex gap-1 flex-wrap">
                                 @if (u.IsActive)
                                 {
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => Suspend(u.Id)">Suspender</button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => AskSuspend(u)"
+                                            disabled="@(_suspendingId == u.Id)">
+                                        @if (_suspendingId == u.Id)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                        }
+                                        Suspender
+                                    </button>
                                 }
                                 else
                                 {
-                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Reactivate(u.Id)">Reativar</button>
+                                    <button class="btn btn-sm btn-outline-success"
+                                            @onclick="() => Reactivate(u.Id)"
+                                            disabled="@(_reactivatingId == u.Id)">
+                                        @if (_reactivatingId == u.Id)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                        }
+                                        Reativar
+                                    </button>
                                 }
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenChangePlan(u)">Plano</button>
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => OpenGrantTrial(u)"
+                                        disabled="@u.IsOnTrial"
+                                        title="@(u.IsOnTrial ? "Usuário já está em trial ativo" : "Conceder trial")">
+                                    Trial
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -56,13 +119,14 @@
             </tbody>
         </table>
     </div>
-</LoadingSpinner>
+}
 
+@* ── Change Plan Modal ── *@
 @if (_showChangePlan && _changePlanUser is not null)
 {
     <div class="modal-overlay" style="position:fixed;inset:0;background:var(--modal-bg);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem">
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;padding:1.5rem">
-            <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Alterar Plano</h6>
+            <h6 class="fw-bold mb-0" style="color:var(--text-primary);font-size:1rem">Alterar Plano</h6>
             <p class="text-theme-muted mb-3" style="font-size:.85rem">Usuário: <strong>@_changePlanUser.Name</strong></p>
             <div style="margin-bottom:1rem">
                 <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Novo plano</label>
@@ -79,6 +143,44 @@
         </div>
     </div>
 }
+
+@* ── Grant Trial Modal ── *@
+@if (_showGrantTrial && _grantTrialUser is not null)
+{
+    <div class="modal-overlay" style="position:fixed;inset:0;background:var(--modal-bg);z-index:1050;display:flex;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;padding:1.5rem">
+            <h6 class="fw-bold mb-0" style="color:var(--text-primary);font-size:1rem">Conceder Trial</h6>
+            <p class="text-theme-muted mb-3" style="font-size:.85rem">Usuário: <strong>@_grantTrialUser.Name</strong></p>
+            @if (!string.IsNullOrEmpty(_grantTrialError))
+            {
+                <div class="alert alert-danger py-2 mb-3" style="font-size:.8rem">@_grantTrialError</div>
+            }
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Plano</label>
+                <select class="form-control-theme w-100" @bind="_grantTrialPlanId">
+                    <option value="2">Pro</option>
+                    <option value="3">Business</option>
+                </select>
+            </div>
+            <div style="margin-bottom:1rem">
+                <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Duração (dias)</label>
+                <input type="number" min="1" max="90" class="form-control-theme w-100" @bind="_grantTrialDays" />
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn-ghost" @onclick="CloseGrantTrial" disabled="@_grantingTrial">Cancelar</button>
+                <button class="btn-accent" @onclick="ConfirmGrantTrial" disabled="@_grantingTrial">
+                    @if (_grantingTrial) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmModal @bind-Visible="_showSuspendConfirm"
+    Title="Suspender usuário"
+    Message="@($"Tem certeza que deseja suspender '{_suspendTarget?.Name}'? O acesso será bloqueado.")"
+    OnConfirm="SuspendConfirmed" />
 
 <ToastContainer @ref="_toast" />
 
@@ -105,22 +207,40 @@
         catch { _users = []; }
         finally { _loading = false; }
     }
+
     async Task Search() => await Load();
 
-    async Task Suspend(Guid id)
+    // ── Suspend ──────────────────────────────────────────────────────────────
+    AdminUserDto? _suspendTarget;
+    bool _showSuspendConfirm;
+    Guid? _suspendingId;
+
+    void AskSuspend(AdminUserDto u) { _suspendTarget = u; _showSuspendConfirm = true; }
+
+    async Task SuspendConfirmed()
     {
-        await AdminSvc.SuspendUserAsync(_adminId, id);
+        if (_suspendTarget is null) return;
+        _suspendingId = _suspendTarget.Id;
+        await AdminSvc.SuspendUserAsync(_adminId, _suspendTarget.Id);
+        _suspendingId = null;
+        _suspendTarget = null;
         await Load();
         _toast?.Show("Usuário suspenso.", "warning");
     }
 
+    // ── Reactivate ───────────────────────────────────────────────────────────
+    Guid? _reactivatingId;
+
     async Task Reactivate(Guid id)
     {
+        _reactivatingId = id;
         await AdminSvc.ReactivateUserAsync(_adminId, id);
+        _reactivatingId = null;
         await Load();
         _toast?.Show("Usuário reativado.", "success");
     }
 
+    // ── Change Plan ──────────────────────────────────────────────────────────
     AdminUserDto? _changePlanUser;
     bool _showChangePlan;
     int _newPlanId = 1;
@@ -142,5 +262,44 @@
         _changePlanUser = null;
         await Load();
         _toast?.Show("Plano alterado com sucesso.", "success");
+    }
+
+    // ── Grant Trial ──────────────────────────────────────────────────────────
+    AdminUserDto? _grantTrialUser;
+    bool _showGrantTrial;
+    int _grantTrialPlanId = 2;
+    int _grantTrialDays = 7;
+    bool _grantingTrial;
+    string _grantTrialError = "";
+
+    void OpenGrantTrial(AdminUserDto u)
+    {
+        _grantTrialUser = u;
+        _grantTrialPlanId = 2;
+        _grantTrialDays = 7;
+        _grantTrialError = "";
+        _showGrantTrial = true;
+    }
+
+    void CloseGrantTrial() { _showGrantTrial = false; _grantTrialUser = null; _grantTrialError = ""; }
+
+    async Task ConfirmGrantTrial()
+    {
+        if (_grantTrialUser is null) return;
+        _grantingTrial = true;
+        _grantTrialError = "";
+        var result = await AdminSvc.GrantTrialAsync(_adminId, _grantTrialUser.Id, _grantTrialPlanId, _grantTrialDays);
+        _grantingTrial = false;
+        if (result.IsSuccess)
+        {
+            _showGrantTrial = false;
+            _grantTrialUser = null;
+            await Load();
+            _toast?.Show("Trial concedido com sucesso.", "success");
+        }
+        else
+        {
+            _grantTrialError = result.Error ?? "Erro ao conceder trial.";
+        }
     }
 }
