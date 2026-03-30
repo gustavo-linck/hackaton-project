@@ -250,9 +250,13 @@
         if (firstRender)
         {
             var theme = await JS.InvokeAsync<string>("umblink.getTheme");
-            _isDark = theme == "dark";
+            var isDark = theme == "dark";
             await JS.InvokeVoidAsync("umblink.initHeroGradient", _heroEl);
-            StateHasChanged();
+            if (isDark != _isDark)
+            {
+                _isDark = isDark;
+                StateHasChanged();
+            }
         }
     }
 

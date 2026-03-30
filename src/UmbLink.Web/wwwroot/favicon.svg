@@ -1,4 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="8" fill="#557cf2"/>
-  <text x="16" y="22" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">U</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ddd6fe" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Stylized U shape — bold, centered -->
+  <path d="M8,5 L8,18 A8,8,0,0,0,24,18 L24,5"
+        fill="none"
+        stroke="url(#stroke)"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <!-- Small link dot accent at bottom center -->
+  <circle cx="16" cy="26" r="1.5" fill="white" fill-opacity="0.6"/>
 </svg>

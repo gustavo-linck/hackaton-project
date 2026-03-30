@@ -347,7 +347,7 @@
         ("other",    "Outro",         "bi-person",           "Qualquer perfil"),
     ];
 
-    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
+    string PublicPagePrefix => "/p/";
     string CreatedPageUrl => string.IsNullOrWhiteSpace(_createdSlug)
         ? PublicPagePrefix
         : new Uri(new Uri(Nav.BaseUri), $"p/{_createdSlug}").ToString();

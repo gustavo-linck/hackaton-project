@@ -828,7 +828,7 @@ else
         }
     }
 
-    string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
+    string PublicPagePrefix => "/p/";
 
     async Task DuplicateLink(LinkDto link)
     {

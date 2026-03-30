@@ -548,6 +548,8 @@ body {
     letter-spacing: -0.02em;
     margin-bottom: 1.25rem;
     color: #ffffff; /* always white — hero is always dark */
+    user-select: none;
+    outline: none;
 }
 
 .hero-title .highlight {
