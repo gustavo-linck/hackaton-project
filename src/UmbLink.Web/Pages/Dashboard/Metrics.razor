@@ -20,9 +20,40 @@
         </div>
     </div>
 
-    <LoadingSpinner Loading="_loading">
-        @if (_metrics is not null)
-        {
+    @if (_loading)
+    {
+        <div class="row g-3 mb-4">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card text-center p-3" style="background:var(--bg-card);border-color:var(--border)">
+                        <Skeleton Width="50%" Height="2rem" BorderRadius="8px" />
+                        <div style="margin-top:.5rem"><Skeleton Width="65%" Height=".75rem" /></div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="card mb-4 p-3" style="background:var(--bg-card);border-color:var(--border)">
+            <Skeleton Width="200px" Height="1rem" />
+            <div style="margin-top:1rem"><Skeleton Width="100%" Height="280px" BorderRadius="8px" /></div>
+        </div>
+        <div class="card p-3" style="background:var(--bg-card);border-color:var(--border)">
+            <Skeleton Width="180px" Height="1rem" />
+            <div style="margin-top:1rem">
+                @for (int i = 0; i < 4; i++)
+                {
+                    <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border)">
+                        <Skeleton Width="55%" Height=".875rem" />
+                        <Skeleton Width="10%" Height=".875rem" />
+                        <Skeleton Width="10%" Height=".875rem" />
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (_metrics is not null)
+    {
+        <div class="fade-in-content">
             <!-- Summary cards -->
             <div class="row g-3 mb-4">
                 <div class="col-sm-6 col-lg-3">
@@ -51,7 +82,7 @@
 
             <!-- Chart -->
             <div class="card mb-4 p-3" style="background:var(--bg-card);border-color:var(--border)">
-                <h6 class="fw-semibold mb-3">Visualizações diárias</h6>
+                <h6 class="fw-semibold mb-3">Visitas e cliques diários</h6>
                 <canvas id="views-chart" height="100"></canvas>
             </div>
 
@@ -83,8 +114,8 @@
                     </div>
                 </div>
             }
-        }
-    </LoadingSpinner>
+        </div>
+    }
 </div>
 
 @code {
@@ -94,6 +125,7 @@
 
     MetricsSummaryDto? _metrics;
     bool _loading = true;
+    bool _chartPending;
     int _days = 30;
     string _pageTitle = "";
     Guid _userId;
@@ -109,14 +141,26 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_metrics is not null)
+        if (_chartPending && _metrics is not null)
+        {
+            _chartPending = false;
             await RenderChart();
+        }
     }
 
     async Task LoadMetrics()
     {
         _loading = true;
-        _metrics = await MetricsSvc.GetPageMetricsAsync(_userId, PageId, _days);
+        _chartPending = false;
+        try
+        {
+            _metrics = await MetricsSvc.GetPageMetricsAsync(_userId, PageId, _days);
+            _chartPending = true;
+        }
+        catch
+        {
+            _metrics = null;
+        }
         _loading = false;
         StateHasChanged();
     }
@@ -125,16 +169,27 @@
     {
         if (_metrics is null) return;
         var labels = _metrics.DailyViews.Select(d => d.Date.ToString("dd/MM")).ToArray();
-        var data = _metrics.DailyViews.Select(d => d.Views).ToArray();
+        var viewsData = _metrics.DailyViews.Select(d => d.Views).ToArray();
+        var clicksData = _metrics.DailyViews.Select(d => d.Clicks).ToArray();
         await JS.InvokeVoidAsync("umblink.renderChart", "views-chart", "line",
             labels,
-            new[] { new {
-                label = "Visualizações",
-                data,
-                borderColor = "#0d6efd",
-                backgroundColor = "rgba(13,110,253,.1)",
-                fill = true,
-                tension = 0.4
-            }});
+            new object[] {
+                new {
+                    label = "Visualizações",
+                    data = viewsData,
+                    borderColor = "#0d6efd",
+                    backgroundColor = "rgba(13,110,253,.1)",
+                    fill = true,
+                    tension = 0.4
+                },
+                new {
+                    label = "Cliques",
+                    data = clicksData,
+                    borderColor = "#198754",
+                    backgroundColor = "rgba(25,135,84,.1)",
+                    fill = true,
+                    tension = 0.4
+                }
+            });
     }
 }
