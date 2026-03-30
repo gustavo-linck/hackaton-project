@@ -1472,3 +1472,96 @@ body {
 [data-theme="dark"] .template-card-selectable:hover {
     box-shadow: 0 4px 20px rgba(85, 124, 242, 0.25);
 }
+
+/* ===== Dark Mode — Enhanced Card Visuals ===== */
+
+/* Subtle gradient background for .card-theme in dark mode */
+[data-theme="dark"] .card-theme {
+    background: linear-gradient(135deg, #151c30 0%, #1a2440 100%);
+}
+
+/* Elevated hover state with blue-tinted gradient and glow */
+[data-theme="dark"] .card-theme:hover {
+    background: linear-gradient(135deg, #1c2540 0%, #1f2d52 100%);
+    box-shadow: 0 8px 24px rgba(85, 124, 242, 0.15), 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-color: rgba(85, 124, 242, 0.25);
+}
+
+/* Bootstrap .card — same gradient treatment in dark mode */
+[data-theme="dark"] .card {
+    background: linear-gradient(135deg, #151c30 0%, #1a2440 100%);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .card:hover {
+    background: linear-gradient(135deg, #1c2540 0%, #1f2d52 100%);
+    box-shadow: 0 8px 24px rgba(85, 124, 242, 0.15), 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-color: rgba(85, 124, 242, 0.25);
+}
+
+/* Ghost button — more visible hover in dark mode */
+[data-theme="dark"] .btn-ghost:hover {
+    background: rgba(85, 124, 242, 0.12);
+    border-color: rgba(85, 124, 242, 0.4);
+    color: var(--text-primary);
+}
+
+/* Form inputs — subtle depth in dark mode */
+[data-theme="dark"] .form-control-theme {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Admin table row hover — accent-tinted highlight */
+[data-theme="dark"] .table tbody tr:hover {
+    background: rgba(85, 124, 242, 0.06);
+}
+
+/* ===== Dark Mode — Page Card Depth ===== */
+[data-theme="dark"] .page-card {
+    background: linear-gradient(135deg, #151c30 0%, #1a2440 100%);
+}
+
+[data-theme="dark"] .page-card:hover {
+    background: linear-gradient(135deg, #1c2540 0%, #1f2d52 100%);
+    box-shadow: 0 8px 28px rgba(85, 124, 242, 0.18), 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-color: rgba(85, 124, 242, 0.3);
+}
+
+[data-theme="dark"] .page-card-footer {
+    background: rgba(0, 0, 0, 0.15);
+    border-top-color: rgba(85, 124, 242, 0.1);
+}
+
+/* ===== Skeleton Loading ===== */
+:root,
+:root[data-theme="light"] {
+    --skeleton-base: #e5e7eb;
+    --skeleton-highlight: #f3f4f6;
+}
+
+:root[data-theme="dark"] {
+    --skeleton-base: #1c2540;
+    --skeleton-highlight: #243058;
+}
+
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+}
+
+.skeleton-block {
+    background: linear-gradient(
+        90deg,
+        var(--skeleton-base)      25%,
+        var(--skeleton-highlight) 50%,
+        var(--skeleton-base)      75%
+    );
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 2s ease-in-out infinite;
+    border-radius: 6px;
+    display: block;
+}
+
+.fade-in-content {
+    animation: fadeIn 0.3s ease forwards;
+}
