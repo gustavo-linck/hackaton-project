@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using UmbLink.Infrastructure.Data;
 using UmbLink.Infrastructure.Data.Entities;
 
@@ -10,4 +11,11 @@ public class AuditLogRepository(AppDbContext db) : IAuditLogRepository
         db.AuditLogs.Add(log);
         await db.SaveChangesAsync();
     }
+
+    public async Task<List<AuditLog>> GetRecentAsync(int count = 20) =>
+        await db.AuditLogs
+            .Include(a => a.User)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(count)
+            .ToListAsync();
 }

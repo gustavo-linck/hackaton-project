@@ -37,10 +37,6 @@ else
                     else { <i class="bi bi-check-lg"></i> }
                     Salvar
                 </button>
-                @if (!string.IsNullOrEmpty(_saveStatus))
-                {
-                    <span style="font-size:.8rem;color:var(--text-muted);margin-left:.5rem">@_saveStatus</span>
-                }
             </div>
         </div>
 
@@ -79,7 +75,7 @@ else
                                     <label class="form-label-theme">Bio</label>
                                     <div style="display:flex;align-items:center;gap:.5rem">
                                         <span style="font-size:.75rem;color:var(--text-muted)">@(_showBio ? "Visível" : "Oculta")</span>
-                                        <input type="checkbox" checked="@_showBio" @onchange="e => { _showBio = (bool)(e.Value ?? true); ScheduleAutoSave(); }" />
+                                        <input type="checkbox" checked="@_showBio" @onchange="e => { _showBio = (bool)(e.Value ?? true); }" />
                                     </div>
                                 </div>
                                 <textarea value="@_editBio" @oninput="OnBioInput" class="form-control-theme w-100" rows="2" maxlength="200"></textarea>
@@ -490,10 +486,6 @@ else
     DotNetObjectReference<Editor>? _dotnetRef;
     Guid _userId;
 
-    // Auto-save state
-    System.Timers.Timer? _autoSaveTimer;
-    string _saveStatus = "";
-
     // Preview mode
     string _previewMode = "mobile";
 
@@ -671,7 +663,6 @@ else
     {
         var newConfig = BuildThemeConfig();
         _page = _page! with { ThemeConfig = newConfig };
-        ScheduleAutoSave();
     }
 
     void SelectThemeOrUpgrade(ThemeDefinition theme)
@@ -736,14 +727,12 @@ else
     {
         _editTitle = e.Value?.ToString() ?? string.Empty;
         if (_page is not null) _page = _page with { Title = _editTitle };
-        ScheduleAutoSave();
     }
 
     void OnBioInput(ChangeEventArgs e)
     {
         _editBio = e.Value?.ToString() ?? string.Empty;
         if (_page is not null) _page = _page with { Bio = string.IsNullOrEmpty(_editBio) ? null : _editBio };
-        ScheduleAutoSave();
     }
 
     void OnAvatarInput(ChangeEventArgs e)
@@ -818,30 +807,6 @@ else
 
     string PublicPagePrefix => new Uri(new Uri(Nav.BaseUri), "p/").ToString();
 
-    void ScheduleAutoSave()
-    {
-        _autoSaveTimer?.Stop();
-        _autoSaveTimer?.Dispose();
-        _saveStatus = "";
-        _autoSaveTimer = new System.Timers.Timer(2000);
-        _autoSaveTimer.AutoReset = false;
-        _autoSaveTimer.Elapsed += async (_, _) =>
-        {
-            await InvokeAsync(async () =>
-            {
-                _saveStatus = "Salvando...";
-                StateHasChanged();
-                await SavePage();
-                _saveStatus = "Salvo ✓";
-                StateHasChanged();
-                await Task.Delay(2000);
-                _saveStatus = "";
-                StateHasChanged();
-            });
-        };
-        _autoSaveTimer.Start();
-    }
-
     async Task DuplicateLink(LinkDto link)
     {
         var req = new CreateLinkRequest
@@ -864,8 +829,6 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        _autoSaveTimer?.Stop();
-        _autoSaveTimer?.Dispose();
         _dotnetRef?.Dispose();
         await ValueTask.CompletedTask;
     }

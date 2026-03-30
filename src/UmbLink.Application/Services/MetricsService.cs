@@ -45,6 +45,7 @@ public class MetricsService(IBackgroundTaskQueue queue, IPageRepository pageRepo
         var from = DateTime.UtcNow.Date.AddDays(-days + 1);
 
         var views = await analyticsRepo.GetViewsByPageAsync(pageId, from);
+        var clicks = await analyticsRepo.GetClicksByDateAsync(pageId, from);
         var links = await analyticsRepo.GetClicksByPageLinksAsync(pageId, from);
 
         var totalViews = views.Sum(v => v.Count);
@@ -55,7 +56,7 @@ public class MetricsService(IBackgroundTaskQueue queue, IPageRepository pageRepo
             .Select(d => new DailyMetricDto(
                 d,
                 views.FirstOrDefault(v => v.Date == d).Count,
-                0))
+                clicks.FirstOrDefault(c => c.Date == d).Count))
             .ToList();
 
         var linkMetrics = links

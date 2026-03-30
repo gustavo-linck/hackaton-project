@@ -3,9 +3,13 @@
 @inject SignInManager<AppUser> SignInMgr
 @inject ISubscriptionService SubSvc
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 @using Microsoft.AspNetCore.Identity
 @using UmbLink.Infrastructure.Identity
 @using UmbLink.Infrastructure.Repositories
+@using System.Text.Json
+@using System.Net.Http
+@using System.Net.Http.Json
 @inject IPaymentMethodRepository PaymentRepo
 
 <PageTitle>Configurações — UmbLink</PageTitle>
@@ -49,19 +53,66 @@
     {
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
             <h6 style="font-weight:600;color:var(--text-primary);margin-bottom:1.25rem">Perfil</h6>
+
+            @* Avatar upload *@
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem">
+                <div style="position:relative;cursor:pointer" @onclick="TriggerFileInput">
+                    @if (!string.IsNullOrEmpty(_avatarPreview))
+                    {
+                        <img src="@_avatarPreview" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--border)" alt="Avatar" />
+                    }
+                    else if (!string.IsNullOrEmpty(_avatarUrl))
+                    {
+                        <img src="@_avatarUrl" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--border)" alt="Avatar" />
+                    }
+                    else
+                    {
+                        <div style="width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.5rem;cursor:pointer">
+                            @(_displayName.Length > 0 ? _displayName[0].ToString().ToUpper() : "U")
+                        </div>
+                    }
+                    @if (_uploadingAvatar)
+                    {
+                        <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center">
+                            <span class="spinner-border spinner-border-sm text-light"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card)">
+                            <i class="bi bi-camera-fill" style="font-size:.6rem;color:#fff"></i>
+                        </div>
+                    }
+                </div>
+                <div>
+                    <div style="font-size:.85rem;font-weight:600;color:var(--text-primary)">Foto de perfil</div>
+                    <div style="font-size:.75rem;color:var(--text-muted)">Clique para alterar · JPG, PNG ou WebP · máx. 2MB</div>
+                    @if (!string.IsNullOrEmpty(_avatarError))
+                    {
+                        <small style="color:var(--danger)">@_avatarError</small>
+                    }
+                </div>
+            </div>
+            <InputFile id="avatarInput" OnChange="OnAvatarSelected" style="display:none" accept="image/*" />
+
+            @* Display name *@
             <div style="margin-bottom:1rem">
                 <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Nome de exibição</label>
                 <input class="form-control-theme w-100" @bind="_displayName" maxlength="50" />
             </div>
+
+            @* Email *@
             <div style="margin-bottom:1.25rem">
                 <label style="display:block;font-size:.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">E-mail</label>
                 <input class="form-control-theme w-100" value="@_email" disabled style="opacity:.6;cursor:not-allowed" />
-                @if (_isOAuth)
-                {
-                    <small class="text-theme-muted">E-mail gerenciado pelo provedor Google.</small>
-                }
+                <small class="text-theme-muted" style="font-size:.75rem">
+                    <i class="bi bi-info-circle me-1"></i>
+                    @(_isOAuth ? "E-mail gerenciado pelo provedor Google." : "O e-mail não pode ser alterado. Entre em contato com o suporte se necessário.")
+                </small>
             </div>
-            <button class="btn-accent" @onclick="SaveProfileAsync" disabled="@_saving">
+
+            <button class="btn-accent" @onclick="SaveProfileAsync"
+                    disabled="@(_saving || _displayName.Trim() == _originalName.Trim())">
                 @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
                 Salvar alterações
             </button>
@@ -190,7 +241,13 @@
     string _successMsg = "", _errorMsg = "";
 
     string _displayName = "", _email = "";
+    string _originalName = "";
     bool _isOAuth;
+
+    string _avatarUrl = "";
+    string _avatarPreview = "";
+    bool _uploadingAvatar;
+    string _avatarError = "";
 
     string _currentPassword = "", _newPassword = "", _confirmPassword = "";
 
@@ -214,6 +271,8 @@
         if (user is null) { Nav.NavigateTo("/dashboard"); return; }
 
         _displayName = user.Name;
+        _originalName = user.Name;
+        _avatarUrl = user.AvatarUrl ?? "";
         _email = user.Email ?? "";
         var logins = await UserMgr.GetLoginsAsync(user);
         _isOAuth = logins.Any(l => l.LoginProvider == "Google");
@@ -227,14 +286,58 @@
         _loading = false;
     }
 
+    async Task TriggerFileInput() => await JS.InvokeVoidAsync("document.getElementById('avatarInput').click");
+
+    async Task OnAvatarSelected(InputFileChangeEventArgs e)
+    {
+        _avatarError = "";
+        var file = e.File;
+        if (file.Size > 2 * 1024 * 1024) { _avatarError = "Arquivo muito grande. Máximo 2MB."; return; }
+        if (!file.ContentType.StartsWith("image/")) { _avatarError = "Apenas imagens são aceitas."; return; }
+
+        // Show preview
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream(2 * 1024 * 1024).ReadAsync(buffer);
+        _avatarPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        _uploadingAvatar = true;
+        StateHasChanged();
+
+        // Upload
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(buffer), "file", file.Name);
+        using var http = new HttpClient();
+        http.BaseAddress = new Uri(Nav.BaseUri);
+        var resp = await http.PostAsync("/api/upload/avatar", content);
+        _uploadingAvatar = false;
+        if (resp.IsSuccessStatusCode)
+        {
+            var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+            _avatarUrl = json.GetProperty("url").GetString() ?? _avatarUrl;
+            _avatarPreview = "";
+            _successMsg = "Foto atualizada com sucesso.";
+        }
+        else
+        {
+            _avatarPreview = "";
+            _avatarError = "Erro ao enviar imagem. Tente novamente.";
+        }
+        StateHasChanged();
+    }
+
     async Task SaveProfileAsync()
     {
         _saving = true; _successMsg = ""; _errorMsg = "";
+        if (string.IsNullOrWhiteSpace(_displayName)) { _errorMsg = "O nome não pode estar vazio."; _saving = false; return; }
+        if (_displayName.Trim().Length > 50) { _errorMsg = "O nome deve ter no máximo 50 caracteres."; _saving = false; return; }
         var user = await UserMgr.FindByIdAsync(_userId.ToString());
         if (user is null) { _errorMsg = "Usuário não encontrado."; _saving = false; return; }
         user.Name = _displayName.Trim();
         var result = await UserMgr.UpdateAsync(user);
-        if (result.Succeeded) _successMsg = "Perfil atualizado com sucesso.";
+        if (result.Succeeded)
+        {
+            _successMsg = "Perfil atualizado com sucesso.";
+            _originalName = _displayName.Trim();
+        }
         else _errorMsg = result.Errors.First().Description;
         _saving = false;
     }

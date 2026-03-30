@@ -30,6 +30,27 @@ public class AnalyticsRepository(AppDbContext db) : IAnalyticsRepository
         return results.Select(r => (r.Date, r.Count)).ToList();
     }
 
+    public async Task<List<(DateTime Date, int Count)>> GetClicksByDateAsync(Guid pageId, DateTime from)
+    {
+        var linkIds = await db.Links
+            .Where(l => l.PageId == pageId)
+            .Select(l => l.Id)
+            .ToListAsync();
+
+        if (linkIds.Count == 0)
+            return [];
+
+        var timestamps = await db.ClickEvents
+            .Where(c => linkIds.Contains(c.LinkId) && c.Timestamp >= from)
+            .Select(c => c.Timestamp)
+            .ToListAsync();
+
+        return timestamps
+            .GroupBy(t => t.Date)
+            .Select(g => (g.Key, g.Count()))
+            .ToList();
+    }
+
     public async Task<List<(Guid LinkId, string Title, int Clicks)>> GetClicksByPageLinksAsync(Guid pageId, DateTime from)
     {
         var results = await db.Links
