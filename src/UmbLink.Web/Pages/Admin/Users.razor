@@ -221,11 +221,15 @@ else
     {
         if (_suspendTarget is null) return;
         _suspendingId = _suspendTarget.Id;
-        await AdminSvc.SuspendUserAsync(_adminId, _suspendTarget.Id);
-        _suspendingId = null;
-        _suspendTarget = null;
-        await Load();
-        _toast?.Show("Usuário suspenso.", "warning");
+        try
+        {
+            var result = await AdminSvc.SuspendUserAsync(_adminId, _suspendTarget.Id);
+            if (result.IsFailure) { _toast?.Show(result.Error ?? "Erro ao suspender usuário.", "danger"); return; }
+            _suspendTarget = null;
+            await Load();
+            _toast?.Show("Usuário suspenso.", "warning");
+        }
+        finally { _suspendingId = null; }
     }
 
     // ── Reactivate ───────────────────────────────────────────────────────────
@@ -234,10 +238,14 @@ else
     async Task Reactivate(Guid id)
     {
         _reactivatingId = id;
-        await AdminSvc.ReactivateUserAsync(_adminId, id);
-        _reactivatingId = null;
-        await Load();
-        _toast?.Show("Usuário reativado.", "success");
+        try
+        {
+            var result = await AdminSvc.ReactivateUserAsync(_adminId, id);
+            if (result.IsFailure) { _toast?.Show(result.Error ?? "Erro ao reativar usuário.", "danger"); return; }
+            await Load();
+            _toast?.Show("Usuário reativado.", "success");
+        }
+        finally { _reactivatingId = null; }
     }
 
     // ── Change Plan ──────────────────────────────────────────────────────────
@@ -257,7 +265,8 @@ else
     async Task ConfirmChangePlan()
     {
         if (_changePlanUser is null) return;
-        await AdminSvc.ChangePlanAsync(_adminId, _changePlanUser.Id, _newPlanId);
+        var result = await AdminSvc.ChangePlanAsync(_adminId, _changePlanUser.Id, _newPlanId);
+        if (result.IsFailure) { _toast?.Show(result.Error ?? "Erro ao alterar plano.", "danger"); return; }
         _showChangePlan = false;
         _changePlanUser = null;
         await Load();
@@ -286,20 +295,24 @@ else
     async Task ConfirmGrantTrial()
     {
         if (_grantTrialUser is null) return;
+        if (_grantTrialDays < 1) { _grantTrialError = "Duração mínima é 1 dia."; return; }
         _grantingTrial = true;
         _grantTrialError = "";
-        var result = await AdminSvc.GrantTrialAsync(_adminId, _grantTrialUser.Id, _grantTrialPlanId, _grantTrialDays);
-        _grantingTrial = false;
-        if (result.IsSuccess)
+        try
         {
-            _showGrantTrial = false;
-            _grantTrialUser = null;
-            await Load();
-            _toast?.Show("Trial concedido com sucesso.", "success");
+            var result = await AdminSvc.GrantTrialAsync(_adminId, _grantTrialUser.Id, _grantTrialPlanId, _grantTrialDays);
+            if (result.IsSuccess)
+            {
+                _showGrantTrial = false;
+                _grantTrialUser = null;
+                await Load();
+                _toast?.Show("Trial concedido com sucesso.", "success");
+            }
+            else
+            {
+                _grantTrialError = result.Error ?? "Erro ao conceder trial.";
+            }
         }
-        else
-        {
-            _grantTrialError = result.Error ?? "Erro ao conceder trial.";
-        }
+        finally { _grantingTrial = false; }
     }
 }
