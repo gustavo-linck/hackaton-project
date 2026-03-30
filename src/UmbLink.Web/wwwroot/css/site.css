@@ -1565,3 +1565,24 @@ body {
 .fade-in-content {
     animation: fadeIn 0.3s ease forwards;
 }
+
+/* ===== Umbler Products Dropdown ===== */
+.umbler-product-link {
+    display: block;
+    padding: .6rem .7rem;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+}
+
+.umbler-product-link:hover {
+    background: var(--bg-secondary);
+    border-color: rgba(85, 124, 242, 0.35);
+}
+
+[data-theme="dark"] .umbler-product-link:hover {
+    background: rgba(85, 124, 242, 0.08);
+    border-color: rgba(85, 124, 242, 0.35);
+}

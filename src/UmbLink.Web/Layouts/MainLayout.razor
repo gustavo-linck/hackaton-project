@@ -5,6 +5,57 @@
     <nav class="navbar-theme d-flex align-items-center flex-wrap">
         <a class="nav-brand" href="/dashboard">UmbLink</a>
 
+        @* ── Umbler products waffle menu ── *@
+        <div style="position:relative;align-self:center;margin-left:.35rem">
+            <button class="btn-ghost" @onclick="ToggleProducts" title="Produtos Umbler"
+                    style="padding:.3rem .45rem;border-radius:8px;line-height:1">
+                <i class="bi bi-grid-3x3-gap" style="font-size:1rem"></i>
+            </button>
+            @if (_productsOpen)
+            {
+                <div style="position:fixed;inset:0;z-index:1040" @onclick="CloseProducts"></div>
+                <div style="position:absolute;top:calc(100% + 8px);left:0;z-index:1041;
+                            background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+                            padding:.875rem;width:268px;max-width:calc(100vw - 1.5rem);
+                            box-shadow:0 8px 32px rgba(0,0,0,.16)">
+                    <p style="font-size:.68rem;font-weight:700;text-transform:uppercase;
+                               letter-spacing:.07em;color:var(--text-muted);margin:0 0 .65rem">
+                        Produtos Umbler
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem">
+                        @* Current: UmbLink *@
+                        <div style="padding:.6rem .7rem;border-radius:8px;
+                                    background:rgba(85,124,242,.1);border:1px solid rgba(85,124,242,.25)">
+                            <i class="bi bi-link-45deg" style="color:var(--accent);font-size:1.1rem"></i>
+                            <div style="font-weight:700;font-size:.8rem;color:var(--text-primary);margin-top:.2rem">UmbLink</div>
+                            <div style="font-size:.68rem;color:var(--text-muted)">Link-in-bio</div>
+                        </div>
+                        @* Umbler hosting *@
+                        <a href="https://www.umbler.com/br/" target="_blank" rel="noopener noreferrer"
+                           class="umbler-product-link" @onclick="CloseProducts">
+                            <i class="bi bi-cloud-upload" style="font-size:1.1rem;color:var(--text-secondary)"></i>
+                            <div style="font-weight:700;font-size:.8rem;color:var(--text-primary);margin-top:.2rem">Umbler</div>
+                            <div style="font-size:.68rem;color:var(--text-muted)">Hospedagem</div>
+                        </a>
+                        @* Umbler Talk *@
+                        <a href="https://a.umbler.com/br/talk/" target="_blank" rel="noopener noreferrer"
+                           class="umbler-product-link" @onclick="CloseProducts">
+                            <i class="bi bi-whatsapp" style="font-size:1.1rem;color:#25d366"></i>
+                            <div style="font-weight:700;font-size:.8rem;color:var(--text-primary);margin-top:.2rem">Umbler Talk</div>
+                            <div style="font-size:.68rem;color:var(--text-muted)">WhatsApp CRM</div>
+                        </a>
+                        @* Umbler Mail *@
+                        <a href="https://mail.umbler.com/" target="_blank" rel="noopener noreferrer"
+                           class="umbler-product-link" @onclick="CloseProducts">
+                            <i class="bi bi-envelope" style="font-size:1.1rem;color:var(--text-secondary)"></i>
+                            <div style="font-weight:700;font-size:.8rem;color:var(--text-primary);margin-top:.2rem">Umbler Mail</div>
+                            <div style="font-size:.68rem;color:var(--text-muted)">E-mail profissional</div>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
         <div class="ms-auto d-flex align-items-center gap-2">
             <AuthorizeView>
                 <Authorized>
@@ -105,6 +156,7 @@
 @code {
     bool _isDark;
     bool _menuOpen;
+    bool _productsOpen;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -124,4 +176,7 @@
 
     void ToggleMenu() => _menuOpen = !_menuOpen;
     void CloseMenu() => _menuOpen = false;
+
+    void ToggleProducts() => _productsOpen = !_productsOpen;
+    void CloseProducts() => _productsOpen = false;
 }
