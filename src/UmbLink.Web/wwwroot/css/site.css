@@ -1566,6 +1566,25 @@ body {
     animation: fadeIn 0.3s ease forwards;
 }
 
+/* ===== Client-side field validation ===== */
+.field-valid {
+    border-color: #22c55e !important;
+}
+.field-valid:focus {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+}
+.field-invalid {
+    border-color: var(--danger) !important;
+}
+.field-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+.field-error-msg {
+    font-size: .75rem;
+    color: var(--danger);
+    margin-top: .25rem;
+}
+
 /* ===== Umbler Products Dropdown ===== */
 .umbler-product-link {
     display: block;

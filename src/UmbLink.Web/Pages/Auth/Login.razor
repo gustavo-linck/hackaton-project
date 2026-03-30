@@ -17,7 +17,16 @@
 
                 <div class="mb-3">
                     <label class="form-label">E-mail</label>
-                    <input name="email" type="email" class="form-control-theme" placeholder="voce@exemplo.com" required />
+                    <input name="email" type="email"
+                           class="form-control-theme @(_emailTouched ? (_emailError is null ? "field-valid" : "field-invalid") : string.Empty)"
+                           placeholder="voce@exemplo.com"
+                           value="@_emailVal"
+                           @oninput="OnEmailInput"
+                           required />
+                    @if (_emailTouched && _emailError is not null)
+                    {
+                        <div class="field-error-msg">@_emailError</div>
+                    }
                 </div>
 
                 <div class="mb-3">
@@ -63,15 +72,28 @@
 @code {
     [SupplyParameterFromQuery] string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery] string? Error { get; set; }
+    [SupplyParameterFromQuery] string? Email { get; set; }
     [Inject] IConfiguration Config { get; set; } = default!;
 
     bool _showPassword;
     bool _googleEnabled;
     string _errorMsg = "";
 
+    string _emailVal = "";
+    bool _emailTouched;
+
+    string? _emailError => !_emailVal.Contains('@') ? "Insira um e-mail válido com @." : null;
+
+    void OnEmailInput(ChangeEventArgs e)
+    {
+        _emailVal = e.Value?.ToString() ?? string.Empty;
+        _emailTouched = true;
+    }
+
     protected override void OnInitialized()
     {
         _googleEnabled = !string.IsNullOrEmpty(Config["Google:ClientId"]);
+        _emailVal = Email ?? string.Empty;
         _errorMsg = Error switch {
             "invalid" => "E-mail ou senha inválidos.",
             "locked"  => "Conta bloqueada temporariamente. Tente novamente em breve.",

@@ -7,9 +7,10 @@
 
         @* ── Umbler products waffle menu ── *@
         <div style="position:relative;align-self:center;margin-left:.35rem">
-            <button class="btn-ghost" @onclick="ToggleProducts" title="Produtos Umbler"
-                    style="padding:.3rem .45rem;border-radius:8px;line-height:1">
-                <i class="bi bi-grid-3x3-gap" style="font-size:1rem"></i>
+            <button class="btn-ghost" @onclick="ToggleProducts" title="Outros produtos Umbler"
+                    style="padding:.3rem .6rem;border-radius:8px;line-height:1;display:flex;align-items:center;gap:.35rem;font-size:.82rem;font-weight:500">
+                <i class="bi bi-grid-3x3-gap" style="font-size:.95rem"></i>
+                <span class="d-none d-sm-inline">Outros produtos</span>
             </button>
             @if (_productsOpen)
             {

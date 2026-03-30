@@ -449,7 +449,15 @@ else
                 </div>
                 <div>
                     <label class="form-label-theme">URL</label>
-                    <input @bind="_newLinkUrl" type="url" class="form-control-theme w-100" placeholder="https://..." maxlength="2048" />
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:var(--bg-secondary);border-color:var(--border);color:var(--text-muted);font-size:.85rem;padding:.45rem .65rem;border-right:0">https://</span>
+                        <input value="@_newLinkUrlDisplay"
+                               @oninput="OnUrlInput"
+                               class="form-control-theme"
+                               placeholder="meusite.com/perfil"
+                               maxlength="2041"
+                               style="border-left:0" />
+                    </div>
                 </div>
             </div>
             <div class="modal-theme-footer">
@@ -478,7 +486,7 @@ else
     bool _showAddLink;
     bool _showMobilePreview;
     bool _showSuggestions;
-    string _newLinkTitle = "", _newLinkUrl = "";
+    string _newLinkTitle = "", _newLinkUrlDisplay = "";
     bool _showUpgrade;
     string _upgradeMessage = "";
     ToastContainer? _toast;
@@ -689,16 +697,31 @@ else
 
     void OnSuggestionSelected((string Url, string Title) suggestion)
     {
-        _newLinkUrl = suggestion.Url;
+        _newLinkUrlDisplay = StripProtocol(suggestion.Url);
         if (string.IsNullOrEmpty(_newLinkTitle))
             _newLinkTitle = suggestion.Title;
         _showSuggestions = false;
     }
 
+    void OnUrlInput(ChangeEventArgs e)
+    {
+        _newLinkUrlDisplay = StripProtocol(e.Value?.ToString() ?? "");
+    }
+
+    static string StripProtocol(string url)
+    {
+        if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return url["https://".Length..];
+        if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            return url["http://".Length..];
+        return url;
+    }
+
     async Task AddLink()
     {
         _linkError = "";
-        var result = await LinkSvc.AddAsync(_userId, PageId, new() { Title = _newLinkTitle, Url = _newLinkUrl });
+        var fullUrl = _newLinkUrlDisplay.Length > 0 ? "https://" + _newLinkUrlDisplay.Trim() : "";
+        var result = await LinkSvc.AddAsync(_userId, PageId, new() { Title = _newLinkTitle, Url = fullUrl });
         if (result.IsFailure)
         {
             if (result.LimitError is not null) { _showUpgrade = true; _upgradeMessage = result.LimitError.Message; _showAddLink = false; }
@@ -707,7 +730,7 @@ else
         }
         _links.Add(result.Value!);
         _showAddLink = false;
-        _newLinkTitle = _newLinkUrl = "";
+        _newLinkTitle = _newLinkUrlDisplay = "";
     }
 
     async Task ToggleLink(LinkDto link)

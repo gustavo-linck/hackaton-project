@@ -15,26 +15,54 @@
             <form method="post" action="/auth/do-register">
                 <div class="mb-3">
                     <label class="form-label">Nome</label>
-                    <input name="name" type="text" class="form-control-theme" placeholder="Seu nome" required />
+                    <input name="name" type="text"
+                           class="form-control-theme @(_nameTouched ? (_nameError is null ? "field-valid" : "field-invalid") : string.Empty)"
+                           placeholder="Seu nome"
+                           value="@_nameVal"
+                           @oninput="OnNameInput"
+                           required />
+                    @if (_nameTouched && _nameError is not null)
+                    {
+                        <div class="field-error-msg">@_nameError</div>
+                    }
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">E-mail</label>
-                    <input name="email" type="email" class="form-control-theme" placeholder="voce@exemplo.com" required />
+                    <input name="email" type="email"
+                           class="form-control-theme @(_emailTouched ? (_emailError is null ? "field-valid" : "field-invalid") : string.Empty)"
+                           placeholder="voce@exemplo.com"
+                           value="@_emailVal"
+                           @oninput="OnEmailInput"
+                           required />
+                    @if (_emailTouched && _emailError is not null)
+                    {
+                        <div class="field-error-msg">@_emailError</div>
+                    }
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
                     <div class="input-group">
                         <input name="password" type="@(_showPassword ? "text" : "password")"
-                               class="form-control-theme" minlength="6" required />
+                               class="form-control-theme @(_passwordTouched ? (_passwordError is null ? "field-valid" : "field-invalid") : string.Empty)"
+                               minlength="8" required
+                               value="@_passwordVal"
+                               @oninput="OnPasswordInput" />
                         <button type="button" class="btn btn-ghost"
                                 @onclick="() => _showPassword = !_showPassword"
                                 tabindex="-1">
                             <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
                         </button>
                     </div>
-                    <div class="form-text">Mínimo 8 caracteres com número.</div>
+                    @if (_passwordTouched && _passwordError is not null)
+                    {
+                        <div class="field-error-msg">@_passwordError</div>
+                    }
+                    else
+                    {
+                        <div class="form-text">Mínimo 8 caracteres com número.</div>
+                    }
                 </div>
 
                 <button class="btn btn-accent w-100" type="submit">
@@ -58,15 +86,49 @@
 
 @code {
     [SupplyParameterFromQuery] string? Error { get; set; }
+    [SupplyParameterFromQuery] string? Name { get; set; }
+    [SupplyParameterFromQuery] string? Email { get; set; }
     [Inject] IConfiguration Config { get; set; } = default!;
 
     bool _showPassword;
     bool _googleEnabled;
     string _errorMsg = "";
 
+    string _nameVal = "";
+    string _emailVal = "";
+    string _passwordVal = "";
+    bool _nameTouched;
+    bool _emailTouched;
+    bool _passwordTouched;
+
+    string? _nameError => _nameVal.Trim().Length < 2 ? "O nome deve ter ao menos 2 caracteres." : null;
+    string? _emailError => !_emailVal.Contains('@') || !_emailVal.Contains('.') ? "Insira um e-mail válido (ex: voce@exemplo.com)." : null;
+    string? _passwordError => _passwordVal.Length < 8 ? "A senha deve ter ao menos 8 caracteres." :
+                              !_passwordVal.Any(char.IsDigit) ? "A senha deve conter ao menos um número." : null;
+
+    void OnNameInput(ChangeEventArgs e)
+    {
+        _nameVal = e.Value?.ToString() ?? string.Empty;
+        _nameTouched = true;
+    }
+
+    void OnEmailInput(ChangeEventArgs e)
+    {
+        _emailVal = e.Value?.ToString() ?? string.Empty;
+        _emailTouched = true;
+    }
+
+    void OnPasswordInput(ChangeEventArgs e)
+    {
+        _passwordVal = e.Value?.ToString() ?? string.Empty;
+        _passwordTouched = true;
+    }
+
     protected override void OnInitialized()
     {
         _googleEnabled = !string.IsNullOrEmpty(Config["Google:ClientId"]);
+        _nameVal = Name ?? string.Empty;
+        _emailVal = Email ?? string.Empty;
         _errorMsg = Error switch {
             "required"   => "Preencha todos os campos.",
             null or ""   => "",

@@ -153,8 +153,10 @@ app.MapPost("/auth/do-login", async (
     var remember   = form["remember"] == "true";
     var returnUrl  = form["returnUrl"].ToString();
 
+    var encodedEmail = Uri.EscapeDataString(email);
+
     if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-        return Results.Redirect("/auth/login?error=required");
+        return Results.Redirect($"/auth/login?error=required&email={encodedEmail}");
 
     var result = await sm.PasswordSignInAsync(email, password, remember, lockoutOnFailure: true);
 
@@ -163,7 +165,7 @@ app.MapPost("/auth/do-login", async (
 
     var code = result.IsLockedOut ? "locked" : "invalid";
     var ret  = string.IsNullOrEmpty(returnUrl) ? "" : $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
-    return Results.Redirect($"/auth/login?error={code}{ret}");
+    return Results.Redirect($"/auth/login?error={code}&email={encodedEmail}{ret}");
 }).DisableAntiforgery();
 
 app.MapPost("/auth/do-register", async (
@@ -177,15 +179,18 @@ app.MapPost("/auth/do-register", async (
     var email    = form["email"].ToString().Trim();
     var password = form["password"].ToString();
 
+    var encodedName  = Uri.EscapeDataString(name);
+    var encodedEmail = Uri.EscapeDataString(email);
+
     if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-        return Results.Redirect("/auth/register?error=required");
+        return Results.Redirect($"/auth/register?error=required&name={encodedName}&email={encodedEmail}");
 
     var user = new AppUser { Name = name, Email = email, UserName = email };
     var result = await um.CreateAsync(user, password);
     if (!result.Succeeded)
     {
         var msg = Uri.EscapeDataString(result.Errors.First().Description);
-        return Results.Redirect($"/auth/register?error={msg}");
+        return Results.Redirect($"/auth/register?error={msg}&name={encodedName}&email={encodedEmail}");
     }
 
     await um.AddToRoleAsync(user, "User");
